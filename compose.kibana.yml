@@ -1,0 +1,108 @@
+x-filebeat-common: &filebeat-common
+  environment:
+    ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
+    ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS:-elasticsearch:9200}
+  image: elastic/filebeat:${ELK_VERSION:-7.17.11}
+  networks:
+    - eurydice
+  read_only: true
+  command:
+    - filebeat
+    - run
+    - --strict.perms=false
+    - -e
+    - -E
+    - setup.kibana.host="http://kibana:5601"
+    - output.console={pretty:true}
+  healthcheck:
+    test:
+      - CMD
+      - test
+      - output
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 5s
+  depends_on:
+    elasticsearch:
+      condition: service_healthy
+
+services:
+
+  filebeat-origin:
+    <<: *filebeat-common
+    volumes:
+      - "${FILEBEAT_CONFIG_PATH:-./filebeat/filebeat.origin.yml}:/usr/share/filebeat/filebeat.yml:ro"
+      - ${ELASTICSEARCH_CERT_PATH:-/etc/ssl/certs/ca-certificates.crt}:/usr/share/elasticsearch/config/certs/cert.crt:ro
+      - filebeat-origin-elastic-registry:/usr/share/filebeat/data
+      - db-origin-logs:/logs/origin/postgresql:ro
+      - backend-origin-logs:/logs/origin/backend:ro
+      - sender-logs:/logs/origin/sender:ro
+      - dbtrimmer-origin-logs:/logs/origin/dbtrimmer:ro
+
+  filebeat-destination:
+    <<: *filebeat-common
+    volumes:
+      - "${FILEBEAT_CONFIG_PATH:-./filebeat/filebeat.destination.yml}:/usr/share/filebeat/filebeat.yml:ro"
+      - ${ELASTICSEARCH_CERT_PATH:-/etc/ssl/certs/ca-certificates.crt}:/usr/share/elasticsearch/config/certs/cert.crt:ro
+      - filebeat-destination-elastic-registry:/usr/share/filebeat/data
+      - db-destination-logs:/logs/destination/postgresql:ro
+      - backend-destination-logs:/logs/destination/backend:ro
+      - receiver-logs:/logs/destination/receiver:ro
+      - dbtrimmer-destination-logs:/logs/destination/dbtrimmer:ro
+      - s3remover-logs:/logs/destination/s3remover:ro
+
+  elasticsearch:
+    image: elasticsearch:${ELK_VERSION:-7.17.11}
+    networks:
+      - eurydice
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - elastic:/usr/share/elasticsearch/data"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s; wait $$! || exit 1",
+        ]
+      interval: 5s
+      timeout: 40s
+      retries: 5
+      start_period: 30s
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.elasticsearch.rule: Host(`elasticsearch.localhost`)
+
+  kibana:
+    image: kibana:${ELK_VERSION:-7.17.11}
+    networks:
+      - eurydice
+    environment:
+      SERVER_NAME: kibana.localhost
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PUBLICBASEURL: http://kibana.localhost
+      TELEMETRY_ENABLED: "false"
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --silent localhost:5601/api/status || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.kibana.rule: Host(`kibana.localhost`)
+
+volumes:
+  elastic:
+  filebeat-origin-elastic-registry:
+  filebeat-destination-elastic-registry:

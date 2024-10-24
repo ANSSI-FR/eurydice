@@ -1,0 +1,72 @@
+filebeat.modules:
+  - module: postgresql
+    log:
+      enabled: true
+      var.paths:
+        - /logs/origin/postgresql/*.csv
+      input:
+        processors:
+        - add_fields:
+            target: 'service'
+            fields:
+              side: origin
+
+x-common-input-conf: &common-input-conf
+  type: filestream
+  enabled: true
+  fields_under_root: true
+  parsers:
+    - ndjson:
+        target: "data"
+        add_error_key: true
+        message_key: "message"
+
+filebeat.inputs:
+- <<: *common-input-conf
+  id: backend-origin-logs
+  paths:
+    - /logs/origin/backend/log.json
+  fields:
+    service:
+      side: origin
+      type: backend
+- <<: *common-input-conf
+  id: sender-logs
+  paths:
+    - /logs/origin/sender/log.json
+  fields:
+    service:
+      side: origin
+      type: sender
+- <<: *common-input-conf
+  id: dbtrimmer-origin-logs
+  paths:
+    - /logs/origin/dbtrimmer/log.json
+  fields:
+    service:
+      side: origin
+      type: dbtrimmer
+- <<: *common-input-conf
+  id: db-migrations-origin-logs
+  paths:
+    - /logs/origin/db-migrations/log.json
+  fields:
+    service:
+      side: origin
+      type: db-migrations
+
+setup:
+  template:
+    enabled: true
+    name: filebeat-%{[agent.version]}
+    pattern: "eurydice-*"
+  ilm:
+    enabled: false
+
+output.elasticsearch:
+  hosts: "${ELASTICSEARCH_HOSTS}"
+  api_key: "${ELASTICSEARCH_API_KEY:}"
+  index: "eurydice-%{[service.side]}-%{[service.type]}-1.0"
+  ssl:
+    certificate_authorities:
+      - /usr/share/elasticsearch/config/certs/cert.crt

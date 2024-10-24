@@ -1,0 +1,24 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "Eurydice Origin",
+            "Group": "Servers",
+            "Port": 5432,
+            "Username": "eurydice",
+            "Host": "db-origin",
+            "SSLMode": "prefer",
+            "MaintenanceDB": "eurydice",
+            "PassFile": "/pgadmin4/.pgpass"
+        },
+        "2": {
+            "Name": "Eurydice Destination",
+            "Group": "Servers",
+            "Port": 5432,
+            "Username": "eurydice",
+            "Host": "db-destination",
+            "SSLMode": "prefer",
+            "MaintenanceDB": "eurydice",
+            "PassFile": "/pgadmin4/.pgpass"
+        }
+    }
+}

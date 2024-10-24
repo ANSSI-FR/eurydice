@@ -1,0 +1,585 @@
+x-backend-common-envs: &backend-common-envs
+  DB_HOST: db
+  DB_NAME: eurydice
+  DB_USER: eurydice
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_PORT: "5432"
+  MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+  MINIO_BUCKET_NAME: eurydice
+  MINIO_ACCESS_KEY: minio
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+  MINIO_ENABLED: ${MINIO_ENABLED:-true}
+  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY}
+  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION}
+  EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
+  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-}
+  UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-}
+  UI_BADGE_COLOR: ${UI_BADGE_COLOR:-brown}
+  LOG_TO_FILE: ${LOG_TO_FILE:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+x-backend-common: &backend-common
+  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-backend:${EURYDICE_VERSION:-latest}
+  user: ${UID:-1000}:${GID:-1000}
+  networks:
+    - eurydice
+  read_only: true
+  restart: always
+  tmpfs:
+    - /tmp
+  depends_on:
+    db:
+      condition: service_started
+    minio:
+      condition: service_healthy
+
+x-backend: &backend
+  <<: *backend-common
+  cpus: ${CPUS_BACKEND:-4}
+  mem_limit: ${MEM_LIMIT_BACKEND:-8GB}
+  ports:
+    - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:8080:8080"
+  restart: always
+
+x-dbtrimmer: &dbtrimmer
+  <<: *backend-common
+  cpus: ${CPUS_DBTRIMMER:-2}
+  mem_limit: ${MEM_LIMIT_DBTRIMMER:-2GB}
+  environment:
+    <<: *backend-common-envs
+    DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER:-7days}
+    DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY:-6h}
+    DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY:-200ms}
+  restart: always
+
+x-frontend: &frontend
+  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-frontend:${EURYDICE_VERSION:-latest}
+  user: ${UID:-1000}:${GID:-1000}
+  cpus: ${CPUS_FRONTEND:-4}
+  mem_limit: ${MEM_LIMIT_FRONTEND:-500M}
+  ports:
+    - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:8888:8080"
+  networks:
+    - eurydice
+  read_only: true
+  tmpfs:
+    - /tmp:uid=${UID:-1000},gid=${GID:-1000},mode=700
+    - /var/cache/nginx:uid=${UID:-1000},gid=${GID:-1000},mode=700
+    - /etc/nginx/conf.d:uid=${UID:-1000},gid=${GID:-1000},mode=700
+  restart: always
+
+x-filebeat: &filebeat
+  image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elastic/filebeat:${ELK_VERSION:-7.17.11}
+  user: ${UID:-1000}:${GID:-1000}
+  cpus: ${CPUS_FILEBEAT:-2}
+  mem_limit: ${MEM_LIMIT_FILEBEAT:-500m}
+  read_only: true
+  networks:
+    - eurydice
+  restart: always
+  environment:
+    ELASTICSEARCH_API_KEY:
+    ELASTICSEARCH_HOSTS:
+  command:
+    - filebeat
+    - run
+    - --strict.perms=false
+    - -e
+  healthcheck:
+    test:
+      - CMD
+      - test
+      - output
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 5s
+
+services:
+  ############# Common services #############
+
+  minio:
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/minio/minio:RELEASE.2023-08-23T10-07-06Z
+    user: ${UID:-1000}:${GID:-1000}
+    cpus: ${CPUS_MINIO:-4}
+    mem_limit: ${MEM_LIMIT_MINIO:-4GB}
+    ports:
+      - ${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:9001:9001
+    networks:
+      - eurydice
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    read_only: true
+    restart: always
+    volumes:
+      - ${MINIO_DATA_DIR}:/data
+      - ${MINIO_CONF_DIR}:/config
+    command:
+      - server
+      - /data
+      - --config-dir
+      - /config/
+      - --certs-dir
+      - /config/.certs/
+      - --console-address
+      - :9001
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl http://localhost:9001/minio/health/live
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 2s
+
+  db:
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/postgres:15
+    read_only: true
+    shm_size: ${SHM_SIZE_DATABASE:-1g}
+    cpus: ${CPUS_DATABASE:-4}
+    mem_limit: ${MEM_LIMIT_DATABASE:-8GB}
+    networks:
+      - eurydice
+    restart: always
+    environment:
+      POSTGRES_DB: eurydice
+      POSTGRES_USER: eurydice
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    user: ${UID:-1000}:${GID:-1000}
+    tmpfs:
+      - /tmp:mode=770,uid=${UID:-1000},gid=${GID:-1000}
+      - /run:mode=770,uid=${UID:-1000},gid=${GID:-1000}
+    volumes:
+      - ${DB_DATA_DIR}:/var/lib/postgresql/data
+      - ${DB_LOGS_DIR}:/var/log/postgresql
+    command:
+      - "postgres"
+      - "-c" # turn on csv logging
+      - "logging_collector=on"
+      - "-c"
+      - "log_destination=csvlog"
+      - "-c"
+      - "log_directory=/var/log/postgresql"
+      - "-c" # filebeat format
+      - "log_line_prefix=%m [%p] %q%u@%d "
+      - "-c" # turn on hour-based log rotation
+      - "log_truncate_on_rotation=on"
+      - "-c"
+      - "log_filename=postgresql-%H.log"
+      - "-c"
+      - "log_rotation_age=60"
+      - "-c"
+      - "log_file_mode=0644"
+      - "-c" # print statements that took more than 200ms...
+      - "log_min_duration_statement=200"
+      - "-c" # ...do not print other statements...
+      - "log_statement=none"
+      - "-c" # ...do not even print the duration of these other statements
+      - "log_duration=off"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - psql -U eurydice -lqtA | grep -q "^eurydice|"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:5050:80"
+
+  ############# Origin services #############
+  frontend-origin:
+    <<: *frontend
+    profiles:
+      - origin
+      - origin-with-elk-logging
+    environment:
+      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:-localhost}
+      NGINX_ROOT_DIR: origin
+
+  filebeat-origin:
+    <<: *filebeat
+    profiles:
+      - origin-with-elk-logging
+    volumes:
+      - "${FILEBEAT_CONFIG_PATH}:/usr/share/filebeat/filebeat.yml:ro"
+      - "${FILEBEAT_LOGS_DIR}:/usr/share/filebeat/logs"
+      - "${FILEBEAT_DATA_DIR}:/usr/share/filebeat/data"
+      - "${ELASTICSEARCH_CERT_PATH}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
+      - "${DB_LOGS_DIR}:/logs/origin/postgresql:ro"
+      - "${PYTHON_LOGS_DIR}/backend-origin:/logs/origin/backend:ro"
+      - "${PYTHON_LOGS_DIR}/sender:/logs/origin/sender:ro"
+      - "${PYTHON_LOGS_DIR}/dbtrimmer-origin:/logs/origin/dbtrimmer:ro"
+      - "${PYTHON_LOGS_DIR}/db-migrations-origin:/logs/origin/db-migrations:ro"
+
+  backend-origin: &backend-origin
+    <<: *backend
+    profiles:
+      - origin
+    volumes:
+      - "${PYTHON_LOGS_DIR}/backend-origin:/var/log/app"
+    environment:
+      <<: *backend-common-envs
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+      EURYDICE_API: origin
+      USER_ASSOCIATION_TOKEN_EXPIRES_AFTER: ${USER_ASSOCIATION_TOKEN_EXPIRES_AFTER:-30min}
+      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED:
+      REMOTE_USER_HEADER:
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+      TRANSFERABLE_MAX_SIZE: ${EURYDICE_TRANSFERABLE_MAX_SIZE:-54975581388800}
+    command:
+      - make
+      - run-origin-api
+    healthcheck:
+      test:
+        - CMD
+        - /healthcheck.py
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  backend-origin-with-elk:
+    <<: *backend-origin
+    profiles:
+      - origin-with-elk-logging
+    depends_on:
+      filebeat-origin:
+        condition: service_healthy
+
+  dbtrimmer-origin: &dbtrimmer-origin
+    <<: *dbtrimmer
+    volumes:
+      - "${PYTHON_LOGS_DIR}/dbtrimmer-origin:/var/log/app"
+    profiles:
+      - origin
+    command:
+      - make
+      - run-origin-dbtrimmer
+
+  dbtrimmer-origin-with-elk:
+    <<: *dbtrimmer-origin
+    profiles:
+      - origin-with-elk-logging
+    depends_on:
+      filebeat-origin:
+        condition: service_healthy
+
+  sender: &sender
+    <<: *backend-common
+    profiles:
+      - origin
+    cpus: ${CPUS_SENDER:-2}
+    mem_limit: ${MEM_LIMIT_SENDER:-6GB}
+    volumes:
+      - "${PYTHON_LOGS_DIR}/sender:/var/log/app"
+    extra_hosts:
+      - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
+    environment:
+      <<: *backend-common-envs
+      LIDIS_HOST: lidis.docker.host
+      LIDIS_PORT: "33010"
+      TRANSFERABLE_HISTORY_DURATION: ${TRANSFERABLE_HISTORY_DURATION}
+      TRANSFERABLE_HISTORY_SEND_EVERY: ${TRANSFERABLE_HISTORY_SEND_EVERY}
+      SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS:-UserRotatingTransferableRangeFiller}
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      lidis:
+        condition: service_started
+    command:
+      - make
+      - run-sender
+
+  sender-with-elk:
+    <<: *sender
+    profiles:
+      - origin-with-elk-logging
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      lidis:
+        condition: service_started
+      filebeat-origin:
+        condition: service_healthy
+
+  lidis:
+    profiles:
+      - origin
+      - origin-with-elk-logging
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/eurydice/lidi-send:${LIDI_VERSION:-latest}
+    cpus: ${CPUS_LIDIS:-4}
+    mem_limit: ${MEM_LIMIT_LIDIS:-4GB}
+    read_only: true
+    network_mode: "host"
+    environment:
+      RUST_LOG: ${RUST_LOG:-INFO}
+    restart: always
+    command:
+      - "--from_tcp"
+      - "${LIDIS_DOCKER_HOST:-0.0.0.0}:33010"
+      - "--to_udp"
+      - "${LIDIR_HOST}:${LIDIR_PORT:-11011}"
+      - "--to_udp_mtu"
+      - "${LIDI_UDP_MTU:-1500}"
+      - "--nb_clients"
+      - "1"
+      - "--encoding_block_size"
+      - "${LIDI_ENCODING_BLOCK_SIZE:-60000}"
+      - "--repair_block_size"
+      - "${LIDI_REPAIR_BLOCK_SIZE:-6000}"
+      - "--udp_buffer_size"
+      - "${LIDIS_UDP_BUFFER_SIZE:-32768}"
+
+  ############# Origin tools #############
+  db-migrations-origin: &db-migrations-origin
+    profiles:
+      - migration-origin
+    <<: *backend
+    volumes:
+      - "${PYTHON_LOGS_DIR}/db-migrations-origin:/var/log/app"
+    environment:
+      <<: *backend-common-envs
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      EURYDICE_API: origin
+    command:
+      - make
+      - migrate
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  db-migrations-origin-with-elk:
+    profiles:
+      - migration-origin-with-elk-logging
+    <<: *db-migrations-origin
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      filebeat-origin:
+        condition: service_healthy
+
+  ############# Destination services #############
+  lidir: &lidir
+    profiles:
+      - destination
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/eurydice/lidi-receive:${LIDI_VERSION:-latest}
+    depends_on:
+      receiver:
+        condition: service_started
+    cpus: ${CPUS_LIDIR:-4}
+    mem_limit: ${MEM_LIMIT_LIDIR:-4GB}
+    read_only: true
+    network_mode: "host"
+    environment:
+      RUST_LOG: ${RUST_LOG:-INFO}
+    restart: always
+    command:
+      - "--from_udp"
+      - "${LIDIR_HOST:-0.0.0.0}:${LIDIR_PORT:-11011}"
+      - "--from_udp_mtu"
+      - "${LIDI_UDP_MTU:-1500}"
+      - "--to_tcp"
+      - "127.0.0.1:65432"
+      - "--encoding_block_size"
+      - "${LIDI_ENCODING_BLOCK_SIZE:-60000}"
+      - "--repair_block_size"
+      - "${LIDI_REPAIR_BLOCK_SIZE:-6000}"
+      - "--nb_clients"
+      - "1"
+
+  lidir-with-elk:
+    <<: *lidir
+    profiles:
+      - destination-with-elk-logging
+    depends_on:
+      receiver-with-elk:
+        condition: service_started
+
+  receiver: &receiver
+    profiles:
+      - destination
+    <<: *backend-common
+    volumes:
+      - "${PYTHON_LOGS_DIR}/receiver:/var/log/app"
+      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+    cpus: ${CPUS_RECEIVER:-2}
+    mem_limit: ${MEM_LIMIT_RECEIVER:-6GB}
+    environment:
+      <<: *backend-common-envs
+      PACKET_RECEIVER_HOST: "0.0.0.0"
+      PACKET_RECEIVER_PORT: "65432"
+      RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS:-6}"
+    restart: always
+    ports:
+      - "127.0.0.1:65432:65432"
+    command:
+      - make
+      - run-receiver
+
+  receiver-with-elk:
+    profiles:
+      - destination-with-elk-logging
+    <<: *receiver
+    depends_on:
+      filebeat-destination:
+        condition: service_healthy
+
+  backend-destination: &backend-destination
+    profiles:
+      - destination
+    <<: *backend
+    volumes:
+      - "${PYTHON_LOGS_DIR}/backend-destination:/var/log/app"
+      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+    environment:
+      <<: *backend-common-envs
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+      EURYDICE_API: destination
+      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED:
+      REMOTE_USER_HEADER:
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+    command:
+      - make
+      - run-destination-api
+    healthcheck:
+      test:
+        - CMD
+        - /healthcheck.py
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  backend-destination-with-elk:
+    profiles:
+      - destination-with-elk-logging
+    <<: *backend-destination
+    depends_on:
+      filebeat-destination:
+        condition: service_healthy
+
+  frontend-destination:
+    <<: *frontend
+    profiles:
+      - destination
+      - destination-with-elk-logging
+    environment:
+      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:-localhost}
+      NGINX_ROOT_DIR: destination
+
+  filebeat-destination:
+    <<: *filebeat
+    profiles:
+      - destination-with-elk-logging
+    volumes:
+      - "${FILEBEAT_CONFIG_PATH}:/usr/share/filebeat/filebeat.yml:ro"
+      - "${FILEBEAT_LOGS_DIR}:/usr/share/filebeat/logs"
+      - "${FILEBEAT_DATA_DIR}:/usr/share/filebeat/data"
+      - "${ELASTICSEARCH_CERT_PATH}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
+      - "${DB_LOGS_DIR}:/logs/destination/postgresql:ro"
+      - "${PYTHON_LOGS_DIR}/backend-destination:/logs/destination/backend:ro"
+      - "${PYTHON_LOGS_DIR}/receiver:/logs/destination/receiver:ro"
+      - "${PYTHON_LOGS_DIR}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro"
+      - "${PYTHON_LOGS_DIR}/s3remover:/logs/destination/s3remover:ro"
+      - "${PYTHON_LOGS_DIR}/db-migrations-destination:/logs/destination/db-migrations:ro"
+
+  dbtrimmer-destination: &dbtrimmer-destination
+    profiles:
+      - destination
+    <<: *dbtrimmer
+    volumes:
+      - "${PYTHON_LOGS_DIR}/dbtrimmer-destination:/var/log/app"
+    command:
+      - make
+      - run-destination-dbtrimmer
+
+  dbtrimmer-destination-with-elk:
+    profiles:
+      - destination-with-elk-logging
+    <<: *dbtrimmer-destination
+    depends_on:
+      filebeat-destination:
+        condition: service_healthy
+
+  s3remover: &s3remover
+    profiles:
+      - destination
+    <<: *backend-common
+    volumes:
+      - "${PYTHON_LOGS_DIR}/s3remover:/var/log/app"
+      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+    cpus: ${CPUS_S3REMOVER:-2}
+    mem_limit: ${MEM_LIMIT_S3REMOVER:-1GB}
+    environment:
+      <<: *backend-common-envs
+      S3REMOVER_EXPIRE_TRANSFERABLES_AFTER:
+      S3REMOVER_RUN_EVERY:
+      S3REMOVER_POLL_EVERY:
+    restart: always
+    command:
+      - make
+      - run-destination-s3remover
+
+  s3remover-with-elk:
+    profiles:
+      - destination-with-elk-logging
+    <<: *s3remover
+    depends_on:
+      filebeat-destination:
+        condition: service_healthy
+
+  ############# Destination tools #############
+  db-migrations-destination: &db-migrations-destination
+    profiles:
+      - migration-destination
+    <<: *backend
+    volumes:
+      - "${PYTHON_LOGS_DIR}/db-migrations-destination:/var/log/app"
+    environment:
+      <<: *backend-common-envs
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      EURYDICE_API: destination
+    command:
+      - make
+      - migrate
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  db-migrations-destination-with-elk:
+    profiles:
+      - migration-destination-with-elk-logging
+    <<: *db-migrations-destination
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      filebeat-destination:
+        condition: service_healthy
+
+networks:
+  eurydice:
+    driver: bridge
+    name: eurydice
+    ipam:
+      config:
+        - subnet: ${EURYDICE_IPV4_SUBNET:-172.18.0.0/24}

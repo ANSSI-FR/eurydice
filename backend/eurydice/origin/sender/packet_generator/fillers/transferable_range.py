@@ -1,0 +1,364 @@
+import logging
+from collections import defaultdict
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Optional
+
+from django.conf import settings
+from django.db import models
+from django.db.models.query import QuerySet
+from minio.deleteobjects import DeleteObject
+from minio.error import S3Error
+
+import eurydice.common.protocol as protocol
+import eurydice.origin.core.models as origin_models
+import eurydice.origin.sender.user_selector as user_selector
+from eurydice.common import exceptions
+from eurydice.common import minio
+from eurydice.common.utils import orm
+from eurydice.origin.core import enums as origin_enums
+from eurydice.origin.sender.packet_generator.fillers import base
+
+logging.config.dictConfig(settings.LOGGING)  # type: ignore
+logger = logging.getLogger(__name__)
+
+
+def _build_protocol_transferable(
+    transferable_range: origin_models.TransferableRange,
+) -> protocol.Transferable:
+    """
+    Given the django model for a TransferableRange and a user, build the
+    protocol's model for the associated Transferable
+
+    Args:
+        transferable_range: the TransferableRange django model
+
+    Returns:
+        protocol's model for the associated Transferable
+    """
+
+    sha1: Optional[bytes]
+
+    if transferable_range.is_last:
+        sha1 = bytes(transferable_range.outgoing_transferable.sha1)
+    else:
+        sha1 = None
+
+    return protocol.Transferable(
+        id=transferable_range.outgoing_transferable.id,
+        name=transferable_range.outgoing_transferable.name,
+        user_provided_meta=transferable_range.outgoing_transferable.user_provided_meta,  # noqa: E501
+        sha1=sha1,
+        size=transferable_range.outgoing_transferable.size,
+        user_profile_id=transferable_range.outgoing_transferable.user_profile.id,
+    )
+
+
+def _fetch_next_transferable_ranges_for_user(
+    user: origin_models.User,
+) -> QuerySet[origin_models.TransferableRange]:
+    """
+    Fetch the given user's next MAX_TRANSFERABLES_PER_PACKET pending
+    TransferableRanges.
+
+    Args:
+        user: for filtering TransferableRanges
+
+    Returns:
+        the user's pending TransferableRanges
+
+    """
+
+    return orm.make_queryset_with_subquery_join(
+        queryset=origin_models.TransferableRange.objects.select_related(
+            "outgoing_transferable__revocation"
+        )
+        .filter(
+            outgoing_transferable__user_profile=user.user_profile,
+            transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
+        )
+        .order_by("created_at"),
+        subquery=origin_models.TransferableRange.objects.values(
+            "outgoing_transferable_id"
+        ).filter(
+            transfer_state=origin_enums.TransferableRangeTransferState.ERROR,
+        ),
+        on=models.Q(outgoing_transferable_id=models.F("outgoing_transferable_id")),
+        select={"erroneous_outgoing_transferable_id": "outgoing_transferable_id"},
+    )[: settings.MAX_TRANSFERABLES_PER_PACKET]
+
+
+def _fetch_pending_transferable_ranges() -> QuerySet[origin_models.TransferableRange]:
+    """
+    Fetch the next MAX_TRANSFERABLES_PER_PACKET pending TransferableRanges.
+
+    Also pre-fetches revocations and ERROR ranges, to reduce the amount of db queries.
+
+    Returns:
+        the pending TransferableRanges
+
+    """
+
+    return orm.make_queryset_with_subquery_join(
+        queryset=origin_models.TransferableRange.objects.select_related(
+            "outgoing_transferable__revocation"
+        )
+        .filter(
+            transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
+        )
+        .order_by("created_at"),
+        subquery=origin_models.TransferableRange.objects.values(
+            "outgoing_transferable_id"
+        ).filter(
+            transfer_state=origin_enums.TransferableRangeTransferState.ERROR,
+        ),
+        on=models.Q(outgoing_transferable_id=models.F("outgoing_transferable_id")),
+        select={"erroneous_outgoing_transferable_id": "outgoing_transferable_id"},
+    )[: settings.MAX_TRANSFERABLES_PER_PACKET]
+
+
+def _get_transferable_range_data(
+    transferable_range: origin_models.TransferableRange,
+) -> bytes:
+    """
+    Given a TransferableRange, fetch and return its data from minio.
+
+    Args:
+        transferable_range: range for which to fetch data
+
+    Returns:
+        TransferableRange data as bytes
+
+    Raises:
+        S3ObjectNotFoundError: if object is not found in S3.
+
+    """
+    response = None
+    try:
+        response = minio.client.get_object(
+            bucket_name=transferable_range.s3_bucket_name,
+            object_name=transferable_range.s3_object_name,
+        )
+        data = response.read()
+    except S3Error as e:
+        if e.code == "NoSuchKey":
+            raise exceptions.S3ObjectNotFoundError() from e
+        raise
+    finally:
+        if response:
+            response.close()
+            response.release_conn()
+    return data
+
+
+class OTWPacketAlreadyHasTransferableRanges(ValueError):
+    """
+    Exception raised when passing an OnTheWirePacket which already has
+    TransferableRanges to the TransferableRangeFiller.
+    """
+
+
+def __group_transferable_ranges_by_bucket(
+    transferable_ranges: List[origin_models.TransferableRange],
+) -> Dict[str, List[origin_models.TransferableRange]]:
+    result = defaultdict(list)
+    for transferable_range in transferable_ranges:
+        result[transferable_range.s3_bucket_name].append(
+            transferable_range,
+        )
+    return result
+
+
+def _delete_objects_from_s3(
+    transferable_ranges: List[origin_models.TransferableRange],
+) -> None:
+    """
+    Delete TransferableRanges data from S3.
+
+    Args:
+        transferable_ranges: List of TransferableRanges to delete data from S3
+    """
+    transferable_ranges_by_bucket = __group_transferable_ranges_by_bucket(
+        transferable_ranges,
+    )
+
+    for bucket_name, transferable_ranges in transferable_ranges_by_bucket.items():
+        errors = minio.client.remove_objects(
+            bucket_name=bucket_name,
+            delete_object_list=iter(
+                DeleteObject(transferable_range.s3_object_name)
+                for transferable_range in transferable_ranges
+            ),
+        )
+        for error in errors:
+            logger.error("Error occurred when deleting object", error)
+
+
+def _add(
+    transferable_range: origin_models.TransferableRange,
+    packet: protocol.OnTheWirePacket,
+) -> None:
+    """
+    Add given TransferableRange to the given packet, mark it as TRANSFERRED
+    and delete its associated data from s3.
+
+    Args:
+        transferable_range: django model for the TransferableRange to add
+        packet: Pydantic protocol packet to add TransferableRange to
+
+    """
+    protocol_transferable = _build_protocol_transferable(transferable_range)
+
+    try:
+        protocol_transferable_range = protocol.TransferableRange(
+            transferable=protocol_transferable,
+            is_last=transferable_range.is_last,
+            byte_offset=transferable_range.byte_offset,
+            data=_get_transferable_range_data(transferable_range),
+        )
+    except exceptions.S3ObjectNotFoundError:
+        transferable_range.mark_as_error()
+        logger.error(
+            "Couldn't retrieve S3 object "
+            f"for TransferableRange {transferable_range.id} "
+            f"for Transferable {transferable_range.outgoing_transferable.id}."
+        )
+        raise
+
+    logger.info(
+        f"Add TransferableRange {transferable_range.id} "
+        f"for Transferable {transferable_range.outgoing_transferable.id}."
+    )
+    packet.transferable_ranges.append(protocol_transferable_range)
+
+    transferable_range.mark_as_transferred()
+
+
+def _cancel(
+    transferable_range: origin_models.TransferableRange,
+) -> None:
+    """Mark the provided transferable_range as CANCELED and remove its data from the
+    storage.
+    """
+    logger.info(f"Cancel Transferable {transferable_range.outgoing_transferable.id}.")
+    transferable_range.mark_as_canceled()
+
+
+def _process(
+    transferable_range: origin_models.TransferableRange,
+    packet: protocol.OnTheWirePacket,
+) -> int:
+    """Process a transferable range by either adding it to the packet or cancelling
+    it."""
+    if (
+        transferable_range.erroneous_outgoing_transferable_id is not None  # type: ignore # noqa: E501
+        or hasattr(transferable_range.outgoing_transferable, "revocation")
+    ):
+        _cancel(transferable_range)
+        return 0
+
+    _add(transferable_range, packet)
+
+    return transferable_range.size
+
+
+class TransferableRangeFiller(base.OnTheWirePacketFiller):
+    """
+    Abstract filler.
+
+    Fills the given packet with TransferableRange's data and metadata
+    by calling the `fill()` method
+    """
+
+    def _get_transferable_ranges_to_process(
+        self,
+    ) -> Iterator[origin_models.TransferableRange]:
+        """
+        TransferableRange iterator
+
+        Yields:
+            TransferableRanges queried from DB
+        """
+        raise NotImplementedError()
+
+    def fill(self, packet: protocol.OnTheWirePacket) -> None:
+        """Given an OnTheWirePacket, fill it with TransferableRanges up to
+        TRANSFERABLE_RANGE_SIZE bytes if it has no existing TransferableRanges.
+
+        Args:
+            packet: packet to fill with TransferableRanges
+
+        Raises:
+            OTWPacketAlreadyHasTransferableRanges: when passed a packet which already
+                has TransferableRanges.
+
+        """
+        if len(packet.transferable_ranges) > 0:
+            raise OTWPacketAlreadyHasTransferableRanges
+
+        packet_size = 0
+
+        to_delete = []
+
+        for transferable_range in self._get_transferable_ranges_to_process():
+            try:
+                packet_size += _process(transferable_range, packet)
+                to_delete.append(transferable_range)
+            except exceptions.S3ObjectNotFoundError:
+                pass
+
+            if packet_size >= settings.TRANSFERABLE_RANGE_SIZE:
+                break
+
+        _delete_objects_from_s3(to_delete)
+
+
+class UserRotatingTransferableRangeFiller(TransferableRangeFiller):
+    """
+    Fill the given packet with TransferableRange's data and metadata
+    by calling the `fill()` method
+    """
+
+    def __init__(self) -> None:
+        self._user_selector = user_selector.WeightedRoundRobinUserSelector()
+        super().__init__()
+
+    def _get_transferable_ranges_to_process(
+        self,
+    ) -> Iterator[origin_models.TransferableRange]:
+        """
+        TransferableRange iterator using the _user_selector
+
+        Yields:
+            TransferableRanges queried from DB
+        """
+        self._user_selector.start_round()
+
+        while user := self._user_selector.get_next_user():
+            yield from _fetch_next_transferable_ranges_for_user(user)
+
+
+class FIFOTransferableRangeFiller(TransferableRangeFiller):
+    """
+    Fill the given packet with TransferableRange's data and metadata
+    by calling the `fill()` method
+    """
+
+    def _get_transferable_ranges_to_process(
+        self,
+    ) -> Iterator[origin_models.TransferableRange]:
+        """
+        TransferableRange iterator
+
+        Yields:
+            TransferableRanges queried from DB
+        """
+        return iter(_fetch_pending_transferable_ranges())
+
+
+__all__ = (
+    "TransferableRangeFiller",
+    "UserRotatingTransferableRangeFiller",
+    "FIFOTransferableRangeFiller",
+)

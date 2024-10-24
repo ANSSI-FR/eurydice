@@ -1,0 +1,7 @@
+filebeat.inputs:
+  - type: filestream
+    paths:
+      - /dev/null
+
+output.console:
+  pretty: true

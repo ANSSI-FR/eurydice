@@ -1,0 +1,2020 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserAssociation form behaves correctly with an invalid token: no token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: 0px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label theme--light"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div />
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                ⚠️ Attention aux majuscules, la casse du texte est prise en compte.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with an invalid token: token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton doit être composé d'exactement 2 mots.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with an invalid token: token is submitting 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton doit être composé d'exactement 2 mots.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with an invalid token: token submitted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton doit être composé d'exactement 2 mots.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with invalid token2: no token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: 0px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label theme--light"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div />
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                ⚠️ Attention aux majuscules, la casse du texte est prise en compte.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with invalid token2: token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton ne doit contenir que des lettres et des espaces.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with invalid token2: token is submitting 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton ne doit contenir que des lettres et des espaces.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with invalid token2: token submitted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Le jeton ne doit contenir que des lettres et des espaces.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with valid token: no token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: 0px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label theme--light"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div />
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                ⚠️ Attention aux majuscules, la casse du texte est prise en compte.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with valid token: token inputted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                ⚠️ Attention aux majuscules, la casse du texte est prise en compte.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default primary"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with valid token: token is submitting 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                ⚠️ Attention aux majuscules, la casse du texte est prise en compte.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--is-elevated v-btn--has-bg v-btn--loading theme--light v-size--default primary"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+      <span
+        class="v-btn__loader"
+      >
+        <div
+          aria-valuemax="100"
+          aria-valuemin="0"
+          class="v-progress-circular v-progress-circular--visible v-progress-circular--indeterminate"
+          role="progressbar"
+          style="height: 23px; width: 23px;"
+        >
+          <svg
+            style="transform: rotate(0deg);"
+            viewBox="21.904761904761905 21.904761904761905 43.80952380952381 43.80952380952381"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              class="v-progress-circular__overlay"
+              cx="43.80952380952381"
+              cy="43.80952380952381"
+              fill="transparent"
+              r="20"
+              stroke-dasharray="125.664"
+              stroke-dashoffset="125.66370614359172px"
+              stroke-width="3.8095238095238093"
+            />
+          </svg>
+          <div
+            class="v-progress-circular__info"
+          />
+        </div>
+      </span>
+    </button>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form behaves correctly with valid token: token submitted 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty v-input--is-readonly theme--light v-text-field v-text-field--enclosed v-text-field--outlined success--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light success--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              readonly="readonly"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light success--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Votre compte est maintenant associé.
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <a
+      class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default primary"
+      href="/"
+      id="UserAssociation-ContinueButton"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+            />
+          </svg>
+        </span>
+        Continuer
+      </span>
+    </a>
+  </form>
+</div>
+`;
+
+exports[`UserAssociation form correctly displays API error: token submitted and error is displayed 1`] = `
+<div
+  class="container UserAssociation-Card"
+>
+  <h1
+    class="mb-2"
+  >
+    👋 Bienvenue
+  </h1>
+   
+  <p>
+    
+    Il semble que vous n'ayez pas encore associé votre compte utilisateur côté
+    destination avec votre compte côté origine.
+  
+  </p>
+   
+  <p>
+    Cette étape est nécessaire pour pouvoir accéder à vos transferts.
+  </p>
+   
+  <p>
+    Réalisez l'association de vos comptes en quelques instants :
+  </p>
+   
+  <ol>
+    <li>
+      
+      Connectez-vous à l'interface utilisateur côté origine. Cliquez ensuite
+      sur le bouton "Jeton d'Association" situé en haut à droite de la page.
+    
+    </li>
+     
+    <li>
+      Prenez note du jeton d'association.
+    </li>
+     
+    <li>
+      Entrez le jeton d'association dans le formulaire ci-dessous.
+    </li>
+  </ol>
+   
+  <form
+    class="v-form pa-4 pt-6"
+    id="UserAssociation-TokenForm"
+    novalidate="novalidate"
+  >
+    <div
+      class="v-input mb-2 v-textarea v-textarea--auto-grow v-textarea--no-resize v-input--has-state v-input--is-label-active v-input--is-dirty theme--light v-text-field v-text-field--enclosed v-text-field--outlined error--text"
+    >
+      <div
+        class="v-input__control"
+      >
+        <div
+          class="v-input__slot"
+        >
+          <fieldset
+            aria-hidden="true"
+          >
+            <legend
+              style="width: -24px;"
+            >
+              <span
+                class="notranslate"
+              >
+                ​
+              </span>
+            </legend>
+          </fieldset>
+          <div
+            class="v-text-field__slot"
+          >
+            <label
+              class="v-label v-label--active theme--light error--text"
+              for="UserAssociation-TextArea"
+              style="left: 0px; position: absolute;"
+            >
+              Jeton d'association
+            </label>
+            <textarea
+              id="UserAssociation-TextArea"
+              rows="5"
+              style="height: 120px;"
+            />
+          </div>
+          <div
+            class="v-input__append-inner"
+          >
+            <div
+              class="v-input__icon v-input__icon--clear"
+            >
+              <button
+                aria-label="Clear Jeton d'association"
+                class="v-icon notranslate v-icon--link mdi mdi-close theme--light error--text"
+                tabindex="-1"
+                type="button"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          class="v-text-field__details"
+        >
+          <div
+            class="v-messages theme--light error--text"
+            role="alert"
+          >
+            <transition-group-stub
+              class="v-messages__wrapper"
+              name="message-transition"
+              tag="div"
+            >
+              <div
+                class="v-messages__message"
+              >
+                Nous ne pouvons pas aider un peuple qui ne veut pas s'aider lui-même
+              </div>
+            </transition-group-stub>
+          </div>
+        </div>
+      </div>
+    </div>
+     
+    <button
+      class="v-btn v-btn--disabled v-btn--has-bg theme--light v-size--default"
+      disabled="disabled"
+      id="UserAssociation-SubmitButton"
+      type="submit"
+    >
+      <span
+        class="v-btn__content"
+      >
+        <span
+          aria-hidden="true"
+          class="v-icon notranslate v-icon--left theme--light"
+        >
+          <svg
+            aria-hidden="true"
+            class="v-icon__svg"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 14H9C9 9.03 13.03 5 18 5V7C14.13 7 11 10.13 11 14M18 11V9C15.24 9 13 11.24 13 14H15C15 12.34 16.34 11 18 11M7 4C7 2.89 6.11 2 5 2S3 2.89 3 4 3.89 6 5 6 7 5.11 7 4M11.45 4.5H9.45C9.21 5.92 8 7 6.5 7H3.5C2.67 7 2 7.67 2 8.5V11H8V8.74C9.86 8.15 11.25 6.5 11.45 4.5M19 17C20.11 17 21 16.11 21 15S20.11 13 19 13 17 13.89 17 15 17.89 17 19 17M20.5 18H17.5C16 18 14.79 16.92 14.55 15.5H12.55C12.75 17.5 14.14 19.15 16 19.74V22H22V19.5C22 18.67 21.33 18 20.5 18Z"
+            />
+          </svg>
+        </span>
+        
+      Associer
+    
+      </span>
+    </button>
+  </form>
+</div>
+`;

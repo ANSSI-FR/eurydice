@@ -1,0 +1,1028 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Origin TransferableTable renders correctly 1`] = `
+<div>
+  <div
+    class="v-card v-sheet v-sheet--outlined theme--light"
+  >
+    <div
+      class="v-data-table v-data-table--has-top v-data-table--has-bottom theme--light"
+    >
+      <header
+        class="v-sheet theme--light v-toolbar v-toolbar--flat"
+        style="height: 64px;"
+      >
+        <div
+          class="v-toolbar__content"
+          style="height: 64px;"
+        >
+          <div
+            class="v-toolbar__title"
+          >
+            Transferts
+          </div>
+           
+          <div
+            class="spacer"
+          />
+           
+          <transition-stub
+            name="scale-transition"
+          >
+            <button
+              class="v-btn v-btn--has-bg theme--light v-size--default primary"
+              style="display: none;"
+              type="button"
+            >
+              <span
+                class="v-btn__content"
+              >
+                <span
+                  aria-hidden="true"
+                  class="v-icon notranslate v-icon--left theme--light"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="v-icon__svg"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
+                    />
+                  </svg>
+                </span>
+                 Nouveaux fichiers
+            
+              </span>
+            </button>
+          </transition-stub>
+        </div>
+      </header>
+      <div
+        class="v-data-table__wrapper"
+      >
+        <table>
+          <colgroup>
+            <col
+              class=""
+            />
+            <col
+              class=""
+            />
+            <col
+              class=""
+            />
+            <col
+              class=""
+            />
+            <col
+              class=""
+            />
+            <col
+              class=""
+            />
+          </colgroup>
+          <thead
+            class="v-data-table-header"
+          >
+            <tr>
+              <th
+                aria-label="Nom"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  Nom
+                </span>
+              </th>
+              <th
+                aria-label="SHA-1"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  SHA-1
+                </span>
+              </th>
+              <th
+                aria-label="Taille"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  Taille
+                </span>
+              </th>
+              <th
+                aria-label="État"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  État
+                </span>
+              </th>
+              <th
+                aria-label="Créé le"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  Créé le
+                </span>
+              </th>
+              <th
+                aria-label="Actions"
+                class="text-start"
+                role="columnheader"
+                scope="col"
+              >
+                <span>
+                  Actions
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default warning lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="v-icon notranslate mr-2 theme--light"
+                      style="font-size: 17px; height: 17px; width: 17px;"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="v-icon__svg"
+                        role="img"
+                        style="font-size: 17px; height: 17px; width: 17px;"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.9L16.2,16.2Z"
+                        />
+                      </svg>
+                    </span>
+                    En Attente
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <button
+                    class="v-btn v-btn--icon v-btn--round theme--light v-size--default"
+                    target="_blank"
+                    type="button"
+                  >
+                    <span
+                      class="v-btn__content"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="v-icon notranslate theme--light"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="v-icon__svg"
+                          role="img"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default info lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <div
+                      aria-valuemax="100"
+                      aria-valuemin="0"
+                      aria-valuenow="0"
+                      class="v-progress-circular mr-2 v-progress-circular--visible"
+                      role="progressbar"
+                      style="height: 17px; width: 17px;"
+                    >
+                      <svg
+                        style="transform: rotate(0deg);"
+                        viewBox="34 34 68 68"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          class="v-progress-circular__underlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="0"
+                          stroke-width="28"
+                        />
+                        <circle
+                          class="v-progress-circular__overlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="125.66370614359172px"
+                          stroke-width="28"
+                        />
+                      </svg>
+                      <div
+                        class="v-progress-circular__info"
+                      />
+                    </div>
+                    En Cours
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <button
+                    class="v-btn v-btn--icon v-btn--round theme--light v-size--default"
+                    target="_blank"
+                    type="button"
+                  >
+                    <span
+                      class="v-btn__content"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="v-icon notranslate theme--light"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="v-icon__svg"
+                          role="img"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default info lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <div
+                      aria-valuemax="100"
+                      aria-valuemin="0"
+                      aria-valuenow="33"
+                      class="v-progress-circular mr-2 v-progress-circular--visible"
+                      role="progressbar"
+                      style="height: 17px; width: 17px;"
+                    >
+                      <svg
+                        style="transform: rotate(0deg);"
+                        viewBox="34 34 68 68"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          class="v-progress-circular__underlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="0"
+                          stroke-width="28"
+                        />
+                        <circle
+                          class="v-progress-circular__overlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="84.19468311620646px"
+                          stroke-width="28"
+                        />
+                      </svg>
+                      <div
+                        class="v-progress-circular__info"
+                      />
+                    </div>
+                    En Cours
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <button
+                    class="v-btn v-btn--icon v-btn--round theme--light v-size--default"
+                    target="_blank"
+                    type="button"
+                  >
+                    <span
+                      class="v-btn__content"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="v-icon notranslate theme--light"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="v-icon__svg"
+                          role="img"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default info lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <div
+                      aria-valuemax="100"
+                      aria-valuemin="0"
+                      aria-valuenow="100"
+                      class="v-progress-circular mr-2 v-progress-circular--visible"
+                      role="progressbar"
+                      style="height: 17px; width: 17px;"
+                    >
+                      <svg
+                        style="transform: rotate(0deg);"
+                        viewBox="34 34 68 68"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          class="v-progress-circular__underlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="0"
+                          stroke-width="28"
+                        />
+                        <circle
+                          class="v-progress-circular__overlay"
+                          cx="68"
+                          cy="68"
+                          fill="transparent"
+                          r="20"
+                          stroke-dasharray="125.664"
+                          stroke-dashoffset="0px"
+                          stroke-width="28"
+                        />
+                      </svg>
+                      <div
+                        class="v-progress-circular__info"
+                      />
+                    </div>
+                    En Cours
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <button
+                    class="v-btn v-btn--icon v-btn--round theme--light v-size--default"
+                    target="_blank"
+                    type="button"
+                  >
+                    <span
+                      class="v-btn__content"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="v-icon notranslate theme--light"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="v-icon__svg"
+                          role="img"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z"
+                          />
+                        </svg>
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default success lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="v-icon notranslate mr-2 theme--light"
+                      style="font-size: 17px; height: 17px; width: 17px;"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="v-icon__svg"
+                        role="img"
+                        style="font-size: 17px; height: 17px; width: 17px;"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+                        />
+                      </svg>
+                    </span>
+                    Succès
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="v-icon notranslate v-icon--disabled theme--light"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="v-icon__svg"
+                      role="img"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19,13H5V11H19V13Z"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default error lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="v-icon notranslate mr-2 theme--light"
+                      style="font-size: 17px; height: 17px; width: 17px;"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="v-icon__svg"
+                        role="img"
+                        style="font-size: 17px; height: 17px; width: 17px;"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                        />
+                      </svg>
+                    </span>
+                    Erreur
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="v-icon notranslate v-icon--disabled theme--light"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="v-icon__svg"
+                      role="img"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19,13H5V11H19V13Z"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class=""
+            >
+              <td
+                class="text-start"
+              >
+                
+    testFile.bin
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                
+          
+        
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    10MB
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <span
+                  class="v-chip theme--light v-size--default grey lighten-1 white--text"
+                >
+                  <span
+                    class="v-chip__content"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="v-icon notranslate mr-2 theme--light"
+                      style="font-size: 17px; height: 17px; width: 17px;"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="v-icon__svg"
+                        role="img"
+                        style="font-size: 17px; height: 17px; width: 17px;"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M14.59,6L12,8.59L9.41,6L8,7.41L10.59,10L8,12.59L9.41,14L12,11.41L14.59,14L16,12.59L13.41,10L16,7.41L14.59,6M17,3A2,2 0 0,1 19,5V15A2,2 0 0,1 17,17H13V19H14A1,1 0 0,1 15,20H22V22H15A1,1 0 0,1 14,23H10A1,1 0 0,1 9,22H2V20H9A1,1 0 0,1 10,19H11V17H7C5.89,17 5,16.1 5,15V5A2,2 0 0,1 7,3H17Z"
+                        />
+                      </svg>
+                    </span>
+                    Annulé
+    
+                  </span>
+                </span>
+                <span
+                  class="v-tooltip v-tooltip--right"
+                >
+                  <!---->
+                </span>
+              </td>
+              <td
+                class="text-start"
+              >
+                
+    1 févr. 2022 11:52
+  
+              </td>
+              <td
+                class="text-start"
+              >
+                <div
+                  class="TransferableCancelButton"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="v-icon notranslate v-icon--disabled theme--light"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="v-icon__svg"
+                      role="img"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19,13H5V11H19V13Z"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        class="Paginator-controls mt-3"
+        style="--text-field-width: 9ch;"
+      >
+        <button
+          class="ml-2 v-btn v-btn--disabled v-btn--outlined theme--light v-size--default"
+          disabled="disabled"
+          type="button"
+        >
+          <span
+            class="v-btn__content"
+          >
+            <span
+              aria-hidden="true"
+              class="v-icon notranslate theme--light"
+            >
+              <svg
+                aria-hidden="true"
+                class="v-icon__svg"
+                role="img"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                />
+              </svg>
+            </span>
+          </span>
+        </button>
+         
+        <div
+          class="v-input shrink mx-2 v-input--is-label-active v-input--is-dirty v-input--dense theme--light v-text-field v-text-field--enclosed v-text-field--outlined"
+        >
+          <div
+            class="v-input__control"
+          >
+            <div
+              class="v-input__slot"
+            >
+              <fieldset
+                aria-hidden="true"
+              >
+                <legend
+                  style="width: 0px;"
+                >
+                  <span
+                    class="notranslate"
+                  >
+                    ​
+                  </span>
+                </legend>
+              </fieldset>
+              <div
+                class="v-text-field__slot"
+              >
+                <label
+                  class="v-label v-label--active theme--light"
+                  for="input-191"
+                  style="left: 0px; position: absolute;"
+                >
+                  Page
+                </label>
+                <input
+                  id="input-191"
+                  type="text"
+                />
+                <div
+                  class="v-text-field__suffix"
+                >
+                  sur 1
+                </div>
+              </div>
+            </div>
+            <div
+              class="v-text-field__details"
+            >
+              <div
+                class="v-messages theme--light"
+              >
+                <transition-group-stub
+                  class="v-messages__wrapper"
+                  name="message-transition"
+                  tag="div"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+         
+        <button
+          class="mr-4 v-btn v-btn--disabled v-btn--outlined theme--light v-size--default"
+          disabled="disabled"
+          type="button"
+        >
+          <span
+            class="v-btn__content"
+          >
+            <span
+              aria-hidden="true"
+              class="v-icon notranslate theme--light"
+            >
+              <svg
+                aria-hidden="true"
+                class="v-icon__svg"
+                role="img"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                />
+              </svg>
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;

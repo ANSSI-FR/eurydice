@@ -1,0 +1,10 @@
+# Safety Security and License Configuration file
+security:
+    ignore-vulnerabilities:
+        51457:
+          reason: no fix available yet
+          expires: '2024-03-01'
+        62044:
+          reason: we don't install packages from mercurial
+        70612:
+          reason: no fix available yet

@@ -1,0 +1,19 @@
+*
+!docker/entrypoint.sh
+!docker/healthcheck.py
+!eurydice
+!tests
+!Makefile
+!manage.py
+!Pipfile*
+!pyproject.toml
+!setup.cfg
+!settings.py
+
+# ignore static files
+**/staticfiles/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class

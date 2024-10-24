@@ -1,0 +1,65 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_list %}
+
+{% block filters %}
+
+{% if cl.has_filters %}
+  <div id="changelist-filter">
+    <h2>{% trans 'Filter' %} </h2>
+
+    <h3>By creation date</h3>
+
+    <p>
+      From: <br /><input type="date" id="created_at__gte" size="10"><br />
+      To: <br /><input type="date" id="created_at__lte" size="10">
+    </p>
+
+    <ul>
+        <li><a href="#" onclick="javascript:applyDateFilters();">Apply filter</a></li>
+        <li><a href="#" onclick="javascript:clearDateFilters();">Clear filter</a></li>
+    </ul>
+
+    {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
+  </div>
+
+  <script>
+
+    const FROM_PARAM = "created_at__gte";
+    const TO_PARAM = "created_at__lte";
+
+    const searchParams = new URLSearchParams(location.search);
+
+    const from = searchParams.get(FROM_PARAM);
+    const to = searchParams.get(TO_PARAM);
+
+    const fromInput = document.getElementById(FROM_PARAM);
+    const toInput = document.getElementById(TO_PARAM);
+
+    if (from) {
+      fromInput.value = from;
+    }
+    if (to) {
+      toInput.value = to;
+    }
+
+    function applyDateFilters() {
+        const searchParams = new URLSearchParams(location.search);
+
+        searchParams.set("created_at__gte", fromInput.value);
+        searchParams.set("created_at__lte", toInput.value);
+
+        location.search = searchParams;
+    }
+
+    function clearDateFilters() {
+      const searchParams = new URLSearchParams(location.search);
+
+      searchParams.delete("created_at__gte", fromInput.value);
+      searchParams.delete("created_at__lte", toInput.value);
+
+      location.search = searchParams;
+    }
+    </script>
+
+{% endif %}
+{% endblock %}

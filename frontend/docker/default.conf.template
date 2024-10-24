@@ -1,0 +1,36 @@
+server {
+    # if no host matched, close the connection to prevent host spoofing
+    listen 8080 default_server;
+    return 444;
+}
+
+server {
+    listen 8080;
+    server_name ${NGINX_SERVER_NAME};
+
+    root /var/www/html/eurydice/${NGINX_ROOT_DIR};
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    keepalive_timeout 5;
+
+    gzip on;
+    gzip_types
+    text/plain
+    text/css
+    text/js
+    text/javascript
+    application/javascript
+    image/svg+xml;
+
+    add_header Strict-Transport-Security "max-age=315360000";
+
+    add_header Permissions-Policy "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(), xr-spatial-tracking=(), interest-cohort=()";
+    add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'";
+    add_header Referrer-Policy "same-origin";
+    add_header X-Content-Type-Options "nosniff";
+
+}

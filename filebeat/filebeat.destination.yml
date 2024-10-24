@@ -1,0 +1,80 @@
+filebeat.modules:
+  - module: postgresql
+    log:
+      enabled: true
+      var.paths:
+        - /logs/destination/postgresql/*.csv
+      input:
+        processors:
+        - add_fields:
+            target: 'service'
+            fields:
+              side: destination
+
+x-common-input-conf: &common-input-conf
+  type: filestream
+  enabled: true
+  fields_under_root: true
+  parsers:
+    - ndjson:
+        target: "data"
+        add_error_key: true
+        message_key: "message"
+
+filebeat.inputs:
+- <<: *common-input-conf
+  id: backend-destination-logs
+  paths:
+    - /logs/destination/backend/log.json
+  fields:
+    service:
+      side: destination
+      type: backend
+- <<: *common-input-conf
+  id: receiver-logs
+  paths:
+    - /logs/destination/receiver/log.json
+  fields:
+    service:
+      side: destination
+      type: receiver
+- <<: *common-input-conf
+  id: dbtrimmer-destination-logs
+  paths:
+    - /logs/destination/dbtrimmer/log.json
+  fields:
+    service:
+      side: destination
+      type: dbtrimmer
+- <<: *common-input-conf
+  id: s3remover-destination-logs
+  paths:
+    - /logs/destination/s3remover/log.json
+  fields:
+    service:
+      side: destination
+      type: s3remover
+- <<: *common-input-conf
+  id: db-migrations-destination-logs
+  paths:
+    - /logs/destination/db-migrations/log.json
+  fields:
+    service:
+      side: destination
+      type: db-migrations
+
+setup:
+  template:
+    enabled: true
+    name: filebeat-%{[agent.version]}
+    pattern: "eurydice-*"
+  ilm:
+    enabled: false
+
+output.elasticsearch:
+  hosts: "${ELASTICSEARCH_HOSTS}"
+  api_key: "${ELASTICSEARCH_API_KEY:}"
+  index: "eurydice-%{[service.side]}-%{[service.type]}-1.0"
+  ssl:
+    certificate_authorities:
+      - /usr/share/elasticsearch/config/certs/cert.crt

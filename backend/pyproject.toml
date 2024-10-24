@@ -1,0 +1,170 @@
+[tool.isort]
+# Python black compatibility
+# https://black.readthedocs.io/en/stable/compatible_configs.html#isort
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+# Custom configuration
+force_single_line = true
+default_section = "THIRDPARTY"
+known_first_party = "eurydice"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "**/__init__.py",
+    "**/apps.py",
+    "**/admin.py",
+    "**/urls.py",
+    "**/wsgi.py",
+    "**/settings/*",
+    "**/migrations/*"
+]
+data_file = ".report/.coverage"
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:"
+]
+
+[tool.coverage.xml]
+output = ".report/cobertura-coverage.xml"
+
+[tool.flakeheaven]
+max_line_length = 88
+exclude = ["*/*/migrations/*", "*/*/settings/*"]
+
+[tool.flakeheaven.plugins]
+"flake8-*" = ["+*"]
+flake8-annotations = [
+    "+*",
+    # Missing type annotation for self in method
+    "-ANN101",
+    # Missing type annotation for *args
+    "-ANN002",
+    # Missing type annotation for **kwargs
+    "-ANN003",
+    # Missing type annotation for cls in classmethod
+    "-ANN102",
+    # Missing return type annotation for special method
+    "-ANN204",
+]
+flake8-docstrings = [
+    "-*",
+    # Missing Docstrings
+    "+D1??",
+    # Quotes Issues
+    "+D3??",
+    # Missing docstring in public module
+    "-D100",
+    # Missing docstring in public package
+    "-D104",
+    # Missing docstring in magic method
+    "-D105",
+    # Missing docstring in __init__
+    "-D107",
+]
+flake8-pytest-style = ["+*", "-PT012"]
+pycodestyle = [
+    "+*",
+    # Whitespace before ':' (for black compatibility)
+    "-E203",
+    # missing whitespace after ',', ';', or ':' (for black compatibility)
+    "-E231",
+    # line break before binary operator (for black compatibility)
+    "-W503",
+]
+pyflakes = ["+*"]
+radon = ["+*"]
+mccabe = ["+*"]
+dlint = [
+    "+*",
+    # insecure use of "hashlib" module (duplicate with bandit)
+    "-DUO130",
+]
+pep8-naming = ["+*"]
+
+[tool.flakeheaven.exceptions."tests/**"]
+flake8-docstrings = ["-*"]
+flake8-annotations = [
+    "+*",
+    # Missing return type annotation for public function
+    "-ANN201",
+]
+
+[tool.flakeheaven.exceptions."**/__init__.py"]
+pyflakes = [
+    "+*",
+    # imported but unused
+    "-F401",
+]
+
+[tool.flakeheaven.exceptions."**/apps.py"]
+flake8-docstrings = ["-*"]
+
+[tool.flakeheaven.exceptions."**/urls.py"]
+flake8-docstrings = ["-*"]
+
+[tool.flakeheaven.exceptions."**/filters.py"]
+flake8-docstrings = ["-D106"]
+
+[tool.flakeheaven.exceptions."**/serializers.py"]
+flake8-docstrings = ["-*"]
+
+[tool.flakeheaven.exceptions."**/manage.py"]
+flake8-docstrings = ["-*"]
+
+[tool.flakeheaven.exceptions."**/models.py"]
+flake8-docstrings = ["-D106"]
+
+[tool.flakeheaven.exceptions."**/models/*.py"]
+flake8-docstrings = ["-D106"]
+
+[tool.flakeheaven.exceptions."**/admin.py"]
+flake8-docstrings = [
+    "+*",
+    # Missing docstring in public class
+    "-D101",
+    # Missing docstring in public class
+    "-D102",
+    # Missing docstring in public function
+    "-D103",
+]
+
+[tool.flakeheaven.exceptions."**/renderers.py"]
+flake8-docstrings = [
+    "+*",
+    # Missing docstring in public class
+    "-D101",
+    # Missing docstring in public method
+    "-D102",
+]
+
+[tool.flakeheaven.exceptions."**/exceptions.py"]
+flake8-docstrings = [
+    # Missing docstring in public class
+    "-D101",
+]
+
+[tool.pytype]
+keep_going = true
+exclude = [
+    "tests/",
+    "**/settings/",
+]
+python_version = "3.10"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Transform all warnings into errors.
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::django.utils.deprecation.RemovedInDjango50Warning"
+]

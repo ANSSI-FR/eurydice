@@ -1,0 +1,11 @@
+*
+!docker/
+!public/
+!src/
+!tests/
+!Makefile
+!package.json
+!package-lock.json
+!.prettierignore
+!vue.config.js
+!.npmrc

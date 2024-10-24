@@ -1,0 +1,292 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DropZone renders correctly when sender is not working 1`] = `
+<div>
+  <div
+    bg-color="primary"
+    class="v-tabs theme--light"
+  >
+    <div
+      class="v-item-group theme--light v-slide-group v-tabs-bar v-tabs-bar--is-mobile primary--text"
+      role="tablist"
+    >
+      <div
+        class="v-slide-group__prev v-slide-group__prev--disabled"
+      >
+        <transition-stub
+          name="fade-transition"
+        />
+      </div>
+      <div
+        class="v-slide-group__wrapper"
+      >
+        <div
+          class="v-slide-group__content v-tabs-bar__content"
+        >
+          <div
+            class="v-tabs-slider-wrapper"
+            style="transition: none;"
+          >
+            <div
+              class="v-tabs-slider"
+            />
+          </div>
+          <div
+            aria-selected="true"
+            class="v-tab v-tab--active"
+            role="tab"
+            tabindex="0"
+          >
+            Fichiers
+          </div>
+           
+          <div
+            aria-selected="false"
+            class="v-tab"
+            role="tab"
+            tabindex="0"
+          >
+            Texte
+          </div>
+        </div>
+      </div>
+      <div
+        class="v-slide-group__next v-slide-group__next--disabled"
+      >
+        <transition-stub
+          name="fade-transition"
+        />
+      </div>
+    </div>
+  </div>
+   
+  <div
+    class="v-input v-input--is-disabled theme--light v-text-field v-text-field--enclosed v-text-field--outlined v-text-field--placeholder v-file-input"
+  >
+    <div
+      class="v-input__control"
+    >
+      <div
+        class="v-input__slot"
+      >
+        <div
+          class="v-input__prepend-inner"
+        >
+          <span
+            aria-hidden="true"
+            class="v-icon notranslate theme--light"
+            style="font-size: 36px; height: 36px; width: 36px;"
+          >
+            <svg
+              aria-hidden="true"
+              class="v-icon__svg"
+              role="img"
+              style="font-size: 36px; height: 36px; width: 36px;"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M17 15L18 19H21V22H3V19H6L7 15H17M15 8L16 12H8L9 8H15M13 1L14 5H10L11 1H13Z"
+              />
+            </svg>
+          </span>
+        </div>
+        <fieldset
+          aria-hidden="true"
+        >
+          <legend
+            style="width: 0px;"
+          >
+            <span
+              class="notranslate"
+            >
+              ​
+            </span>
+          </legend>
+        </fieldset>
+        <div
+          class="v-text-field__slot"
+        >
+          <div
+            class="v-file-input__text v-file-input__text--placeholder"
+          >
+            Le transfert de fichiers n'est pas opérationnel
+          </div>
+          <input
+            disabled="disabled"
+            id="input-24"
+            multiple="multiple"
+            placeholder="Le transfert de fichiers n'est pas opérationnel"
+            type="file"
+          />
+        </div>
+      </div>
+      <div
+        class="v-text-field__details"
+      >
+        <div
+          class="v-messages theme--light"
+        >
+          <transition-group-stub
+            class="v-messages__wrapper"
+            name="message-transition"
+            tag="div"
+          />
+        </div>
+        <div
+          class="v-counter theme--light"
+        >
+          0 files (0 B in total)
+        </div>
+      </div>
+    </div>
+  </div>
+   
+  <!---->
+</div>
+`;
+
+exports[`DropZone renders correctly when sender is working 1`] = `
+<div>
+  <div
+    bg-color="primary"
+    class="v-tabs theme--light"
+  >
+    <div
+      class="v-item-group theme--light v-slide-group v-tabs-bar v-tabs-bar--is-mobile primary--text"
+      role="tablist"
+    >
+      <div
+        class="v-slide-group__prev v-slide-group__prev--disabled"
+      >
+        <transition-stub
+          name="fade-transition"
+        />
+      </div>
+      <div
+        class="v-slide-group__wrapper"
+      >
+        <div
+          class="v-slide-group__content v-tabs-bar__content"
+        >
+          <div
+            class="v-tabs-slider-wrapper"
+            style="transition: none;"
+          >
+            <div
+              class="v-tabs-slider"
+            />
+          </div>
+          <div
+            aria-selected="true"
+            class="v-tab v-tab--active"
+            role="tab"
+            tabindex="0"
+          >
+            Fichiers
+          </div>
+           
+          <div
+            aria-selected="false"
+            class="v-tab"
+            role="tab"
+            tabindex="0"
+          >
+            Texte
+          </div>
+        </div>
+      </div>
+      <div
+        class="v-slide-group__next v-slide-group__next--disabled"
+      >
+        <transition-stub
+          name="fade-transition"
+        />
+      </div>
+    </div>
+  </div>
+   
+  <div
+    class="v-input theme--light v-text-field v-text-field--enclosed v-text-field--outlined v-text-field--placeholder v-file-input"
+  >
+    <div
+      class="v-input__control"
+    >
+      <div
+        class="v-input__slot"
+      >
+        <div
+          class="v-input__prepend-inner"
+        >
+          <span
+            aria-hidden="true"
+            class="v-icon notranslate theme--light"
+            style="font-size: 36px; height: 36px; width: 36px;"
+          >
+            <svg
+              aria-hidden="true"
+              class="v-icon__svg"
+              role="img"
+              style="font-size: 36px; height: 36px; width: 36px;"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z"
+              />
+            </svg>
+          </span>
+        </div>
+        <fieldset
+          aria-hidden="true"
+        >
+          <legend
+            style="width: 0px;"
+          >
+            <span
+              class="notranslate"
+            >
+              ​
+            </span>
+          </legend>
+        </fieldset>
+        <div
+          class="v-text-field__slot"
+        >
+          <div
+            class="v-file-input__text v-file-input__text--placeholder"
+          >
+            Cliquez ou déposez vos fichiers ici
+          </div>
+          <input
+            id="input-11"
+            multiple="multiple"
+            placeholder="Cliquez ou déposez vos fichiers ici"
+            type="file"
+          />
+        </div>
+      </div>
+      <div
+        class="v-text-field__details"
+      >
+        <div
+          class="v-messages theme--light"
+        >
+          <transition-group-stub
+            class="v-messages__wrapper"
+            name="message-transition"
+            tag="div"
+          />
+        </div>
+        <div
+          class="v-counter theme--light"
+        >
+          0 files (0 B in total)
+        </div>
+      </div>
+    </div>
+  </div>
+   
+  <!---->
+</div>
+`;
