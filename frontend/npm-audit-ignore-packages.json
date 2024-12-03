@@ -1,0 +1,12 @@
+{
+  "name": "vue",
+  "description": "deprecated but too heavy to update ourselves"
+}
+{
+  "name": "vuetify",
+  "description": "goes with vue"
+}
+{
+  "name": "vuex",
+  "description": "goes with vue"
+}

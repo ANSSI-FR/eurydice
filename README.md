@@ -54,9 +54,9 @@ See [docs/administrators.md](docs/administrators.md).
 
 See documentation directories:
 
-- [Common API documentation](eurydice/common/api/docs/static/).
-- [Origin API documentation and code snippets](eurydice/origin/api/docs/static/).
-- [Destination API documentation and code snippets](eurydice/destination/api/docs/static/).
+- [Common API documentation](backend/eurydice/common/api/docs/static/).
+- [Origin API documentation and code snippets](backend/eurydice/origin/api/docs/static/).
+- [Destination API documentation and code snippets](backend/eurydice/destination/api/docs/static/).
 
 ## 🙏 Credits
 

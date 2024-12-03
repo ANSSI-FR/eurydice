@@ -94,7 +94,7 @@ def _build_state_annotation() -> expressions.Case:
     )
 
 
-def _build_transfer_finished_at_annotation() -> expressions.Case:
+def _build_finished_at_annotation() -> expressions.Case:
     """Build the annotation for computing the date at which the transfer through the
     diode finished when querying the Transferable(s).
 
@@ -162,13 +162,12 @@ def _build_transfer_duration_annotation() -> Epoch:
 
     """
     return Epoch(
-        functions.Coalesce("transfer_finished_at", PythonNow())
-        - expressions.F("created_at")
+        functions.Coalesce("finished_at", PythonNow()) - expressions.F("created_at")
     )
 
 
-def _build_transfer_speed_annotation() -> expressions.F:
-    """Build query for annotating the `transfer_speed` in Bytes/second to the
+def _build_speed_annotation() -> expressions.F:
+    """Build query for annotating the `speed` in Bytes/second to the
     OutgoingTransferable.
 
     Returns:
@@ -183,7 +182,7 @@ def _build_transfer_speed_annotation() -> expressions.F:
     )
 
 
-def _build_transfer_estimated_finish_date_annotation() -> expressions.Case:
+def _build_estimated_finish_date_annotation() -> expressions.Case:
     """Build query for annotating the `transfer_finish_date` to
     the OutgoingTransferable.
 
@@ -198,7 +197,7 @@ def _build_transfer_estimated_finish_date_annotation() -> expressions.Case:
         # https://www.postgresql.org/docs/9.0/sql-expressions.html#SYNTAX-EXPRESS-EVAL
         default=PythonNow()
         + ConvertSecondsToDuration(
-            expressions.F("size") / functions.NullIf(expressions.F("transfer_speed"), 0)
+            expressions.F("size") / functions.NullIf(expressions.F("speed"), 0)
         ),
         output_field=models.DateTimeField(null=True),
     )
@@ -217,20 +216,16 @@ class TransferableManager(models.Manager):
             .get_queryset()
             .annotate(state=_build_state_annotation())
             .annotate(
-                transfer_finished_at=_build_transfer_finished_at_annotation(),
+                finished_at=_build_finished_at_annotation(),
             )
             .annotate(
                 progress=_build_progress_annotation(),
                 transfer_duration=_build_transfer_duration_annotation(),
             )
             .annotate(
-                transfer_speed=_build_transfer_speed_annotation(),
+                speed=_build_speed_annotation(),
             )
-            .annotate(
-                transfer_estimated_finish_date=(
-                    _build_transfer_estimated_finish_date_annotation()
-                )
-            )
+            .annotate(estimated_finish_date=(_build_estimated_finish_date_annotation()))
         )
 
 

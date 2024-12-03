@@ -4,14 +4,20 @@
 
 ### 🚀 Run the development environment
 
-Start the container used for development in detached mode.
+Run the config task.
+
+```bash
+make dev-config
+```
+
+Start the development stack
 
 ```bash
 # Development stack with basic console logging
-docker compose up -d
+make dev-up
 
 # Development stack with advanced ElasticSearch logging using filebeat (accessible at `kibana.localhost`)
-docker compose -f compose.yml -f compose.kibana.yml up -d
+make dev-up-elk
 ```
 
 _Note: it is [recommended](https://github.com/moby/moby/issues/40379) to use the environment variable `DOCKER_BUILDKIT=1`_
@@ -30,45 +36,15 @@ The following URLs are available in the development environment:
 - http://pgadmin.localhost/: database management tool.
 - http://traefik.localhost/: the traefik dashboard
 
+### 🚏 Stop the development environment
+
+```bash
+make dev-down
+```
+
 ### Start the production stack locally
 
-You may use the example environment variables defined in `.env.example`.
-Create needed directories on you host:
-
-```bash
-mkdir /tmp/eurydice
-mkdir /tmp/eurydice/minio-data
-mkdir /tmp/eurydice/minio-conf
-mkdir /tmp/eurydice/db-data
-mkdir /tmp/eurydice/db-logs
-mkdir /tmp/eurydice/filebeat-logs
-mkdir /tmp/eurydice/filebeat-data
-sudo chown -R 1000:1000 /tmp/eurydice/
-```
-
-Then, run database migrations:
-
-```bash
-docker compose -f compose.prod.yml --profile origin --env-file .env.example run --rm db-migrations-origin
-```
-
-or
-
-```bash
-docker compose -f compose.prod.yml --profile destination --env-file .env.example run --rm db-migrations-destination
-```
-
-Finally, you can start the stack:
-
-```bash
-docker compose -f compose.prod.yml --env-file .env.example --profile origin up -d
-```
-
-or
-
-```bash
-docker compose -f compose.prod.yml --env-file .env.example --profile destination up -d
-```
+Copy `env.example` to `env.prod` and update variables according to your needs. Then run `make prod-up-origin` or `make prod-up-destination` depending on your case.
 
 ## ✨ Frontend
 

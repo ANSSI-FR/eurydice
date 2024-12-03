@@ -76,9 +76,10 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
         max_value=settings.TRANSFERABLE_MAX_SIZE,
     )
 
-    transfer_speed = drf_serializers.IntegerField(
+    speed = drf_serializers.IntegerField(
         help_text=_("The transfer speed through the network diode in bytes per second"),
         min_value=0,
+        allow_null=True,
     )
 
     sha1 = serializers.BytesAsHexadecimalField(
@@ -88,15 +89,17 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
         help_text=_("SHA-1 digest for this transferable in hexadecimal form"),
     )
 
-    transfer_finished_at = drf_serializers.DateTimeField(
+    finished_at = drf_serializers.DateTimeField(
         help_text=_("Date at which this transferable was fully sent through the diode"),
+        allow_null=True,
     )
 
-    transfer_estimated_finish_date = drf_serializers.DateTimeField(
+    estimated_finish_date = drf_serializers.DateTimeField(
         help_text=_(
             "Date at which this transferable is expected to be fully"
-            " sent through the diode"
+            " sent through the diode."
         ),
+        allow_null=True,
     )
 
     class Meta:
@@ -113,9 +116,9 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
             "state",
             "progress",
             "bytes_transferred",
-            "transfer_finished_at",
-            "transfer_speed",
-            "transfer_estimated_finish_date",
+            "finished_at",
+            "speed",
+            "estimated_finish_date",
         )
 
 

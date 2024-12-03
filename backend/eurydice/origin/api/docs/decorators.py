@@ -29,9 +29,9 @@ outgoing_transferable_example = {
     "state": "ONGOING",
     "progress": 43,
     "bytes_transferred": 42,
-    "transfer_finished_at": "1969-12-28T14:16:42Z",
-    "transfer_speed": 17891337,
-    "transfer_estimated_finish_date": "1969-12-28T14:16:42Z",
+    "finished_at": "1969-12-28T14:16:42Z",
+    "speed": 17891337,
+    "estimated_finish_date": "1969-12-28T14:16:42Z",
 }
 
 outgoing_transferable = spectacular_utils.extend_schema_view(

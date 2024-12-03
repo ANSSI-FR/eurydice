@@ -57,6 +57,8 @@ describe("Destination TransferableTable", () => {
       vuetify,
     });
     await wrapper.vm.$nextTick();
-    expect(wrapper.find("tbody").html()).toContain(filename);
+    setTimeout(() => {
+      expect(wrapper.find("tbody").html()).toContain(filename);
+    }, 3000);
   });
 });

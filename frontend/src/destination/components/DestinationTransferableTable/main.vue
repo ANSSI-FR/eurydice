@@ -1,36 +1,53 @@
 <template>
-  <TransferableTable
-    ref="transferableTable"
-    :states="states"
-    :headers="headers"
-  >
-    <template #state="{ transferable: { state, progress } }">
-      <TransferableStatusChip
-        :state="state"
-        :state-label="states[state].label"
-        :color="states[state].color"
-        :icon="states[state].icon"
-        :tooltip-text="states[state].tooltipText"
-        :progress="progress"
+  <div>
+    <div class="top-actions">
+      <v-btn small @click="toggleSelectAll">Tout sélectionner</v-btn>
+      <SelectedTransferablesDeleteButton
+        :selected-transferables="selectedTransferables"
+        @reset-selection="selectedTransferables = []"
       />
-    </template>
-    <template #name="{ transferable: { name } }">
-      {{ decodeURI(name) }}
-    </template>
-    <template #size="{ transferable: { size } }">
-      {{ formatSize(size) }}
-    </template>
-    <template #createdAt="{ transferable: { createdAt } }">
-      {{ formatDate(createdAt) }}
-    </template>
-    <template #actions="{ transferable }">
-      <TransferableActions
-        :transferable="transferable"
-        @async-operation-started="disableAutoRefresh"
-        @async-operation-ended="enableAutoRefresh"
-      />
-    </template>
-  </TransferableTable>
+    </div>
+    <TransferableTable
+      ref="transferableTable"
+      :states="states"
+      :headers="headers"
+    >
+      <template #selected="{ transferable: { id, state } }">
+        <v-checkbox
+          v-model="selectedTransferables"
+          :disabled="selectionDisabled(state)"
+          name="selection"
+          :value="id"
+        />
+      </template>
+      <template #state="{ transferable: { state, progress } }">
+        <TransferableStatusChip
+          :state="state"
+          :state-label="states[state].label"
+          :color="states[state].color"
+          :icon="states[state].icon"
+          :tooltip-text="states[state].tooltipText"
+          :progress="progress"
+        />
+      </template>
+      <template #name="{ transferable: { name } }">
+        {{ decodeURI(name) }}
+      </template>
+      <template #size="{ transferable: { size } }">
+        {{ formatSize(size) }}
+      </template>
+      <template #createdAt="{ transferable: { createdAt } }">
+        {{ formatDate(createdAt) }}
+      </template>
+      <template #actions="{ transferable }">
+        <TransferableActions
+          :transferable="transferable"
+          @async-operation-started="disableAutoRefresh"
+          @async-operation-ended="enableAutoRefresh"
+        />
+      </template>
+    </TransferableTable>
+  </div>
 </template>
 
 <script>
@@ -41,11 +58,13 @@ import {
   mdiCloseNetwork,
   mdiDownloadNetwork,
   mdiTrashCanOutline,
+  mdiDelete,
 } from "@mdi/js";
 import TransferableTable from "@common/components/TransferableTable/main";
 import TransferableStatusChip from "@common/components/TransferableTable/TransferableStatusChip";
 import { TRANSFERABLE_STATES } from "@destination/constants";
 import TransferableActions from "@destination/components/DestinationTransferableTable/TransferableActions";
+import SelectedTransferablesDeleteButton from "@destination/components/DestinationTransferableTable/SelectedTransferablesDeleteButton";
 
 import bytes from "bytes";
 
@@ -56,10 +75,12 @@ export default {
     TransferableTable,
     TransferableStatusChip,
     TransferableActions,
+    SelectedTransferablesDeleteButton,
   },
   data() {
     return {
       headers: [
+        { text: "Sélection", value: "selected" },
         { text: "Nom", value: "name" },
         { text: "SHA-1", value: "sha1" },
         { text: "Taille", value: "size" },
@@ -105,6 +126,9 @@ export default {
           tooltipText: "Fichier supprimé après le délai d'expiration",
         },
       },
+      selectedTransferables: [],
+      deleting: false,
+      mdiDelete,
     };
   },
   methods: {
@@ -121,6 +145,29 @@ export default {
       this.$refs.transferableTable.setupAutoRefresh();
       this.$refs.transferableTable.getTransferableFrom("current");
     },
+    selectionDisabled(transferableState) {
+      return transferableState !== TRANSFERABLE_STATES.SUCCESS;
+    },
+    toggleSelectAll() {
+      const allIds = [...this.$refs.transferableTable.transferables.results]
+        .filter((input) => input.state === TRANSFERABLE_STATES.SUCCESS)
+        .map((input) => input.id);
+      if (allIds.length === this.selectedTransferables.length) {
+        this.selectedTransferables = [];
+      } else {
+        this.selectedTransferables = allIds;
+      }
+    },
   },
 };
 </script>
+
+<style>
+.top-actions {
+  margin-bottom: 10px;
+}
+
+.top-actions .v-btn {
+  margin-right: 10px;
+}
+</style>

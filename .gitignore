@@ -111,6 +111,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.prod
 .venv
 env/
 venv/
@@ -144,7 +145,6 @@ cython_debug/
 
 # Crash log files
 crash.log
-
 staticfiles/
 
 # Logs
@@ -269,4 +269,8 @@ dist
 # vim
 .*.swp
 
+# local volumes
 data/
+
+# sysctl backup file
+sysctl_backup.conf

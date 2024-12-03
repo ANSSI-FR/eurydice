@@ -20,7 +20,7 @@ x-backend-common-envs: &backend-common-envs
 
 x-backend-common: &backend-common
   image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-backend:${EURYDICE_VERSION:-latest}
-  user: ${UID:-1000}:${GID:-1000}
+  user: ${PUID:-1000}:${PGID:-1000}
   networks:
     - eurydice
   read_only: true
@@ -54,7 +54,7 @@ x-dbtrimmer: &dbtrimmer
 
 x-frontend: &frontend
   image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-frontend:${EURYDICE_VERSION:-latest}
-  user: ${UID:-1000}:${GID:-1000}
+  user: ${PUID:-1000}:${PGID:-1000}
   cpus: ${CPUS_FRONTEND:-4}
   mem_limit: ${MEM_LIMIT_FRONTEND:-500M}
   ports:
@@ -63,14 +63,14 @@ x-frontend: &frontend
     - eurydice
   read_only: true
   tmpfs:
-    - /tmp:uid=${UID:-1000},gid=${GID:-1000},mode=700
-    - /var/cache/nginx:uid=${UID:-1000},gid=${GID:-1000},mode=700
-    - /etc/nginx/conf.d:uid=${UID:-1000},gid=${GID:-1000},mode=700
+    - /tmp:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
+    - /var/cache/nginx:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
+    - /etc/nginx/conf.d:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
   restart: always
 
 x-filebeat: &filebeat
   image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elastic/filebeat:${ELK_VERSION:-7.17.11}
-  user: ${UID:-1000}:${GID:-1000}
+  user: ${PUID:-1000}:${PGID:-1000}
   cpus: ${CPUS_FILEBEAT:-2}
   mem_limit: ${MEM_LIMIT_FILEBEAT:-500m}
   read_only: true
@@ -100,7 +100,7 @@ services:
 
   minio:
     image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/minio/minio:RELEASE.2023-08-23T10-07-06Z
-    user: ${UID:-1000}:${GID:-1000}
+    user: ${PUID:-1000}:${PGID:-1000}
     cpus: ${CPUS_MINIO:-4}
     mem_limit: ${MEM_LIMIT_MINIO:-4GB}
     ports:
@@ -146,10 +146,10 @@ services:
       POSTGRES_DB: eurydice
       POSTGRES_USER: eurydice
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    user: ${UID:-1000}:${GID:-1000}
+    user: ${PUID:-1000}:${PGID:-1000}
     tmpfs:
-      - /tmp:mode=770,uid=${UID:-1000},gid=${GID:-1000}
-      - /run:mode=770,uid=${UID:-1000},gid=${GID:-1000}
+      - /tmp:mode=770,uid=${PUID:-1000},gid=${PGID:-1000}
+      - /run:mode=770,uid=${PUID:-1000},gid=${PGID:-1000}
     volumes:
       - ${DB_DATA_DIR}:/var/lib/postgresql/data
       - ${DB_LOGS_DIR}:/var/log/postgresql
@@ -314,7 +314,7 @@ services:
     profiles:
       - origin
       - origin-with-elk-logging
-    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/eurydice/lidi-send:${LIDI_VERSION:-latest}
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION:-latest}
     cpus: ${CPUS_LIDIS:-4}
     mem_limit: ${MEM_LIMIT_LIDIS:-4GB}
     read_only: true
@@ -375,7 +375,7 @@ services:
   lidir: &lidir
     profiles:
       - destination
-    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/eurydice/lidi-receive:${LIDI_VERSION:-latest}
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-receive:${LIDI_VERSION:-latest}
     depends_on:
       receiver:
         condition: service_started

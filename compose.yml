@@ -271,7 +271,7 @@ services:
       - db-origin-logs:/var/log/postgresql/:rw
 
   lidis:
-    image: eurydice/lidi-send:latest
+    image: anssi/lidi-send:latest
     network_mode: "host"
     environment:
       RUST_LOG: ${RUST_LOG:-INFO}
@@ -290,7 +290,7 @@ services:
   ################ Destination Services ################
 
   lidir:
-    image: eurydice/lidi-receive:latest
+    image: anssi/lidi-receive:latest
     network_mode: "host"
     environment:
       RUST_LOG: ${RUST_LOG:-INFO}

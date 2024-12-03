@@ -38,7 +38,7 @@ lint-fix: ## Runs a static analysis of the code and fix linting errors.
 
 .PHONY: audit
 audit:	## Checks production dependencies for vulnerabilities.
-	npm audit --production
+	bash npm_audit_ignore.sh
 
 .PHONY: format
 format:	## Format CSS, SCSS, YAML, JSON and Markdown files.

@@ -1,10 +1,12 @@
 # type: ignore
 
+from datetime import timezone
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
 
+import django.utils.timezone
 from django import http
 from django.contrib import admin
 from django.contrib.auth import admin as auth_admin
@@ -89,6 +91,7 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
     list_display = ("id", "name", "size", "state", "progress", "user", "created_at")
     list_filter = (StateFilter,)
     search_fields = ("id", "name", "state", "user_profile__user__username")
+    actions = []
 
     inlines = (
         TransferableRangeInline,
@@ -107,9 +110,9 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
         "state",
         "progress",
         "created_at",
-        "transfer_finished_at",
-        "transfer_estimated_finish_date",
-        "transfer_speed",
+        "finished_at",
+        "estimated_finish_date",
+        "speed",
         "transfer_duration",
     )
     help_texts = {
@@ -122,10 +125,10 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
         **_get_help_texts(
             "submission_succeeded",
             "state",
-            "transfer_finished_at",
+            "finished_at",
             "progress",
-            "transfer_speed",
-            "transfer_estimated_finish_date",
+            "speed",
+            "estimated_finish_date",
         ),
     }
 
@@ -149,8 +152,10 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
     state.short_description = _("State")
     state.admin_order_field = "state"
 
-    def transfer_finished_at(self, obj: models.OutgoingTransferable) -> str:
-        return common_admin.format_date(obj.transfer_finished_at)
+    def finished_at(self, obj: models.OutgoingTransferable) -> str:
+        tz = django.utils.timezone.get_current_timezone()
+        date = obj.finished_at.replace(tzinfo=timezone.utc).astimezone(tz=tz)
+        return common_admin.format_date(date)
 
     def progress(self, obj: models.OutgoingTransferable) -> str:
         return obj.progress
@@ -161,8 +166,8 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
     def transfer_duration(self, obj: models.OutgoingTransferable) -> str:
         return obj.transfer_duration
 
-    def transfer_speed(self, obj: models.OutgoingTransferable) -> str:
-        return obj.transfer_speed
+    def speed(self, obj: models.OutgoingTransferable) -> str:
+        return obj.speed
 
-    def transfer_estimated_finish_date(self, obj: models.OutgoingTransferable) -> str:
-        return obj.transfer_estimated_finish_date
+    def estimated_finish_date(self, obj: models.OutgoingTransferable) -> str:
+        return obj.estimated_finish_date

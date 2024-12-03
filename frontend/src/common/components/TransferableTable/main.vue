@@ -25,7 +25,6 @@
             </v-scale-transition>
           </v-toolbar>
         </template>
-
         <template
           v-for="header in headers"
           #[`item.${header.value}`]="{ item }"

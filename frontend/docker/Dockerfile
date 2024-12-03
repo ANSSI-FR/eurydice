@@ -39,6 +39,10 @@ CMD ["make", "dev"]
 # ------------------------------------------------------------------------------
 
 FROM base AS ci
+# hadolint ignore=DL3008
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends jq \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN chown node:node "$(pwd)"
 

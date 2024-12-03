@@ -186,7 +186,7 @@ class TestOutgoingTransferableFiltering:
         assert len(response.data["results"]) == 3
 
         for data in response.data["results"]:
-            assert parse_datetime(data["transfer_finished_at"]) > a_date
+            assert parse_datetime(data["finished_at"]) > a_date
 
     def test_page_size(self, api_client: test.APIClient):
         user_profile = factory.UserProfileFactory()

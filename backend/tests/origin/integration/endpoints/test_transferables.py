@@ -139,6 +139,19 @@ class TestOutgoingTransferableInTransaction(test.APITransactionTestCase):
                 assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
                 assert response.data["detail"].code == "unsupported_media_type"
 
+    def test_filter_sha1_should_raise(self):
+        user_profile = models_factory.UserProfileFactory()
+        self.client.force_login(user=user_profile.user)
+
+        url = reverse("transferable-list")
+
+        response = self.client.get(
+            url, {"sha1": hashlib.sha1(b"invalid").hexdigest()[:5]}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json() == {"detail": "field sha1 malformed."}
+
 
 @pytest.mark.django_db()
 class TestOutgoingTransferable:
@@ -295,9 +308,9 @@ class TestOutgoingTransferable:
         assert data["user_provided_meta"] == {"Metadata-Path": file_path}
         assert data["progress"] == 0
         assert data["bytes_transferred"] == 0
-        assert data["transfer_finished_at"] is None
-        assert data["transfer_speed"] is None
-        assert data["transfer_estimated_finish_date"] is None
+        assert data["finished_at"] is None
+        assert data["speed"] is None
+        assert data["estimated_finish_date"] is None
 
         outgoing_transferable = models.OutgoingTransferable.objects.prefetch_related(
             Prefetch(

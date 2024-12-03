@@ -312,7 +312,7 @@ def test_outgoing_transferable_progress_empty_file(
     (
         "transferable_ranges_params",
         "outgoing_transferable_params",
-        "expected_transfer_finished_at",
+        "expected_finished_at",
     ),
     [
         # test without any transferable ranges
@@ -461,10 +461,10 @@ def test_outgoing_transferable_progress_empty_file(
         ),
     ],
 )
-def test_outgoing_transferable_range_transfer_finished_at(
+def test_outgoing_transferable_range_finished_at(
     transferable_ranges_params: List[Dict[str, Any]],
     outgoing_transferable_params: Dict[str, Any],
-    expected_transfer_finished_at: Optional[datetime.datetime],
+    expected_finished_at: Optional[datetime.datetime],
 ):
     outgoing_transferable = factory.OutgoingTransferableFactory(
         **outgoing_transferable_params
@@ -480,10 +480,7 @@ def test_outgoing_transferable_range_transfer_finished_at(
         id=outgoing_transferable.id
     )
 
-    assert (
-        queried_outgoing_transferable.transfer_finished_at
-        == expected_transfer_finished_at
-    )
+    assert queried_outgoing_transferable.finished_at == expected_finished_at
 
 
 @pytest.mark.django_db()
@@ -698,7 +695,7 @@ def test_bytes_transferred_annotation(
 
 
 @pytest.mark.django_db()
-def test__build_transfer_duration_annotation_with_transfer_finished_at():
+def test__build_transfer_duration_annotation_with_finished_at():
     """
     Test computing an OutgoingTransferable's `transfer_duration` when
     the transfer is finished
@@ -709,7 +706,7 @@ def test__build_transfer_duration_annotation_with_transfer_finished_at():
         day=4,
         tzinfo=timezone.get_current_timezone(),
     )
-    transfer_finished_at = datetime.datetime(
+    finished_at = datetime.datetime(
         year=1998,
         month=2,
         day=5,
@@ -720,11 +717,11 @@ def test__build_transfer_duration_annotation_with_transfer_finished_at():
 
     with freezegun.freeze_time(created_at):
         outgoing_transferable = factory.OutgoingTransferableFactory(
-            size=transferable_size, submission_succeeded_at=transfer_finished_at
+            size=transferable_size, submission_succeeded_at=finished_at
         )
 
         factory.TransferableRangeFactory(
-            finished_at=transfer_finished_at,
+            finished_at=finished_at,
             outgoing_transferable=outgoing_transferable,
             size=transferable_size,
             transfer_state=origin_enums.TransferableRangeTransferState.TRANSFERRED,
@@ -740,7 +737,7 @@ def test__build_transfer_duration_annotation_with_transfer_finished_at():
 
 
 @pytest.mark.django_db()
-def test__build_transfer_duration_annotation_no_transfer_finished_at(
+def test__build_transfer_duration_annotation_no_finished_at(
     faker: Faker,
 ):
     """
@@ -748,17 +745,17 @@ def test__build_transfer_duration_annotation_no_transfer_finished_at(
     the transfer is not yet finished
     """
     created_at = faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
-    transfer_finished_at = None
+    finished_at = None
     transferable_size = 2
     current_datetime = timezone.now()
 
     with freezegun.freeze_time(created_at):
         outgoing_transferable = factory.OutgoingTransferableFactory(
-            size=transferable_size, submission_succeeded_at=transfer_finished_at
+            size=transferable_size, submission_succeeded_at=finished_at
         )
 
         factory.TransferableRangeFactory(
-            finished_at=transfer_finished_at,
+            finished_at=finished_at,
             outgoing_transferable=outgoing_transferable,
             size=transferable_size,
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
@@ -777,24 +774,24 @@ def test__build_transfer_duration_annotation_no_transfer_finished_at(
 
 
 @pytest.mark.django_db()
-def test__build_transfer_speed_annotation_with_non_zero_transfer_duration():
+def test__build_speed_annotation_with_non_zero_transfer_duration():
     created_at = datetime.datetime(
         year=1998,
         month=2,
         day=4,
         tzinfo=timezone.get_current_timezone(),
     )
-    transfer_finished_at = created_at + datetime.timedelta(seconds=1)
+    finished_at = created_at + datetime.timedelta(seconds=1)
     transferable_size = 2
-    expected_transfer_speed = 2
+    expected_speed = 2
 
     with freezegun.freeze_time(created_at):
         outgoing_transferable = factory.OutgoingTransferableFactory(
-            size=transferable_size, submission_succeeded_at=transfer_finished_at
+            size=transferable_size, submission_succeeded_at=finished_at
         )
 
         factory.TransferableRangeFactory(
-            finished_at=transfer_finished_at,
+            finished_at=finished_at,
             outgoing_transferable=outgoing_transferable,
             size=transferable_size,
             transfer_state=origin_enums.TransferableRangeTransferState.TRANSFERRED,
@@ -804,27 +801,27 @@ def test__build_transfer_speed_annotation_with_non_zero_transfer_duration():
         id=outgoing_transferable.id
     )
 
-    assert queried_outgoing_transferable.transfer_speed == expected_transfer_speed
+    assert queried_outgoing_transferable.speed == expected_speed
 
 
 @pytest.mark.django_db()
-def test__build_transfer_speed_annotation_with_zero_transfer_duration(
+def test__build_speed_annotation_with_zero_transfer_duration(
     faker: Faker,
 ):
     """
-    Test when `transfer_speed` is 0 (transfer has just been created)
+    Test when `speed` is 0 (transfer has just been created)
     """
     created_at = faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
-    transfer_finished_at = None
+    finished_at = None
     transferable_size = 2
 
     with freezegun.freeze_time(created_at):
         outgoing_transferable = factory.OutgoingTransferableFactory(
-            size=transferable_size, submission_succeeded_at=transfer_finished_at
+            size=transferable_size, submission_succeeded_at=finished_at
         )
 
         factory.TransferableRangeFactory(
-            finished_at=transfer_finished_at,
+            finished_at=finished_at,
             outgoing_transferable=outgoing_transferable,
             size=transferable_size,
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
@@ -834,11 +831,11 @@ def test__build_transfer_speed_annotation_with_zero_transfer_duration(
             id=outgoing_transferable.id
         )
 
-    assert queried_outgoing_transferable.transfer_speed is None
+    assert queried_outgoing_transferable.speed is None
 
 
 @pytest.mark.django_db()
-def test__build_transfer_estimated_finish_date_annotation_not_none(
+def test__build_estimated_finish_date_annotation_not_none(
     faker: Faker,
 ):
     outgoing_transferable = factory.OutgoingTransferableFactory(
@@ -849,50 +846,50 @@ def test__build_transfer_estimated_finish_date_annotation_not_none(
 
     with freezegun.freeze_time(time_to_freeze):
         queried_outgoing_transferable = (
-            models.OutgoingTransferable.objects.annotate(transfer_speed=Value(1))
+            models.OutgoingTransferable.objects.annotate(speed=Value(1))
             .annotate(
-                transfer_estimated_finish_date=(
-                    outgoing_transferable_model._build_transfer_estimated_finish_date_annotation()  # noqa: E501
+                estimated_finish_date=(
+                    outgoing_transferable_model._build_estimated_finish_date_annotation()  # noqa: E501
                 )
             )
             .get(id=outgoing_transferable.id)
         )
 
     assert (
-        queried_outgoing_transferable.transfer_estimated_finish_date
+        queried_outgoing_transferable.estimated_finish_date
         == time_to_freeze + datetime.timedelta(seconds=2)
     )
 
 
 @pytest.mark.django_db()
-def test__build_transfer_estimated_finish_date_annotation_transfer_speed_0():
+def test__build_estimated_finish_date_annotation_speed_0():
     outgoing_transferable = factory.OutgoingTransferableFactory(
         submission_succeeded_at=None
     )
 
     queried_outgoing_transferable = (
-        models.OutgoingTransferable.objects.annotate(transfer_speed=Value(0))
+        models.OutgoingTransferable.objects.annotate(speed=Value(0))
         .annotate(
-            transfer_estimated_finish_date=(
-                outgoing_transferable_model._build_transfer_estimated_finish_date_annotation()  # noqa: E501
+            estimated_finish_date=(
+                outgoing_transferable_model._build_estimated_finish_date_annotation()  # noqa: E501
             )
         )
         .get(id=outgoing_transferable.id)
     )
 
-    assert queried_outgoing_transferable.transfer_estimated_finish_date is None
+    assert queried_outgoing_transferable.estimated_finish_date is None
 
 
 @pytest.mark.django_db()
-def test__build_transfer_estimated_finish_date_annotation_submission_succeeded():
+def test__build_estimated_finish_date_annotation_submission_succeeded():
     outgoing_transferable = factory.OutgoingTransferableFactory(
         submission_succeeded_at=timezone.now()
     )
 
     queried_outgoing_transferable = models.OutgoingTransferable.objects.annotate(
-        transfer_estimated_finish_date=(
-            outgoing_transferable_model._build_transfer_estimated_finish_date_annotation()  # noqa: E501
+        estimated_finish_date=(
+            outgoing_transferable_model._build_estimated_finish_date_annotation()  # noqa: E501
         )
     ).get(id=outgoing_transferable.id)
 
-    assert queried_outgoing_transferable.transfer_estimated_finish_date is None
+    assert queried_outgoing_transferable.estimated_finish_date is None

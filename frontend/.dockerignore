@@ -9,3 +9,5 @@
 !.prettierignore
 !vue.config.js
 !.npmrc
+!npm_audit_ignore.sh
+!npm-audit-ignore-packages.json
