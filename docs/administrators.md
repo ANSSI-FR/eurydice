@@ -214,6 +214,8 @@ In case you are unable to setup a reverse proxy and remote user authentication, 
 
 Basic HTTP Authentication is enabled when the `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` variable is set to `false`.
 
+If `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` is set to `false` the app won't use kerberos. Kerberos and basic auth **cannot** be used simultaneously.
+
 ### Elasticsearch API key
 
 To send applicative logs into an ELK you need an API key for a user with following role restrictions:

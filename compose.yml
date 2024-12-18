@@ -167,7 +167,8 @@ services:
       - make
       - dev
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
+      VUE_APP_VERSION: ${VUE_APP_VERSION:-development}
       # workaround for vue-cli container detection not working, see:
       # https://github.com/vuejs/vue-cli/issues/6726
       CODESANDBOX_SSE: "1"
@@ -196,6 +197,8 @@ services:
       CSRF_TRUSTED_ORIGINS: ""
       DJANGO_MANAGEPY_MIGRATE: "on"
       METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+      UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet origine}
+      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-green}
     healthcheck:
       test:
         - "CMD"
@@ -402,6 +405,8 @@ services:
       CSRF_TRUSTED_ORIGINS: ""
       DJANGO_MANAGEPY_MIGRATE: "on"
       METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+      UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet destination}
+      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-blue}
     healthcheck:
       test:
         - CMD
@@ -466,4 +471,4 @@ networks:
     name: eurydice
     ipam:
       config:
-        - subnet: ${EURYDICE_IPV4_SUBNET:-172.18.0.0/24}
+        - subnet: ${EURYDICE_IPV4_SUBNET:-172.42.0.0/24}

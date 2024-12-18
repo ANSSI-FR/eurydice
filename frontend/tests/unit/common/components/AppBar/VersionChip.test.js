@@ -3,7 +3,6 @@ import { shallowMount } from "@vue/test-utils";
 
 jest.mock("@common/settings", () => ({
   version: "Tony",
-  releaseCycle: "Stark",
 }));
 
 describe("VersionChip", () => {
@@ -12,6 +11,6 @@ describe("VersionChip", () => {
     const version = wrapper.find("code");
 
     expect(version.isVisible()).toBe(true);
-    expect(version.text()).toBe("Stark Tony");
+    expect(version.text()).toBe("Tony");
   });
 });

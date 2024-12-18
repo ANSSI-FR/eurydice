@@ -1,8 +1,6 @@
-# Disclaimer: this is an early access Alpha version of the software
+# Introduction
 
 This is version `{EURYDICE_VERSION}`, if you find a bug please report it to {EURYDICE_CONTACT}.
-
-# Introduction
 
 ## 👋 Welcome to Eurydice, learn here how to transfer your files through a network diode.
 

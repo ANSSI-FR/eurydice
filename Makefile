@@ -58,6 +58,7 @@ dev-config:
 
 .PHONY: dev-up
 dev-up:
+	$(MAKE) dev-config
 	$(COMPOSE_DEV) up -d
 
 .PHONY: dev-up-elk
@@ -70,8 +71,8 @@ dev-down:
 
 .PHONY: dev-reset
 dev-reset:
-	$(MAKE) down-dev
-	$(MAKE) up-dev
+	$(MAKE) dev-down
+	$(MAKE) dev-up
 
 ### prod
 

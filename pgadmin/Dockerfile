@@ -1,4 +1,4 @@
-FROM dpage/pgadmin4:8.2 as base
+FROM dpage/pgadmin4:8.13 as base
 
 ENV PGADMIN_DISABLE_POSTFIX="1" \
     PGADMIN_CONFIG_SHOW_GRAVATAR_IMAGE="False" \

@@ -1,15 +1,14 @@
 <template>
-  <code class="text-caption">{{ releaseCycle }} {{ version }}</code>
+  <code class="text-caption">{{ version }}</code>
 </template>
 
 <script>
-import { releaseCycle, version } from "@common/settings";
+import { version } from "@common/settings";
 
 export default {
   name: "VersionChip",
   data: () => ({
     version,
-    releaseCycle,
   }),
 };
 </script>

@@ -10,3 +10,7 @@
   "name": "vuex",
   "description": "goes with vue"
 }
+{
+  "name": "nanoid",
+  "description": "id generation"
+}

@@ -15,7 +15,7 @@ humanfriendly = "==10.0"
 whitenoise = "==6.7.0"
 msgpack = "==1.1.0"
 pydantic = "==1.*"
-minio = "==7.2.3"
+minio = "*"
 django-filter = ">=24.*"
 setuptools = ">=70.*"
 
