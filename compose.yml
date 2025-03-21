@@ -31,6 +31,15 @@ x-backend: &backend
   command:
     - make
     - run-dev
+  develop:
+    watch:
+      - action: sync
+        path: ./backend
+        target: /home/eurydice/backend
+        ignore:
+          - .venv/
+      - action: rebuild
+        path: ./Pipfile.lock
 
 x-common-origin-envs: &common-origin-envs
   DB_HOST: db-origin
@@ -161,8 +170,6 @@ services:
     image: eurydice/frontend:dev
     networks:
       - eurydice
-    volumes:
-      - ./frontend:/home/eurydice/frontend
     command:
       - make
       - dev
@@ -176,6 +183,15 @@ services:
       traefik.enable: "true"
       traefik.http.routers.frontend.rule: Host(`origin.localhost`) || Host(`destination.localhost`)
       traefik.http.routers.frontend.priority: "1"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /home/eurydice/frontend
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./package-lock.json
 
   ################ Origin Services ################
 
@@ -187,7 +203,6 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - backend-origin-logs:/var/log/app
     environment:
       <<: [*backend-common-envs, *common-origin-envs, *common-auth-envs]
@@ -230,7 +245,6 @@ services:
       lidis:
         condition: service_started
     volumes:
-      - ./backend:/home/eurydice/backend
       - sender-logs:/var/log/app
     extra_hosts:
       - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
@@ -254,7 +268,6 @@ services:
       backend-origin:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - dbtrimmer-origin-logs:/var/log/app
     environment:
       <<: [*backend-common-envs, *common-origin-envs]
@@ -328,7 +341,6 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - receiver-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
     environment:
@@ -351,7 +363,6 @@ services:
       backend-destination:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - dbtrimmer-destination-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
     environment:
@@ -374,7 +385,6 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - s3remover-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
     environment:
@@ -394,7 +404,6 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./backend:/home/eurydice/backend
       - backend-destination-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
     environment:

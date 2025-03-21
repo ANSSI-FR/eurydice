@@ -1,3 +1,10 @@
+SHELL := bash
+.ONESHELL:
+.SHELLFLAGS := -eu -o pipefail -c
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+
 .PHONY: install
 install:	## Install dependencies.
 	npm ci
@@ -26,6 +33,8 @@ prod-origin:	## Serve origin production bundle. WARNING: do not use this in prod
 prod-destination:	## Serve destination production bundle. WARNING: do not use this in production, this is only intended for testing the production bundle
 	npm run prod:destination
 
+### lint & format & static analysis
+
 .PHONY: lint
 lint:	## Runs a static analysis of the code.
 	npm run lint
@@ -44,9 +53,19 @@ audit:	## Checks production dependencies for vulnerabilities.
 format:	## Format CSS, SCSS, YAML, JSON and Markdown files.
 	npm run format
 
+### tests
+
 .PHONY: tests
 tests:	## Runs unit tests.
 	npm run tests
+
+### misc
+
+.PHONY: clean
+clean:
+	rm -rf node_modules
+
+### help
 
 .PHONY: help
 help:	## Show this help.

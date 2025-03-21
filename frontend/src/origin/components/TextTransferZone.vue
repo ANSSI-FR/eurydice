@@ -7,7 +7,7 @@
     >
     </v-textarea>
     <p>
-      <button :disabled="text.length < 1" @click="transferText">
+      <button :disabled="disableSendingText" @click="transferText">
         Envoyer le texte
       </button>
       <span v-if="ongoingTransfer">Texte en cours d'envoi</span>
@@ -27,6 +27,9 @@ export default {
   },
   computed: {
     ...mapGetters(["ongoingTransfer"]),
+    disableSendingText() {
+      return this.text.length < 1 || this.ongoingTransfer;
+    },
   },
   watch: {
     ongoingTransfer(value) {

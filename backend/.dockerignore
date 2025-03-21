@@ -1,4 +1,11 @@
 *
+# ignore static files
+**/staticfiles/
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+# Allow-list
 !docker/entrypoint.sh
 !docker/healthcheck.py
 !eurydice
@@ -9,11 +16,3 @@
 !pyproject.toml
 !setup.cfg
 !settings.py
-
-# ignore static files
-**/staticfiles/
-
-# Byte-compiled / optimized / DLL files
-**/__pycache__/
-**/*.py[cod]
-**/*$py.class

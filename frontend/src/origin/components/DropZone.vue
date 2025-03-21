@@ -1,77 +1,80 @@
 <template>
-  <div
-    @drop.prevent="uploadFilesFromEvent"
-    @dragover.prevent
-    @dragenter.prevent
-  >
+  <div>
     <v-tabs bg-color="primary">
       <v-tab @click="changeTab('files')">Fichiers</v-tab>
       <v-tab @click="changeTab('text')">Texte</v-tab>
     </v-tabs>
-    <v-file-input
-      v-if="formatTab == 'files'"
-      v-model="files"
-      :clearable="false"
-      chips
-      counter
-      multiple
-      outlined
-      show-size
-      prepend-icon
-      :webkitdirectory="allowDirectoryUpload"
-      :allowdirs="allowDirectoryUpload"
-      :disabled="disableDropZone"
-      :placeholder="
-        disableDropZone
-          ? 'Le transfert de fichiers n\'est pas opérationnel'
-          : 'Cliquez ou déposez vos fichiers ici'
-      "
-      @change="uploadFiles"
+    <div
+      class="drop-zone"
+      @drop.prevent="uploadFilesFromEvent"
+      @dragover.prevent
+      @dragenter.prevent
     >
-      <template v-if="files.length === 0" #prepend-inner>
-        <v-icon v-if="disableDropZone" large>{{ mdiTrafficCone }}</v-icon>
-        <v-icon v-else large>{{ mdiUpload }}</v-icon>
-      </template>
-      <template #selection="{ file }">
-        <DropZoneFile
-          :name="file.name"
-          :progress="file.progress"
-          :finished="file.state === STATES.SUCCESS"
-          :error="file.state === STATES.FAILURE"
-        ></DropZoneFile>
-      </template>
-      <template v-if="files.length !== 0" #append>
-        <div class="DropZone-icons">
-          <v-tooltip left>
-            <template #activator="{ on, attrs }">
-              <v-icon v-bind="attrs" v-on="on" @click="removeFinished">{{
-                mdiCheckAll
-              }}</v-icon>
-            </template>
-            <span>Masquer les transferts terminés</span>
-          </v-tooltip>
-        </div>
-      </template>
-    </v-file-input>
+      <v-file-input
+        v-if="formatTab == 'files'"
+        v-model="files"
+        :clearable="false"
+        chips
+        counter
+        multiple
+        outlined
+        show-size
+        prepend-icon
+        :webkitdirectory="allowDirectoryUpload"
+        :allowdirs="allowDirectoryUpload"
+        :disabled="disableDropZone"
+        :placeholder="
+          disableDropZone
+            ? 'Le transfert de fichiers n\'est pas opérationnel'
+            : 'Cliquez ou déposez vos fichiers ici'
+        "
+        @change="uploadFiles"
+      >
+        <template v-if="files.length === 0" #prepend-inner>
+          <v-icon v-if="disableDropZone" large>{{ mdiTrafficCone }}</v-icon>
+          <v-icon v-else large>{{ mdiUpload }}</v-icon>
+        </template>
+        <template #selection="{ file }">
+          <DropZoneFile
+            :name="file.name"
+            :progress="file.progress"
+            :finished="file.state === STATES.SUCCESS"
+            :error="file.state === STATES.FAILURE"
+          ></DropZoneFile>
+        </template>
+        <template v-if="files.length !== 0" #append>
+          <div class="DropZone-icons">
+            <v-tooltip left>
+              <template #activator="{ on, attrs }">
+                <v-icon v-bind="attrs" v-on="on" @click="removeFinished">{{
+                  mdiCheckAll
+                }}</v-icon>
+              </template>
+              <span>Masquer les transferts terminés</span>
+            </v-tooltip>
+          </div>
+        </template>
+      </v-file-input>
+    </div>
     <TextTransferZone v-if="formatTab == 'text'" @send_text="uploadFile" />
   </div>
 </template>
 
 <script>
 import {
-  mdiUpload,
   mdiCheckAll,
   mdiDeleteSweep,
   mdiTrafficCone,
+  mdiUpload,
 } from "@mdi/js";
-import { mapGetters } from "vuex";
-import DropZoneFile from "@origin/components/DropZoneFile";
 import {
   createTransferable,
   validateTransferable,
 } from "@origin/api/transferables";
-import axios from "axios";
+import DropZoneFile from "@origin/components/DropZoneFile";
 import TextTransferZone from "@origin/components/TextTransferZone";
+import axios from "axios";
+import { mapGetters } from "vuex";
 
 const STATES = {
   ONGOING: "ongoing",

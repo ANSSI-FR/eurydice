@@ -10,6 +10,7 @@ COMPOSE_PROD := $(COMPOSE) -f compose.prod.yml
 
 SYSCTL_OPTIONS = net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog net.ipv4.udp_mem
 SYSCTL_BACKUP_FILE = sysctl_backup.conf
+
 ### config
 
 .PHONY: backup-sysctl
@@ -59,7 +60,7 @@ dev-config:
 .PHONY: dev-up
 dev-up:
 	$(MAKE) dev-config
-	$(COMPOSE_DEV) up -d
+	$(COMPOSE_DEV) watch
 
 .PHONY: dev-up-elk
 dev-up-elk:
@@ -110,13 +111,20 @@ prod-up-destination:
 prod-stop-destination:
 	$(COMPOSE_PROD) --profile destination --env-file .env.prod stop
 
-### Static Analysis
+### static analysis
 
 .PHONY: hadolint
 hadolint:	## Lint the Dockerfiles.
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < backend/docker/Dockerfile
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < frontend/docker/Dockerfile
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < pgadmin/Dockerfile
+
+### misc
+
+.PHONY: clean
+clean:
+	$(MAKE) -C ./backend clean
+	$(MAKE) -C ./frontend clean
 
 ### help
 

@@ -436,3 +436,44 @@ class TestIncomingTransferable:
                 }.items()
             )
             assert response.getvalue() == data
+
+    @pytest.mark.parametrize(
+        ("nb_files", "expected_message"),
+        [
+            (0, "Aucun fichier à supprimer"),
+            (1, "1 fichier a été supprimé"),
+            (2, "2 fichiers ont été supprimés"),
+        ],
+    )
+    def test_delete_all_incoming_transferables_success(
+        self,
+        api_client: test.APIClient,
+        nb_files: int,
+        expected_message: str,
+    ) -> None:
+        user_profile = factory.UserProfileFactory()
+        for _ in range(nb_files):
+            obj = factory.IncomingTransferableFactory(
+                user_profile=user_profile,
+                state=models.IncomingTransferableState.SUCCESS,
+            )
+            data = b"Lorem ipsum dolor sit amet"
+
+            minio.client.make_bucket(bucket_name=obj.s3_bucket_name)
+            minio.client.put_object(
+                bucket_name=obj.s3_bucket_name,
+                object_name=obj.s3_object_name,
+                data=io.BytesIO(data),
+                length=len(data),
+            )
+
+        api_client.force_login(user=user_profile.user)
+        url = reverse("transferable-destroy-all")
+        response = api_client.delete(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == expected_message
+        # Use again to see if the message changes
+        response = api_client.delete(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == "Aucun fichier à supprimer"

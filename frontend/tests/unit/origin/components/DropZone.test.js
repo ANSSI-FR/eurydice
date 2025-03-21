@@ -114,8 +114,7 @@ describe("DropZone", () => {
   });
   it("calls uploadFilesFromEvent on drop event", async () => {
     wrapper.vm.uploadFilesFromEvent = jest.fn();
-
-    wrapper.trigger("drop");
+    wrapper.find(".drop-zone").trigger("drop");
 
     expect(wrapper.vm.uploadFilesFromEvent).toHaveBeenCalledTimes(1);
   });

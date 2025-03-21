@@ -169,5 +169,34 @@ class IncomingTransferableViewSet(
         else:
             return _fs_response(instance, filename, headers)
 
+    @decorators.action(
+        methods=["DELETE"],
+        detail=False,
+        url_path="",
+        url_name="destroy-all",
+        renderer_classes=[
+            # JSONRenderer is only used for error responses and not for successful ones
+            # since successful requests use the ForwardedS3FileResponse
+            renderers.JSONRenderer,
+        ],
+        content_negotiation_class=negotiation.IgnoreClientContentNegotiation,
+    )
+    def delete(self, request: Request) -> Response:
+        """Delete all successful IncomingTransferable to free the space"""
+        logger.debug("Removing all files.")
+        successful_transferables = self.get_queryset().filter(
+            state=models.IncomingTransferableState.SUCCESS
+        )
+        if len(successful_transferables) == 0:
+            return Response("Aucun fichier à supprimer", 200)
+        for instance in successful_transferables:
+            self.perform_destroy(instance)
+        logger.debug("Files successfully removed.")
+        if len(successful_transferables) == 1:
+            return Response("1 fichier a été supprimé", 200)
+        return Response(
+            f"{len(successful_transferables)} fichiers ont été supprimés", 200
+        )
+
 
 __all__ = ("IncomingTransferableViewSet",)

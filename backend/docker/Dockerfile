@@ -49,23 +49,18 @@ WORKDIR /home/eurydice/backend
 
 FROM base AS dev
 
-COPY Pipfile* ./
-
-COPY Makefile .
-
-RUN make install-dev-docker
+ENV PYTHONUNBUFFERED=1
+EXPOSE 8080
 
 COPY docker/entrypoint.sh /entrypoint.sh
 COPY docker/healthcheck.py /healthcheck.py
 RUN chmod +x /entrypoint.sh /healthcheck.py
+ENTRYPOINT ["/entrypoint.sh"]
 
+COPY Pipfile* Makefile ./
+RUN make install-dev-docker
 
 COPY . .
-
-ENV PYTHONUNBUFFERED=1
-
-ENTRYPOINT ["/entrypoint.sh"]
-EXPOSE 8080
 
 # ------------------------------------------------------------------------------
 # Compile production dependencies Stage

@@ -6,6 +6,7 @@
         :selected-transferables="selectedTransferables"
         @reset-selection="selectedTransferables = []"
       />
+      <DeleteAllTransferablesButton />
     </div>
     <TransferableTable
       ref="transferableTable"
@@ -51,21 +52,22 @@
 </template>
 
 <script>
+import TransferableTable from "@common/components/TransferableTable/main";
+import TransferableStatusChip from "@common/components/TransferableTable/TransferableStatusChip";
+import SelectedTransferablesDeleteButton from "@destination/components/DestinationTransferableTable/SelectedTransferablesDeleteButton";
+import TransferableActions from "@destination/components/DestinationTransferableTable/TransferableActions";
+import { TRANSFERABLE_STATES } from "@destination/constants";
 import {
   mdiAlertCircle,
   mdiCheck,
   mdiClockRemove,
   mdiCloseNetwork,
+  mdiDelete,
   mdiDownloadNetwork,
   mdiTrashCanOutline,
-  mdiDelete,
 } from "@mdi/js";
-import TransferableTable from "@common/components/TransferableTable/main";
-import TransferableStatusChip from "@common/components/TransferableTable/TransferableStatusChip";
-import { TRANSFERABLE_STATES } from "@destination/constants";
-import TransferableActions from "@destination/components/DestinationTransferableTable/TransferableActions";
-import SelectedTransferablesDeleteButton from "@destination/components/DestinationTransferableTable/SelectedTransferablesDeleteButton";
 
+import DeleteAllTransferablesButton from "@destination/components/DestinationTransferableTable/DeleteAllTransferablesButton";
 import bytes from "bytes";
 
 export default {
@@ -76,6 +78,7 @@ export default {
     TransferableStatusChip,
     TransferableActions,
     SelectedTransferablesDeleteButton,
+    DeleteAllTransferablesButton,
   },
   data() {
     return {

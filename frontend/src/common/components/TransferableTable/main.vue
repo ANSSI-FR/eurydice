@@ -8,6 +8,7 @@
         disable-sort
         disable-filtering
         :loading="isLoading"
+        :items-per-page="transferablesPerPage"
       >
         <template #top>
           <v-toolbar flat>
@@ -80,6 +81,7 @@ export default {
       showRefresh: false,
       listTransferablesAbortController: null,
       mdiRefresh,
+      transferablesPerPage,
     };
   },
   watch: {
@@ -168,7 +170,6 @@ export default {
       this.transferables = await listTransferables({
         pageSize: transferablesPerPage,
       });
-
       this.showRefresh = false;
       this.$refs.paginatorControls.page = 1;
 

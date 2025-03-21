@@ -7,3 +7,10 @@ export function deleteTransferable(transferableId) {
     method: "DELETE",
   });
 }
+
+export function deleteAllTransferables() {
+  return request({
+    url: `/transferables/`,
+    method: "DELETE",
+  });
+}

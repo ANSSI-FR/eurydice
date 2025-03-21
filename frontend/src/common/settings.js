@@ -4,5 +4,5 @@ module.exports = {
   version: process.env.VUE_APP_VERSION || "development",
   refreshIntervalInMs: 5 * 1000,
   serverDownIntervalInMs: 3 * 60 * 1000, // 3 min
-  transferablesPerPage: 10,
+  transferablesPerPage: 100,
 };

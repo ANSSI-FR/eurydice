@@ -25,12 +25,17 @@ WORKDIR /home/eurydice/frontend
 
 FROM base AS dev
 
+EXPOSE 8080
+
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 8080
-
 ENTRYPOINT ["/entrypoint.sh"]
+
+COPY package.json package-lock.json Makefile ./
+RUN make install
+
+COPY . .
 
 CMD ["make", "dev"]
 
@@ -41,16 +46,17 @@ CMD ["make", "dev"]
 FROM base AS ci
 # hadolint ignore=DL3008
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends jq \
-    && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends jq \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN chown node:node "$(pwd)"
 
 USER node
 
-COPY --chown=node:node . .
-
+COPY --chown=node:node package.json package-lock.json Makefile ./
 RUN make install
+
+COPY --chown=node:node . .
 
 # ------------------------------------------------------------------------------
 # Build production dependencies

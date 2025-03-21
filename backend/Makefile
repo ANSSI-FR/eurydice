@@ -1,3 +1,9 @@
+SHELL := bash
+.ONESHELL:
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+
 SRC_DIR := eurydice
 PACKAGES := common origin destination
 TESTS_DIR := tests
@@ -168,6 +174,18 @@ tests:	## Run tests, iterate over test modules to configure DJANGO_SETTINGS_MODU
 	coverage report -m; \
 	if [ "$$EURYDICE_TESTS_ERROR" = '1' ] ; then exit 1; fi
 
+# ------------------------------------------------------------------------------
+# Misc
+# ------------------------------------------------------------------------------
+
+.PHONY: clean
+clean:
+	rm -rf .venv
+	find . -type f -name '*.pyc' -delete
+	find . -type d -name '__pycache__' -delete
+	rm -rf .mypy_cache .pytest_cache .ruff_cache
+	rm -f coverage coverage.xml
+	rm -rf .report
 
 # ------------------------------------------------------------------------------
 # Help
