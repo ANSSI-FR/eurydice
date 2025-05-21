@@ -1,0 +1,3 @@
+type User = {
+  username: string;
+};

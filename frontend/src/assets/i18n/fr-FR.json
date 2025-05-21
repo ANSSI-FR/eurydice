@@ -1,0 +1,171 @@
+{
+  "Page404": {
+    "errorMessage": "Erreur 404 - Cette page n'existe pas",
+    "homeRedirectMessage": "Retour à la page d'accueil"
+  },
+  "Error": {
+    "Network": {
+      "title": "Erreur réseau"
+    },
+    "401": { "title": "Non autorisé", "message": "Authentification nécessaire." },
+    "403": {
+      "title": "Non autorisé",
+      "message": "Veuillez associer votre compte avec le guichet origine."
+    },
+    "404": { "title": "Page non trouvée", "message": "Cette ressource n'existe pas." },
+    "500": { "title": "Erreur serveur", "message": "Une erreur serveur est survenue." },
+    "503": { "title": "Service indisponible", "message": "Le service est indisponible." },
+    "UserAssociationView": {
+      "400": {
+        "title": "Token invalide",
+        "message": "Le token est incorrect ou a expiré."
+      },
+      "409": {
+        "title": "Déjà associé",
+        "message": "L'utilisateur est déjà associé avec le guichet origine, cliquez pour continuer vers la page principale."
+      }
+    }
+  },
+  "MainNavBar": {
+    "AssociationToken": {
+      "menuBtn": "Jeton d'association",
+      "dialogHeader": "Jeton d'association des comptes",
+      "dialogContent": "Associer votre compte utilisateur côté destination est nécessaire pour transférer des fichiers. Pour réaliser l'association, entrez le texte présent ci-dessous dans l'interface utilisateur côté destination.",
+      "copyBtn": "Copier",
+      "expirationInfo": "Ce jeton expire dans 30 minutes.",
+      "capsInfo": "Attention aux majuscules, la casse du texte est prise en compte.",
+      "successToast": {
+        "title": "Token copié",
+        "message": "Le token a été copié dans votre presse papier."
+      },
+      "closeButton": "Fermer"
+    }
+  },
+  "FooterComponent": {
+    "documentationLinkText": "Documentation de l'API",
+    "contactText": "En cas de problème ou pour nous faire part de vos retours, veuillez nous contacter { contactMethod }.",
+    "contactLinkText": "Contact"
+  },
+  "UploadFile": {
+    "title": "Téléversement",
+    "tabTitle": "Fichiers",
+    "uploadFileButton": "Ajouter un nouveau fichier",
+    "clearFilesButton": "Masquer les transferts terminés et annulés",
+    "dragNDropMessage": "Déposez vos fichiers ici",
+    "successToast": {
+      "title": "Transfert réussi",
+      "message": "Le transfert du fichier { fileName } a réussi."
+    },
+    "abortFileUpload": "Annuler le transfert",
+    "status": {
+      "aborted": "Annulé",
+      "uploading": "En cours ({progress}%)",
+      "uploaded": "Terminé",
+      "error": "Erreur"
+    },
+    "totalFiles": "Aucun fichier | 1 fichier | {count} fichiers"
+  },
+  "ByteSize": {
+    "bytes": "{count} octets",
+    "kiloBytes": "{count} Kio",
+    "megaBytes": "{count} Mio",
+    "gigaBytes": "{count} Gio",
+    "teraBytes": "{count} Tio",
+    "petaBytes": "{count} Pio",
+    "exbiBytes": "{count} Eio",
+    "zebiBytes": "{count} Zio",
+    "yobioBytes": "{count} Yio"
+  },
+  "UserAssociationView": {
+    "associateButton": "Associer",
+    "verifiedTokenMessage": "Votre compte est maintenant associé. Veuillez cliquer pour continuer vers la page principale.",
+    "continueButton": "Continuer",
+    "header": "👋 Bienvenue",
+    "content": {
+      "infos": "Il semble que vous n'ayez pas encore associé votre compte utilisateur côté destination avec votre compte côté origine.\nCette étape est nécessaire pour pouvoir accéder à vos transferts.\nRéalisez l'association de vos comptes en quelques instants :",
+      "steps": "Connectez-vous à l'interface utilisateur côté origine.\nCliquez ensuite sur le bouton \"Jeton d'Association\" situé en haut à droite de la page.\nPrenez note du jeton d'association.\nEntrez le jeton d'association dans le formulaire ci-dessous.",
+      "helpMsg": "Attention aux majuscules, la casse du texte est prise en compte."
+    },
+    "TokenError": {
+      "empty": "Veuillez saisir le token.",
+      "invalidWordSize": "Le jeton doit être composé d'exactement {tokenNbWords} mots."
+    }
+  },
+  "StatusBanner": {
+    "maintenanceMessage": "Le transfert de fichiers est temporairement suspendu pour cause de maintenance. Des fichiers peuvent toujours être envoyés au guichet origine mais ils ne seront pas immédiatement transmis au guichet destination. Ils seront transmis dès la fin de la maintenance.",
+    "serverTimeout": "Le transfert de fichiers n'est pas opérationnel. Vous pouvez contacter vos administrateurs { contactMethod }."
+  },
+  "TransferableState": {
+    "pending": "En attente",
+    "ongoing": "En cours",
+    "error": "Erreur",
+    "canceled": "Annulé",
+    "success": "Réussi",
+    "removed": "Supprimé",
+    "revoked": "Révoqué",
+    "expired": "Expiré",
+    "pendingExplanation": "En attente de transfert vers le guichet destination",
+    "ongoingExplanation": "En cours de transfert vers le guichet destination",
+    "errorExplanation": "Erreur lors du transfert",
+    "canceledExplanation": "Transfert annulé à la demande de l'utilisateur",
+    "successExplanation": "Envoyé vers le guichet destination",
+    "removedExplanation": "Fichier supprimé à la demande de l'utilisateur",
+    "revokedExplanation": "Transfert interrompu à la demande du guichet origine",
+    "expiredExplanation": "Fichier supprimé après le délai d'expiration"
+  },
+  "TransferableTable": {
+    "tableTitle": "Transferts diode",
+    "id": "Id",
+    "createdAt": "Créé le",
+    "name": "Nom",
+    "sha1": "SHA-1",
+    "size": "Taille",
+    "state": "État",
+    "actions": "Actions",
+    "empty": "Aucun transfert trouvé",
+    "refreshNewItems": "Nouveaux fichiers",
+    "previewTooltip": "Prévisualisation seulement sur les fichiers txt, md, json, xml et dont la taille à {nbMio}Mio"
+  },
+  "Actions": {
+    "deleteSelected": "Ne rien supprimer| Supprimer |Supprimer les fichiers sélectionnés",
+    "deleteAll": "Supprimer tout",
+    "deleteAllTooltip": "Supprimer les éléments transférés avec succès",
+    "refresh": "Rafraîchir",
+    "cancel": "Annuler"
+  },
+  "TransferableDeleteAllDialog": {
+    "title": "Supprimer tous les fichiers",
+    "message": "Vous êtes sur le point de supprimer tous les fichiers (pas uniquement ceux sélectionnés). Ils ne pourront plus être téléchargés. Cette action est définitive, êtes-vous sûr ?",
+    "successMessageTitle": "Suppression réussie",
+    "successMessageMessage": "Tous les fichiers ont bien été supprimés."
+  },
+  "TransferableDeleteMultipleDialog": {
+    "title": "Supprimer|Supprimer un fichier|Supprimer des fichiers",
+    "messageIntro": "Aucun fichier n'est à supprimer.|Vous êtes sur le point de supprimer le fichier suivant :|Vous êtes sur le point de supprimer les fichiers suivants :",
+    "messageQuestion": "Aucune action de votre part est requise.|Il ne pourra plus être téléchargé. Cette action est définitive, êtes-vous sûr ?|Ils ne pourront plus être téléchargés. Cette action est définitive, êtes-vous sûr ?",
+    "successMessageTitle": "Suppression réussie",
+    "successMessageMessage": "Aucun fichier n'a été supprimé | Le fichier {files} a bien été supprimé | Les fichiers {files} ont bien été supprimés."
+  },
+  "TransferablePreviewDialog": {
+    "copyAndClose": "Copier et Fermer",
+    "close": "Fermer",
+    "copyMessage": {
+      "title": "Texte copié",
+      "message": "Le contenu se trouve dans le presse-papier."
+    }
+  },
+  "UploadText": {
+    "tabTitle": "Texte",
+    "title": "Envoi de texte",
+    "uploadTextButton": "Envoyer",
+    "defaultFileName": "presse-papier{dateSuffix}.txt",
+    "abortErrorMessage": "Votre texte n'a pas pu être envoyé. Veuillez réessayer ultérieurement."
+  },
+  "ValidateTansferable": {
+    "fileTooLargeTitle": "Fichier trop lourd",
+    "fileTooLargeMessage": "La taille de votre fichier ({fileSize}) dépasse le maximum autorisé de {maxFileSize}. Vous pouvez essayer de compresser votre fichier avant de le téléverser."
+  },
+  "ScrollToTopButton": {
+    "tooltip": "Revenir en haut de la page"
+  }
+}

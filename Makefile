@@ -4,8 +4,8 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-COMPOSE := PUID=$(shell id -u) PGID=$(shell id -g) docker compose
-COMPOSE_DEV := $(COMPOSE) -f compose.yml
+COMPOSE := docker compose
+COMPOSE_DEV := PUID=$(shell id -u) PGID=$(shell id -g) $(COMPOSE) -f compose.yml
 COMPOSE_PROD := $(COMPOSE) -f compose.prod.yml
 
 SYSCTL_OPTIONS = net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog net.ipv4.udp_mem
@@ -58,27 +58,32 @@ dev-config:
 	$(MAKE) config-sysctl config-ufw
 
 .PHONY: dev-up
-dev-up:
+dev-up: ## start the dev stack
 	$(MAKE) dev-config
 	$(COMPOSE_DEV) watch
 
 .PHONY: dev-up-elk
-dev-up-elk:
-	$(COMPOSE_DEV) -f compose.kibana.yml up -d
+dev-up-elk: ## start the dev stack with ELK
+	$(COMPOSE_DEV) -f compose.kibana.yml watch
 
 .PHONY: dev-down
-dev-down:
+dev-down: ## stop the dev stack
 	$(COMPOSE_DEV) down --volumes --remove-orphans
 
 .PHONY: dev-reset
-dev-reset:
+dev-reset: ## reset the dev stack
 	$(MAKE) dev-down
 	$(MAKE) dev-up
+
+.PHONY: install-dev
+install-dev: ## install local environments & dependencies
+	$(MAKE) -C backend install-dev
+	$(MAKE) -C frontend install
 
 ### prod
 
 .PHONY: prod-config
-prod-config:
+prod-config: ## bootstrap the config folders for the prod stack
 	mkdir -p data/minio-data
 	mkdir -p data/minio-conf
 	mkdir -p data/db-data
@@ -94,21 +99,21 @@ prod-config:
 	mkdir -p data/python-logs/db-migrations-destination
 
 .PHONY: prod-up-origin
-prod-up-origin:
+prod-up-origin: ## start the production origin stack
 	$(COMPOSE_PROD) --profile origin --env-file .env.prod run --rm db-migrations-origin
 	$(COMPOSE_PROD) --profile origin --env-file .env.prod up -d
 
 .PHONY: prod-stop-origin
-prod-stop-origin:
+prod-stop-origin: ## stop the production origin stack
 	$(COMPOSE_PROD) --profile origin --env-file .env.prod stop
 
 .PHONY: prod-up-destination
-prod-up-destination:
+prod-up-destination: ## start the production destination stack
 	$(COMPOSE_PROD) --profile destination --env-file .env.prod run --rm db-migrations-destination
 	$(COMPOSE_PROD) --profile destination --env-file .env.prod up -d
 
 .PHONY: prod-stop-destination
-prod-stop-destination:
+prod-stop-destination: ## stop the production destination stack
 	$(COMPOSE_PROD) --profile destination --env-file .env.prod stop
 
 ### static analysis
@@ -122,9 +127,9 @@ hadolint:	## Lint the Dockerfiles.
 ### misc
 
 .PHONY: clean
-clean:
-	$(MAKE) -C ./backend clean
-	$(MAKE) -C ./frontend clean
+clean: ## clean environments & dependencies
+	$(MAKE) -C backend clean
+	$(MAKE) -C frontend clean
 
 ### help
 

@@ -1,33 +1,94 @@
-# ✨ Eurydice frontend
+# Frontend Eurydice
 
-## 🧪 Testing
+# Install
 
-Unit tests are performed with [Jest](https://jestjs.io/).
+## Developer dependencies
 
-Run the tests with the following command:
-
-```bash
-make tests
-```
-
-## 👮‍♀️ Code formatting and 🔎 Static analysis
-
-[ESLint](https://eslint.org/) is the project's linter.
-The [Prettier](https://prettier.io/) formatter is integrated in the linter.
-You can Launch them with the following command:
+This command will install all developer dependencies:
 
 ```bash
-make lint
+make install-dev 
 ```
 
-To automatically fix errors detected by the linter, use the following command:
+## Production environment
+
+To install only production dependencies use:
+
+```bash
+make install
+```
+
+# Launch the project
+
+If you are developing the app, you should run the following command :
+
+```bash
+make run-watch
+```
+
+The app runs on 0.0.0.0:8080, watch for changes in code and reload the page automatically.
+/!\ The port is fixed and the app crashes if you are running on different ports /!\
+
+If you want to preview the built application, you can run the app in preview mode.
+
+```bash
+make run-preview
+```
+
+This command builds the app and launch a static website server to serve your app.
+
+# Lint the code
+
+If you want to lint and fix fixeable lint errors, you can launch this command:
 
 ```bash
 make lint-fix
 ```
 
-CSS, SCSS, YAML, JSON and Markdown files can be formatted with the following command:
+OR
+
+```bash
+make lint
+```
+
+If you only want to check the lint errors (in CI for example):
+
+```bash
+make lint-check
+```
+
+# Format the code
+
+If you want to fix the format of all files :
+
+```bash
+make format-fix
+```
+
+OR
 
 ```bash
 make format
+```
+
+If you want to check the format of all files (for example in CI):
+
+```bash
+make format-check
+```
+
+# Test
+
+To run unit and component tests run:
+
+```bash
+make tests
+```
+
+TODO: playwright
+
+# Build the frontend
+
+```bash
+make build
 ```

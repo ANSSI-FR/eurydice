@@ -16,17 +16,17 @@ whitenoise = "==6.7.0"
 msgpack = "==1.1.0"
 pydantic = "==1.*"
 minio = "*"
-django-filter = ">=24.*"
-setuptools = ">=70.*"
+django-filter = ">=24"
+setuptools = ">=70"
 jinja2 = "==3.1.5"
 
 [dev-packages]
-pytest = ">=8.*"
-pytest-django = ">=4.*"  # useful to configure settings in tests even if not explicitly called
+pytest = ">=8"
+pytest-django = ">=4"  # useful to configure settings in tests even if not explicitly called
 factory-boy = "==3.2.1"
 hypothesis = "==6.39.4"
 coverage = "==6.*"
-pytest-cov = ">=4.*"
+pytest-cov = ">=4"
 pytype = "==2024.01.05"
 ipython = "==8.10.0"
 ipdb = "==0.13.9"

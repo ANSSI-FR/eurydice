@@ -14,7 +14,7 @@ x-backend-common-envs: &backend-common-envs
   EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
   EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-}
   UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-}
-  UI_BADGE_COLOR: ${UI_BADGE_COLOR:-brown}
+  UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
   LOG_TO_FILE: ${LOG_TO_FILE:-true}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
@@ -332,11 +332,11 @@ services:
       - "--nb_clients"
       - "1"
       - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE:-60000}"
+      - "${LIDI_ENCODING_BLOCK_SIZE:-600000}"
       - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE:-6000}"
-      - "--udp_buffer_size"
-      - "${LIDIS_UDP_BUFFER_SIZE:-32768}"
+      - "${LIDI_REPAIR_BLOCK_SIZE:-30000}"
+      - "--nb_encoding_threads"
+      - "${LIDIS_NB_ENCODING_THREADS:-2}"
 
   ############# Origin tools #############
   db-migrations-origin: &db-migrations-origin
@@ -394,11 +394,13 @@ services:
       - "--to_tcp"
       - "127.0.0.1:65432"
       - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE:-60000}"
+      - "${LIDI_ENCODING_BLOCK_SIZE:-600000}"
       - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE:-6000}"
+      - "${LIDI_REPAIR_BLOCK_SIZE:-30000}"
       - "--nb_clients"
       - "1"
+      - "--nb_decoding_threads"
+      - "${LIDIR_NB_DECODING_THREADS:-2}"
 
   lidir-with-elk:
     <<: *lidir

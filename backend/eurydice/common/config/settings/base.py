@@ -39,7 +39,7 @@ env = environ.Env(
     EURYDICE_CONTACT=(str, ""),
     EURYDICE_CONTACT_FR=(str, ""),
     UI_BADGE_CONTENT=(str, "default badge value"),
-    UI_BADGE_COLOR=(str, "black"),
+    UI_BADGE_COLOR=(str, "#01426a"),
 )
 
 DEBUG = env("DEBUG")

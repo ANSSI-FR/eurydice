@@ -274,3 +274,7 @@ data/
 
 # sysctl backup file
 sysctl_backup.conf
+
+# frontend .env files are shared
+!frontend/.env
+!frontend/.env.*

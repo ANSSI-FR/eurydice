@@ -1,0 +1,16 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "vitest.setup.ts"],
+  "exclude": ["src/**/__tests__/*"],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    "paths": {
+      "@destination/*": ["./src/destination/*"],
+      "@origin/*": ["./src/origin/*"],
+      "@common/*": ["./src/common/*"],
+      "@tests/*": ["./src/tests/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
+  }
+}

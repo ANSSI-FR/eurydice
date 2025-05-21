@@ -14,7 +14,7 @@ x-backend-common-envs: &backend-common-envs
   EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
   EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-par courrier recommandé en 3 exemplaires}
   UI_BADGE_CONTENT: Dev -> Dev
-  UI_BADGE_COLOR: "green"
+  UI_BADGE_COLOR: "#01426a"
   LOG_TO_FILE: true
 
 x-backend: &backend
@@ -22,9 +22,6 @@ x-backend: &backend
     context: "backend"
     dockerfile: docker/Dockerfile
     target: dev
-  # NOTE: we tag local dev images with our registry otherwise the image is tagged
-  # using the docker hub as a registry
-  # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
   image: eurydice/backend:dev
   networks:
     - eurydice
@@ -39,7 +36,25 @@ x-backend: &backend
         ignore:
           - .venv/
       - action: rebuild
-        path: ./Pipfile.lock
+        path: ./backend/Pipfile.lock
+
+x-frontend: &frontend
+  build:
+    context: "frontend"
+    dockerfile: docker/Dockerfile
+    target: dev
+  image: eurydice/frontend:dev
+  environment:
+    NODE_ENV: ${NODE_ENV:-development}
+  develop:
+    watch:
+      - action: sync
+        path: ./frontend
+        target: /home/abc/workdir/frontend
+        ignore:
+          - node_modules/
+      - action: rebuild
+        path: ./frontend/package-lock.json
 
 x-common-origin-envs: &common-origin-envs
   DB_HOST: db-origin
@@ -159,41 +174,19 @@ services:
       retries: 10
       start_period: 2s
 
-  frontend:
-    build:
-      context: "frontend"
-      dockerfile: docker/Dockerfile
-      target: dev
-    # note: we tag local dev images with our registry otherwise the image is tagged
-    # using the docker hub as a registry
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    image: eurydice/frontend:dev
+  ################ Origin Services ################
+  frontend-origin:
+    <<: *frontend
     networks:
       - eurydice
-    command:
-      - make
-      - dev
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      VUE_APP_VERSION: ${VUE_APP_VERSION:-development}
-      # workaround for vue-cli container detection not working, see:
-      # https://github.com/vuejs/vue-cli/issues/6726
-      CODESANDBOX_SSE: "1"
+      VITE_EURYDICE_GUICHET: origin
     labels:
       traefik.enable: "true"
-      traefik.http.routers.frontend.rule: Host(`origin.localhost`) || Host(`destination.localhost`)
-      traefik.http.routers.frontend.priority: "1"
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend
-          target: /home/eurydice/frontend
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./package-lock.json
-
-  ################ Origin Services ################
+      traefik.http.routers.frontend_origin.rule: Host(`origin.localhost`)
+      traefik.http.routers.frontend_origin.priority: "1"
+      traefik.http.routers.frontend_origin.service: frontend_origin_service
+      traefik.http.services.frontend_origin_service.loadbalancer.server.port: 8080
 
   backend-origin:
     <<: *backend
@@ -213,7 +206,7 @@ services:
       DJANGO_MANAGEPY_MIGRATE: "on"
       METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
       UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet origine}
-      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-green}
+      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
     healthcheck:
       test:
         - "CMD"
@@ -304,7 +297,6 @@ services:
       - "1"
 
   ################ Destination Services ################
-
   lidir:
     image: anssi/lidi-receive:latest
     network_mode: "host"
@@ -415,7 +407,7 @@ services:
       DJANGO_MANAGEPY_MIGRATE: "on"
       METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
       UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet destination}
-      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-blue}
+      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
     healthcheck:
       test:
         - CMD
@@ -433,6 +425,19 @@ services:
     command:
       - make
       - run-destination-api
+
+  frontend-destination:
+    <<: *frontend
+    networks:
+      - eurydice
+    environment:
+      VITE_EURYDICE_GUICHET: destination
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.frontend_destination.rule: Host(`destination.localhost`)
+      traefik.http.routers.frontend_destination.priority: "1"
+      traefik.http.routers.frontend_destination.service: frontend_destination_service
+      traefik.http.services.frontend_destination_service.loadbalancer.server.port: 8080
 
   ################ Dev Tools ################
 

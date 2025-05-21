@@ -23,8 +23,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3008
 RUN apt-get update \
   && apt-get --no-install-recommends --no-install-suggests --yes --quiet install $BUILD_DEBIAN_PACKAGES $RUN_DEBIAN_PACKAGES \
-  && pip install --no-cache-dir --upgrade pip==24.2 \
-  && pip install --no-cache-dir pipenv==2023.9.1 \
+  && pip install --no-cache-dir --upgrade pip==25.0 \
+  && pip install --no-cache-dir pipenv==2025.0.2 \
   && apt-get clean \
   && apt-get --yes --quiet autoremove --purge \
   && rm -rf \

@@ -1,67 +1,38 @@
 <template>
-  <div>
-    <v-banner v-show="maintenance" color="error">
-      Le transfert de fichiers est temporairement suspendu pour cause de
-      maintenance. Des fichiers peuvent toujours être envoyés au guichet origine
-      mais ils ne seront pas immédiatement transmis au guichet destination. Ils
-      seront transmis dès la fin de la maintenance.
-    </v-banner>
-    <v-banner v-show="showServerDownBanner" color="error">
-      Le transfert de fichiers n'est pas opérationnel. Vous pouvez contacter vos
-      administrateurs {{ appContact }}.
-    </v-banner>
+  <div class="w-full flex flex-col gap-2">
+    <Message
+      severity="error"
+      icon="pi pi-exclamation-triangle"
+      closable
+      v-if="useServerStatusStore().getIsServerInMaintenance"
+      data-testid="StatusBanner.maintenanceMessage"
+    >
+      {{ $t('StatusBanner.maintenanceMessage') }}
+    </Message>
+    <Message
+      severity="error"
+      icon="pi pi-exclamation-triangle"
+      closable
+      v-if="useServerStatusStore().getIsServerDown"
+      data-testid="StatusBanner.serverTimeout"
+    >
+      {{
+        $t('StatusBanner.serverTimeout', {
+          contactMethod: useServerMetadataStore().getServerMetadata?.contact,
+        })
+      }}
+    </Message>
   </div>
 </template>
+<script setup lang="ts">
+import { refreshServerStatus } from '@common/services/status.service';
+import { useServerMetadataStore } from '@common/store/server-metadata.store';
+import { useServerStatusStore } from '@common/store/server-status.store';
+import { Message } from 'primevue';
+import { onMounted } from 'vue';
 
-<script>
-import getAppContact from "@common/api/serverMetadata";
-import { mapGetters } from "vuex";
-import retrieveStatus from "@common/api/status";
-import { refreshIntervalInMs, serverDownIntervalInMs } from "@common/settings";
-
-export default {
-  props: {
-    lastPacketFieldName: {
-      type: String,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      timer: null,
-      appContact: null,
-    };
-  },
-  computed: {
-    ...mapGetters(["serverDown", "maintenance"]),
-    showServerDownBanner() {
-      return !this.maintenance && this.serverDown;
-    },
-  },
-  async beforeCreate() {
-    const { contact } = await getAppContact();
-    this.appContact = contact;
-  },
-  async created() {
-    this.getStatus();
-    this.setupAutoRefresh();
-  },
-  methods: {
-    setupAutoRefresh() {
-      if (!this.timer) {
-        this.timer = setInterval(this.getStatus, refreshIntervalInMs);
-      }
-    },
-    async getStatus() {
-      const status = await retrieveStatus();
-      const { maintenance } = status;
-      this.$store.commit("setMaintenance", maintenance);
-      const lastPacketTimestamp =
-        Date.parse(status[this.lastPacketFieldName]) || 0;
-      const timeSinceLastPacketInMs = Date.now() - lastPacketTimestamp;
-      const serverDown = timeSinceLastPacketInMs > serverDownIntervalInMs;
-      this.$store.commit("setServerDown", serverDown);
-    },
-  },
-};
+onMounted(async () => {
+  refreshServerStatus();
+  setInterval(refreshServerStatus, import.meta.env.VITE_APP_REFRESH_INTERVAL_IN_MS ?? 5000);
+});
 </script>

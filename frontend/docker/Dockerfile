@@ -4,18 +4,9 @@ ARG EURYDICE_VERSION development
 # Base
 # ------------------------------------------------------------------------------
 
-FROM node:18-bullseye AS base
+FROM node:22-bullseye AS base
 
 ENV PATH /home/eurydice/frontend/node_modules/.bin:$PATH
-
-# vue-cli uses the VUE_CLI_BABEL_TRANSPILE_MODULES environment variable,
-# to control whether the babel-plugin-dynamic-import-node plugin is enabled.
-# It only does one thing by converting all import() to require().
-# This configuration can significantly increase the speed of hot updates,
-# when you have a large number of pages.
-# Detail:  https://github.com/vuejs/vue-cli/blob/dev/packages/@vue/babel-preset-app/index.js
-
-ENV VUE_CLI_BABEL_TRANSPILE_MODULES true
 
 WORKDIR /home/eurydice/frontend
 
@@ -27,17 +18,9 @@ FROM base AS dev
 
 EXPOSE 8080
 
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
-
-COPY package.json package-lock.json Makefile ./
-RUN make install
-
 COPY . .
 
-CMD ["make", "dev"]
+CMD ["make", "run-watch"]
 
 # ------------------------------------------------------------------------------
 # CI

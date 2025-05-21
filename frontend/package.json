@@ -1,198 +1,60 @@
 {
-  "name": "eurydice",
-  "version": "0.1.0",
+  "name": "frontend",
+  "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "vue-cli-service serve src/main.dev.js",
-    "prod:origin": "vue-cli-service serve --mode production src/origin/main.js",
-    "prod:destination": "vue-cli-service serve --mode production src/destination/main.js",
-    "build:origin": "vue-cli-service build src/origin/main.js --dest dist/origin",
-    "build:destination": "vue-cli-service build src/destination/main.js --dest dist/destination",
-    "format": "prettier --write \"**/*.{css,scss,yml,yaml,json,md}\"",
-    "lint": "vue-cli-service lint --no-fix",
-    "lint:fix": "vue-cli-service lint --fix",
-    "lint:css": "stylelint ./src/**/*.{vue,htm,html,css,sss,less,scss,sass}",
-    "lint:css:fix": "stylelint ./src/**/*.{vue,htm,html,css,sss,less,scss,sass} --fix",
-    "tests": "jest --clearCache && vue-cli-service test:unit"
+    "dev": "vite --mode dev",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "test:unit": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "lint-check": "eslint .",
+    "lint-fix": "eslint . --fix",
+    "format-fix": "prettier --write .",
+    "format-check": "prettier --check ."
   },
   "dependencies": {
-    "@mdi/js": "~7.3.67",
-    "axios": "~1.7.7",
-    "bytes": "~3.1.2",
-    "core-js": "~3.23.3",
-    "dayjs": "~1.11.10",
-    "lodash": "~4.17.21",
-    "typeface-roboto": "~1.1.13",
-    "vue": "^2.7.0",
-    "vue-router": "~3.5.3",
-    "vuetify": "^2.6.15",
-    "vuex": "~3.6.2"
+    "@primeuix/themes": "^1.0.0",
+    "axios": "^1.7.9",
+    "lodash": "^4.17.21",
+    "pinia": "^3.0.1",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.1",
+    "tailwindcss": "^4.0.7",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.1.1",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.5.18",
-    "@vue/cli-plugin-eslint": "~4.5.18",
-    "@vue/cli-plugin-router": "~4.5.18",
-    "@vue/cli-plugin-unit-jest": "~4.5.18",
-    "@vue/cli-plugin-vuex": "~4.5.18",
-    "@vue/cli-service": "~4.5.18",
-    "@vue/eslint-config-airbnb": "~5.3.0",
-    "@vue/test-utils": "~1.3.0",
-    "babel-eslint": "~10.1.0",
-    "babel-plugin-lodash": "~3.3.4",
-    "eslint": "~6.8.0",
-    "eslint-config-prettier": "~6.15.0",
-    "eslint-plugin-import": "~2.25.4",
-    "eslint-plugin-prettier": "~3.4.1",
-    "eslint-plugin-vue": "~8.5.0",
-    "jest-junit": "~13.0.0",
-    "prettier": "~2.5.1",
-    "sass": "~1.32.13",
-    "sass-loader": "~10.2.1",
-    "stylelint": "~13.13.1",
-    "stylelint-config-prettier": "~8.0.2",
-    "stylelint-config-recommended": "~5.0.0",
-    "stylelint-config-sass-guidelines": "~8.0.0",
-    "stylelint-config-suitcss": "~17.0.0",
-    "stylelint-order": "~4.1.0",
-    "stylelint-prettier": "~1.2.0",
-    "stylelint-scss": "~3.20.1",
-    "stylelint-webpack-plugin": "~2.2.2",
-    "vue-cli-plugin-vuetify": "~2.4.8",
-    "vue-template-compiler": "^2.7.0",
-    "vuetify-loader": "~1.7.3"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "@vue/airbnb",
-      "plugin:vue/recommended",
-      "plugin:prettier/recommended",
-      "prettier/vue"
-    ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "plugins": [
-      "prettier"
-    ],
-    "rules": {
-      "import/extensions": [
-        "error",
-        "always",
-        {
-          "js": "never",
-          "vue": "never"
-        }
-      ]
-    },
-    "overrides": [
-      {
-        "files": [
-          "**/__tests__/*.{j,t}s?(x)",
-          "**/tests/unit/**/*.{spec,test}.{j,t}s?(x)"
-        ],
-        "env": {
-          "jest": true
-        }
-      }
-    ]
-  },
-  "stylelint": {
-    "extends": [
-      "stylelint-config-recommended",
-      "stylelint-config-sass-guidelines",
-      "stylelint-config-suitcss",
-      "stylelint-prettier/recommended"
-    ],
-    "plugin": [
-      "stylelint-scss",
-      "stylelint-order"
-    ],
-    "rules": {
-      "no-invalid-position-at-import-rule": null,
-      "selector-pseudo-element-no-unknown": [
-        true,
-        {
-          "ignorePseudoElements": [
-            "v-deep"
-          ]
-        }
-      ],
-      "selector-class-pattern": [
-        "^(?:(?:o|c|u|t|s|is|has|_|js|qa)-)?[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*(?:__[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)?(?:--[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)?(?:\\[.+\\])?$",
-        {
-          "message": "Class names should match the SUIT CSS naming convention"
-        }
-      ],
-      "selector-max-compound-selectors": 5,
-      "max-nesting-depth": 5,
-      "rule-empty-line-before": [
-        "always",
-        {
-          "except": [
-            "after-single-line-comment",
-            "first-nested"
-          ]
-        }
-      ]
-    }
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ],
-  "babel": {
-    "presets": [
-      "@vue/cli-plugin-babel/preset"
-    ],
-    "plugins": [
-      "lodash"
-    ]
-  },
-  "jest": {
-    "preset": "@vue/cli-plugin-unit-jest",
-    "collectCoverage": true,
-    "coverageDirectory": "<rootDir>/.report",
-    "reporters": [
-      "default",
-      "jest-junit"
-    ],
-    "coverageReporters": [
-      "text",
-      "cobertura",
-      "lcov"
-    ],
-    "collectCoverageFrom": [
-      "src/**/*.{js,vue}",
-      "!src/common/plugins/*.js",
-      "!src/**/(router|store|constants|settings|main.dev).js"
-    ],
-    "testMatch": [
-      "<rootDir>/tests/**/?(*.)+(spec|test).[jt]s?(x)"
-    ],
-    "moduleNameMapper": {
-      "axios": "axios/dist/node/axios.cjs",
-      "^@common/(.*)$": "<rootDir>/src/common/$1",
-      "^@destination/(.*)$": "<rootDir>/src/destination/$1",
-      "^@origin/(.*)$": "<rootDir>/src/origin/$1",
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/tests/unit/__mocks__/fileMock.js",
-      "\\.(css|less)$": "<rootDir>/tests/unit/__mocks__/styleMock.js"
-    },
-    "setupFiles": [
-      "<rootDir>/tests/unit/setup.js"
-    ],
-    "transform": {
-      "^.+\\.(js|jsx)$": "babel-jest",
-      "^.+\\.vue$": "vue-jest"
-    }
-  },
-  "jest-junit": {
-    "outputDirectory": "<rootDir>/.report",
-    "outputName": "junit.xml"
+    "@playwright/test": "^1.50.1",
+    "@tailwindcss/vite": "^4.0.7",
+    "@tsconfig/node22": "^22.0.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/lodash": "^4.17.15",
+    "@types/node": "^22.13.4",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/coverage-v8": "^3.0.6",
+    "@vitest/eslint-plugin": "1.1.31",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.4.0",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.20.1",
+    "eslint-plugin-playwright": "^2.2.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "jiti": "^2.4.2",
+    "jsdom": "^26.0.0",
+    "msw": "^2.7.3",
+    "npm-run-all2": "^7.0.2",
+    "prettier": "^3.5.1",
+    "resize-observer-polyfill": "^1.5.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^3.0.5",
+    "vue-tsc": "^2.2.2"
   }
 }

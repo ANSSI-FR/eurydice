@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+body {
+  background-color: var(--p-content-background);
+}
