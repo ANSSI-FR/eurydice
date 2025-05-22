@@ -4,25 +4,25 @@ from typing import Optional
 
 import humanfriendly as hf
 import pytest
+from django.conf import Settings
 from faker import Faker
 
-from eurydice.common import minio
 from eurydice.destination.core import models
 from eurydice.destination.receiver.packet_handler import extractors
+from eurydice.destination.storage import fs
 from eurydice.destination.utils import rehash
 from tests.common.integration import factory as common_factory
 from tests.destination.integration import factory as destination_factory
-from tests.destination.integration.utils import s3 as s3_utils
 
 
 @pytest.mark.django_db()
-def test_transferable_range_extractor_success():
+def test_transferable_range_extractor_success(settings: Settings):
     extractor = extractors.TransferableRangeExtractor()
 
+    transferable = common_factory.TransferableFactory(sha1=None, size=None)
     first_transferable_range_data = b"0" * hf.parse_size("5MiB")
-
     transferable_range = common_factory.TransferableRangeFactory(
-        transferable=common_factory.TransferableFactory(sha1=None, size=None),
+        transferable=transferable,
         byte_offset=0,
         data=first_transferable_range_data,
         is_last=False,
@@ -33,6 +33,7 @@ def test_transferable_range_extractor_success():
     )
 
     extractor.extract(packet)
+    data = fs.read_bytes(transferable)
 
     all_transferables = models.IncomingTransferable.objects.all()
 
@@ -49,8 +50,6 @@ def test_transferable_range_extractor_success():
     )
     assert queried_transferable.finished_at is None
     assert queried_transferable.sha1 is None
-
-    assert s3_utils.multipart_upload_exists(queried_transferable)
 
     final_transferable_range_data = b"0" * hf.parse_size("5KiB")
     final_transferable_sha1 = hashlib.sha1(
@@ -96,17 +95,10 @@ def test_transferable_range_extractor_success():
     assert queried_transferable.finished_at is not None
     assert bytes(queried_transferable.sha1) == final_transferable_sha1.digest()
 
-    response = None
     try:
-        response = minio.client.get_object(
-            bucket_name=queried_transferable.s3_bucket_name,
-            object_name=queried_transferable.s3_object_name,
-        )
-        data = response.read()
+        data = fs.read_bytes(queried_transferable)
     finally:
-        if response:
-            response.close()
-            response.release_conn()
+        fs.delete(queried_transferable)
 
     assert data == first_transferable_range_data + final_transferable_range_data
 
@@ -153,19 +145,13 @@ def test_transferable_range_extractor_success_small_transferable_range(
     )
     assert queried_transferable.finished_at is not None
     assert bytes(queried_transferable.sha1) == transferable_range_digest.digest()
-    assert queried_transferable.s3_upload_parts.count() == 0
+    assert queried_transferable.file_upload_parts.count() == 0
 
-    response = None
     try:
-        response = minio.client.get_object(
-            bucket_name=queried_transferable.s3_bucket_name,
-            object_name=queried_transferable.s3_object_name,
-        )
-        data = response.read()
+
+        data = fs.read_bytes(queried_transferable)
     finally:
-        if response:
-            response.close()
-            response.release_conn()
+        fs.delete(queried_transferable)
 
     assert data == transferable_range_data
 
@@ -313,7 +299,7 @@ def test_transferable_range_extractor_new_transferable_digest_mismatch(
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     "reported_sha1",
-    [b"\x03\xd7\x03,@No\x92\x8b\\\xf2\xa5\xb5\xb4\x06\x02\xd0\t\x19\xc9"],
+    [b"\x03\xd7\x03,@No\x92\x8b\\\xf2\xa5\xb5\xb4\x06\x02\xd0\t\x19\xc8"],
 )
 def test_transferable_range_extractor_existing_transferable_digest_mismatch(
     reported_sha1: bytes,
@@ -353,8 +339,6 @@ def test_transferable_range_extractor_existing_transferable_digest_mismatch(
     assert queried_transferable.finished_at is None
     assert queried_transferable.sha1 is None
 
-    assert s3_utils.multipart_upload_exists(queried_transferable)
-
     final_transferable_range_data = b"0" * hf.parse_size("5KiB")
 
     another_transferable_range = common_factory.TransferableRangeFactory(
@@ -385,8 +369,6 @@ def test_transferable_range_extractor_existing_transferable_digest_mismatch(
 
     assert queried_transferable.state == models.IncomingTransferableState.ERROR
     assert queried_transferable.finished_at is not None
-
-    assert not s3_utils.multipart_upload_exists(queried_transferable)
 
 
 @pytest.mark.django_db()
@@ -436,8 +418,6 @@ def test_transferable_range_extractor_existing_transferable_size_mismatch(
     assert queried_transferable.finished_at is None
     assert queried_transferable.sha1 is None
 
-    assert s3_utils.multipart_upload_exists(queried_transferable)
-
     reported_final_transferable_size = hf.parse_size(reported_transferable_size)
     final_transferable_range_size = (
         hf.parse_size(actual_transferable_size) - first_transferable_range_size
@@ -474,5 +454,3 @@ def test_transferable_range_extractor_existing_transferable_size_mismatch(
 
     assert queried_transferable.state == models.IncomingTransferableState.ERROR
     assert queried_transferable.finished_at is not None
-
-    assert not s3_utils.multipart_upload_exists(queried_transferable)

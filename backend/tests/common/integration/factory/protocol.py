@@ -21,6 +21,7 @@ class TransferableRangeFactory(factory.Factory):
     is_last = factory.Faker("pybool")
     data = factory.Faker("binary", length=1024)
     transferable = factory.SubFactory(TransferableFactory)
+    id = factory.LazyAttribute(lambda self: self.transferable.id)  # noqa: VNE003
 
     _byte_offset = factory.Faker("pyint", max_value=settings.TRANSFERABLE_MAX_SIZE)
 

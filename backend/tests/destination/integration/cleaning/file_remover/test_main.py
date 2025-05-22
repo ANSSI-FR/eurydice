@@ -4,31 +4,32 @@ from unittest import mock
 import pytest
 from django import conf
 from django.utils import timezone
-from minio.error import S3Error
 
-from eurydice.common import minio
 from eurydice.common.utils import signals
-from eurydice.destination.cleaning.s3remover.s3remover import DestinationS3Remover
+from eurydice.destination.cleaning.file_remover.file_remover import (
+    DestinationFileRemover,
+)
 from eurydice.destination.core import models
+from eurydice.destination.storage import fs
 from tests.destination.integration import factory
 
 
 @pytest.mark.django_db()
 def test_select_transferables_to_remove_success_no_transferable():
-    s3remover = DestinationS3Remover()
+    file_remover = DestinationFileRemover()
     with pytest.raises(StopIteration):
-        next(s3remover._select_transferables_to_remove())
+        next(file_remover._select_transferables_to_remove())
 
 
 @pytest.mark.django_db()
 def test_select_transferables_to_remove_success_single_transferable(
     settings: conf.Settings,
 ):
-    settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
+    settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
     finished_at = (
         timezone.now()
-        - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         - datetime.timedelta(seconds=1)
     )
     transferable = factory.IncomingTransferableFactory(
@@ -39,15 +40,15 @@ def test_select_transferables_to_remove_success_single_transferable(
 
     factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
 
-    s3remover = DestinationS3Remover()
-    assert next(s3remover._select_transferables_to_remove()).id == transferable.id
+    file_remover = DestinationFileRemover()
+    assert next(file_remover._select_transferables_to_remove()).id == transferable.id
 
 
 @pytest.mark.django_db()
 def test_select_transferables_to_remove_success_multiple_transferables(
     settings: conf.Settings,
 ):
-    settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
+    settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
     nb_success_transferables = 3
     success_transferable_id = set()
@@ -55,7 +56,7 @@ def test_select_transferables_to_remove_success_multiple_transferables(
     for _ in range(nb_success_transferables):
         finished_at = (
             timezone.now()
-            - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+            - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
             - datetime.timedelta(seconds=1)
         )
         transferable = factory.IncomingTransferableFactory(
@@ -71,15 +72,15 @@ def test_select_transferables_to_remove_success_multiple_transferables(
     )
     created_at = (
         timezone.now()
-        - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         + datetime.timedelta(seconds=1)
     )
-    factory.S3UploadPartFactory(
+    factory.FileUploadPartFactory(
         part_number=1, incoming_transferable=ongoing_transferable, created_at=created_at
     )
 
-    s3remover = DestinationS3Remover()
-    retrieved = {t.id for t in s3remover._select_transferables_to_remove()}
+    file_remover = DestinationFileRemover()
+    retrieved = {t.id for t in file_remover._select_transferables_to_remove()}
     assert retrieved == success_transferable_id
 
 
@@ -87,7 +88,7 @@ def test_select_transferables_to_remove_success_multiple_transferables(
 def test_select_transferables_to_remove_success_and_ongoing_transferables(
     settings: conf.Settings,
 ):
-    settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
+    settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
     nb_ongoing_transferables_to_keep = 2
     nb_ongoing_transferables_to_remove = 4
@@ -97,12 +98,12 @@ def test_select_transferables_to_remove_success_and_ongoing_transferables(
 
     unexpired_date = (
         timezone.now()
-        - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         + datetime.timedelta(seconds=1)
     )
     expired_date = (
         timezone.now()
-        - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         - datetime.timedelta(seconds=1)
     )
 
@@ -111,24 +112,24 @@ def test_select_transferables_to_remove_success_and_ongoing_transferables(
             state=models.IncomingTransferableState.ONGOING,
             created_at=unexpired_date,
         )
-        s3part = factory.S3UploadPartFactory(
+        filepart = factory.FileUploadPartFactory(
             part_number=1,
             incoming_transferable=transferable,
         )
-        s3part.created_at = unexpired_date
-        s3part.save()
+        filepart.created_at = unexpired_date
+        filepart.save()
 
     for _ in range(nb_ongoing_transferables_to_remove):
         transferable = factory.IncomingTransferableFactory(
             state=models.IncomingTransferableState.ONGOING,
             created_at=expired_date,
         )
-        s3part = factory.S3UploadPartFactory(
+        part = factory.FileUploadPartFactory(
             part_number=1,
             incoming_transferable=transferable,
         )
-        s3part.created_at = expired_date
-        s3part.save()
+        part.created_at = expired_date
+        part.save()
         expected_selected_transferable_id.add(transferable.id)
 
     for _ in range(nb_success_transferables_to_keep):
@@ -146,8 +147,8 @@ def test_select_transferables_to_remove_success_and_ongoing_transferables(
         )
         expected_selected_transferable_id.add(transferable.id)
 
-    s3remover = DestinationS3Remover()
-    retrieved = {t.id for t in s3remover._select_transferables_to_remove()}
+    file_remover = DestinationFileRemover()
+    retrieved = {t.id for t in file_remover._select_transferables_to_remove()}
     assert retrieved == expected_selected_transferable_id
 
 
@@ -155,22 +156,19 @@ def test_select_transferables_to_remove_success_and_ongoing_transferables(
 def test_remove_transferable_success(
     caplog: pytest.LogCaptureFixture,
     success_incoming_transferable: models.IncomingTransferable,
+    settings: conf.Settings,
 ):
-    s3remover = DestinationS3Remover()
-    s3remover._remove_transferable(success_incoming_transferable)
+    file_remover = DestinationFileRemover()
+    file_remover._remove_transferable(success_incoming_transferable)
 
     success_incoming_transferable.refresh_from_db()
     assert (
         success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
     )
 
-    with pytest.raises(S3Error) as exc:
-        minio.client.get_object(
-            bucket_name=success_incoming_transferable.s3_bucket_name,
-            object_name=success_incoming_transferable.s3_object_name,
-        )
+    with pytest.raises(FileNotFoundError):
+        fs.read_bytes(success_incoming_transferable)
 
-    assert exc.value.code == "NoSuchKey"
     assert caplog.messages == [
         f"The IncomingTransferable {success_incoming_transferable.id} has been marked "
         f"as {models.IncomingTransferableState.EXPIRED.value}, "
@@ -180,7 +178,7 @@ def test_remove_transferable_success(
 
 @pytest.mark.django_db()
 @mock.patch(
-    "eurydice.common.minio.client.remove_object",
+    "eurydice.destination.storage.fs.delete",
     side_effect=RuntimeError("Oh no!"),
 )
 def test_remove_transferable_error_ensure_atomicity(mocked_remove_object: mock.Mock):
@@ -188,9 +186,9 @@ def test_remove_transferable_error_ensure_atomicity(mocked_remove_object: mock.M
         state=models.IncomingTransferableState.SUCCESS
     )
 
-    s3remover = DestinationS3Remover()
+    file_remover = DestinationFileRemover()
     with pytest.raises(RuntimeError, match="Oh no!"):
-        s3remover._remove_transferable(transferable)
+        file_remover._remove_transferable(transferable)
 
     transferable.refresh_from_db()
     assert transferable.state == models.IncomingTransferableState.SUCCESS
@@ -205,8 +203,8 @@ def test_loop_success_no_transferable(
     boolean_cond: mock.Mock,
 ):
     boolean_cond.side_effect = [True, True, False]
-    s3remover = DestinationS3Remover()
-    s3remover._loop()
+    file_remover = DestinationFileRemover()
+    file_remover._loop()
     assert time_sleep.call_count == 2
 
 
@@ -219,11 +217,11 @@ def test_loop_success_remove_transferable(
     settings: conf.Settings,
     success_incoming_transferable: models.IncomingTransferable,
 ):
-    settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
+    settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
     finished_at = (
         timezone.now()
-        - settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER
+        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         - datetime.timedelta(seconds=1)
     )
 
@@ -236,18 +234,13 @@ def test_loop_success_remove_transferable(
     )
 
     boolean_cond.side_effect = [True, True, False]
-    s3remover = DestinationS3Remover()
-    s3remover._loop()
+    file_remover = DestinationFileRemover()
+    file_remover._loop()
 
     success_incoming_transferable.refresh_from_db()
     assert (
         success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
     )
 
-    with pytest.raises(S3Error) as exc:
-        minio.client.get_object(
-            bucket_name=success_incoming_transferable.s3_bucket_name,
-            object_name=success_incoming_transferable.s3_object_name,
-        )
-
-    assert exc.value.code == "NoSuchKey"
+    with pytest.raises(FileNotFoundError):
+        fs.read_bytes(success_incoming_transferable)

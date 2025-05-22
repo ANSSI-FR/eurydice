@@ -10,7 +10,7 @@ eurydice
 |   │   └── origin/           # origin services
 |   │       ├── api/          # origin API
 |   │       ├── backoffice/   # Django admin interface of the origin
-|   │       ├── cleaning/     # additional clean-up services (dbtrimmer, s3remover)
+|   │       ├── cleaning/     # additional clean-up services (dbtrimmer, file_remover)
 |   |       ├── config/       # configuration of the origin Django project
 |   |       ├── core/         # code common to the "API" and "sender" services of the origin
 |   │       └── sender/       # service sending data packets to lidis

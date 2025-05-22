@@ -16,6 +16,6 @@ def create_user_profile(instance: models.User, created: bool, *args, **kwargs) -
     """
     if created:
         try:
-            instance.user_profile
+            instance.user_profile  # type: ignore
         except models.UserProfile.DoesNotExist:
             models.UserProfile.objects.create(user=instance)

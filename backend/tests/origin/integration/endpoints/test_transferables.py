@@ -1,7 +1,6 @@
 import hashlib
 import math
 from itertools import product
-from typing import Any
 from unittest import mock
 
 import dateutil.parser
@@ -18,28 +17,11 @@ from rest_framework import test
 from rest_framework.authtoken.models import Token
 
 from eurydice.common import enums
-from eurydice.common import minio
 from eurydice.origin.api.views import OutgoingTransferableViewSet
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.core import models
+from eurydice.origin.storage import fs
 from tests.origin.integration import factory as models_factory
-
-
-@pytest.fixture()
-def _s3_bucket(faker: Faker, settings: conf.Settings) -> Any:
-    bucket_name = f"test-{faker.pystr().lower()}"
-    settings.MINIO_BUCKET_NAME = bucket_name
-
-    minio.client.make_bucket(bucket_name=bucket_name)
-
-    yield
-
-    for s3_obj in minio.client.list_objects(bucket_name=bucket_name):
-        minio.client.remove_object(
-            bucket_name=bucket_name, object_name=s3_obj.object_name
-        )
-
-    minio.client.remove_bucket(bucket_name=bucket_name)
 
 
 def _api_client_session_auth(api_client: test.APIClient, user: models.User) -> None:
@@ -243,7 +225,6 @@ class TestOutgoingTransferable:
         assert response.data["count"] == 0
         assert response.data["results"] == []
 
-    @pytest.mark.usefixtures("_s3_bucket")
     @pytest.mark.parametrize(
         ("transferable_size", "transferable_range_size"),
         [
@@ -269,7 +250,7 @@ class TestOutgoingTransferable:
     ):
         """Upload a file to the origin API.
         Assert DB entries are correctly created.
-        Assert the S3 objects contain the correct file.
+        Assert the file contains the correct data.
 
         Args:
             transferable_size (int): size of the random bytes to upload
@@ -297,27 +278,34 @@ class TestOutgoingTransferable:
                 HTTP_METADATA_PATH=file_path,
             )
 
-            data = response.data
+            transferable_data = response.data
 
-            assert dateutil.parser.parse(data["created_at"]) == now
+            assert dateutil.parser.parse(transferable_data["created_at"]) == now
 
-        assert bytes.fromhex(data["sha1"]) == hashlib.sha1(random_bytes).digest()
-        assert data["size"] == len(random_bytes)
-        assert dateutil.parser.parse(data["submission_succeeded_at"]) == now
-        assert data["state"] == enums.OutgoingTransferableState.PENDING.value
-        assert data["user_provided_meta"] == {"Metadata-Path": file_path}
-        assert data["progress"] == 0
-        assert data["bytes_transferred"] == 0
-        assert data["finished_at"] is None
-        assert data["speed"] is None
-        assert data["estimated_finish_date"] is None
+        assert (
+            bytes.fromhex(transferable_data["sha1"])
+            == hashlib.sha1(random_bytes).digest()
+        )
+        assert transferable_data["size"] == len(random_bytes)
+        assert (
+            dateutil.parser.parse(transferable_data["submission_succeeded_at"]) == now
+        )
+        assert (
+            transferable_data["state"] == enums.OutgoingTransferableState.PENDING.value
+        )
+        assert transferable_data["user_provided_meta"] == {"Metadata-Path": file_path}
+        assert transferable_data["progress"] == 0
+        assert transferable_data["bytes_transferred"] == 0
+        assert transferable_data["finished_at"] is None
+        assert transferable_data["speed"] is None
+        assert transferable_data["estimated_finish_date"] is None
 
         outgoing_transferable = models.OutgoingTransferable.objects.prefetch_related(
             Prefetch(
                 "transferable_ranges",
                 queryset=models.TransferableRange.objects.order_by("byte_offset"),
             )
-        ).get(id=data["id"])
+        ).get(id=transferable_data["id"])
 
         if transferable_size == 0:
             expected_transferable_range_count = 1
@@ -334,17 +322,8 @@ class TestOutgoingTransferable:
         # Verify uploaded transferable_ranges
         final_transferable_digest = hashlib.sha1()
         for transferable_range in outgoing_transferable.transferable_ranges.all():
-            response = None
-            try:
-                response = minio.client.get_object(
-                    bucket_name=transferable_range.s3_bucket_name,
-                    object_name=transferable_range.s3_object_name,
-                )
-                final_transferable_digest.update(response.read())
-            finally:
-                if response:
-                    response.close()
-                    response.release_conn()
+            final_transferable_digest.update(fs.read_bytes(transferable_range))
+        assert final_transferable_digest.hexdigest() == transferable_data["sha1"]
 
     def test_create_outgoing_transferable_unauthorized(
         self, faker: Faker, api_client: test.APIClient

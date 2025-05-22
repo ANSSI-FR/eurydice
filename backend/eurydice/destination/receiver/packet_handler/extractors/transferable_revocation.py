@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from eurydice.common import protocol
 from eurydice.destination.core import models
-from eurydice.destination.receiver.packet_handler import s3_helpers
 from eurydice.destination.receiver.packet_handler.extractors import base
 
 logger = logging.getLogger(__name__)
@@ -27,9 +26,6 @@ def _create_revoked_transferable(revocation: protocol.TransferableRevocation) ->
         sha1=revocation.transferable_sha1,
         bytes_received=0,
         size=None,
-        s3_bucket_name="",
-        s3_object_name="",
-        s3_upload_id="",
         user_profile=user_profile,
         user_provided_meta={},
         created_at=now,
@@ -42,7 +38,6 @@ def _revoke_transferable(transferable: models.IncomingTransferable) -> None:
     """Mark a transferable as REVOKED in the database and remove its data from the
     storage.
     """
-    s3_helpers.abort_multipart_upload(transferable)
     transferable.mark_as_revoked()
 
 

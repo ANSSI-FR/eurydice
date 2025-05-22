@@ -11,12 +11,6 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1", "api"]),
     CSRF_TRUSTED_ORIGINS=(list, []),
     SECRET_KEY=(str, "thxdd#i*^!nt-1s_md@q-&"),
-    MINIO_ENABLED=(bool, True),
-    MINIO_SECURE=(bool, False),
-    MINIO_BUCKET_NAME=(str, "eurydice"),
-    MINIO_ENDPOINT=(str, ""),
-    MINIO_ACCESS_KEY=(str, ""),
-    MINIO_SECRET_KEY=(str, ""),
     TRANSFERABLE_STORAGE_DIR=(str, "/home/eurydice/data"),
     # This value should be kept in sync with the TRANSFERABLE_MAX_SIZE
     # constant defined in the frontend/src/origin/constants.js file
@@ -321,30 +315,13 @@ if LOG_TO_FILE:
         "level": "DEBUG",
     }
 
-# Minio
-
-MINIO_ENDPOINT = env.str("MINIO_ENDPOINT")
-MINIO_ACCESS_KEY = env.str("MINIO_ACCESS_KEY")
-MINIO_SECRET_KEY = env.str("MINIO_SECRET_KEY")
-MINIO_SECURE = env("MINIO_SECURE")
-MINIO_BUCKET_NAME = env("MINIO_BUCKET_NAME")
-MINIO_ENABLED = env("MINIO_ENABLED")
-# Following setting is overridden in destination and origin settings
-MINIO_EXPIRATION_DAYS = 9
-
-# If minio is disabled, use filesystem
 TRANSFERABLE_STORAGE_DIR = env.str("TRANSFERABLE_STORAGE_DIR")
 
-if MINIO_ENABLED:
-    if not MINIO_ENDPOINT:
-        raise django.core.exceptions.ImproperlyConfigured(
-            "The MINIO_ENDPOINT environment variable must not be empty"
-        )
-else:
-    if not TRANSFERABLE_STORAGE_DIR:
-        raise django.core.exceptions.ImproperlyConfigured(
-            "The TRANSFERABLE_STORAGE_DIR environment variable must not be empty"
-        )
+
+if not TRANSFERABLE_STORAGE_DIR:
+    raise django.core.exceptions.ImproperlyConfigured(
+        "The TRANSFERABLE_STORAGE_DIR environment variable must not be empty"
+    )
 
 # drf-spectacular
 # https://drf-spectacular.readthedocs.io/
@@ -388,8 +365,6 @@ SPECTACULAR_SETTINGS["DESCRIPTION"] = (
 # Eurydice
 
 # The maximum size in bytes of a Transferable i.e. a file submitted to be transferred.
-# The limit value of this parameter is set by Minio
-# https://docs.min.io/docs/minio-server-limits-per-tenant.html.
 TRANSFERABLE_MAX_SIZE = humanfriendly.parse_size(
     env("TRANSFERABLE_MAX_SIZE"), binary=False
 )

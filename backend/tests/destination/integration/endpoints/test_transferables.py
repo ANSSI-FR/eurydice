@@ -1,43 +1,33 @@
 import base64
 import contextlib
-import io
 from typing import Dict
 
 import dateutil.parser
 import pytest
+from django.conf import Settings
 from django.urls import reverse
 from faker import Faker
-from minio.error import S3Error
 from rest_framework import status
 from rest_framework import test
 
-from eurydice.common import minio
 from eurydice.destination.core import models
+from eurydice.destination.storage import fs
 from tests.destination.integration import factory
 
 
 @contextlib.contextmanager
-def s3_stored_incoming_transferable():
+def fs_stored_incoming_transferable():
     obj = factory.IncomingTransferableFactory(
         state=models.IncomingTransferableState.SUCCESS
     )
     data = b"Lorem ipsum dolor sit amet"
 
     try:
-        minio.client.make_bucket(bucket_name=obj.s3_bucket_name)
-        minio.client.put_object(
-            bucket_name=obj.s3_bucket_name,
-            object_name=obj.s3_object_name,
-            data=io.BytesIO(data),
-            length=len(data),
-        )
+        fs.write_bytes(obj, data)
 
         yield obj
     finally:
-        minio.client.remove_object(
-            bucket_name=obj.s3_bucket_name, object_name=obj.s3_object_name
-        )
-        minio.client.remove_bucket(bucket_name=obj.s3_bucket_name)
+        fs.delete(obj)
 
 
 @pytest.mark.django_db()
@@ -207,12 +197,12 @@ class TestIncomingTransferable:
 
     @pytest.mark.parametrize("is_multipart", [True, False])
     def test_destroy_incoming_transferable_success(
-        self, is_multipart: bool, api_client: test.APIClient
+        self, is_multipart: bool, api_client: test.APIClient, settings: Settings
     ) -> None:
-        with s3_stored_incoming_transferable() as obj:
+        with fs_stored_incoming_transferable() as obj:
             if is_multipart:
                 for i in range(1, 3):
-                    factory.S3UploadPartFactory(
+                    factory.FileUploadPartFactory(
                         part_number=i, incoming_transferable=obj
                     )
 
@@ -222,12 +212,8 @@ class TestIncomingTransferable:
 
             assert response.status_code == status.HTTP_204_NO_CONTENT
 
-            with pytest.raises(S3Error) as error:
-                minio.client.get_object(
-                    bucket_name=obj.s3_bucket_name, object_name=obj.s3_object_name
-                )
-
-            assert error.value.code == "NoSuchKey"
+            with pytest.raises(FileNotFoundError):
+                fs.read_bytes(obj)
 
             obj.refresh_from_db()
             assert obj.state == models.IncomingTransferableState.REMOVED
@@ -359,18 +345,15 @@ class TestIncomingTransferable:
         assert response.status_code == expected_http_status_code
         assert response.data["detail"].code == expected_error_detail_code
 
-    def test_download_incoming_transferable_s3_object_not_found(
+    def test_download_incoming_transferable_file_not_found(
         self,
         api_client: test.APIClient,
     ) -> None:
-        with factory.s3_stored_incoming_transferable(
+        with factory.fs_stored_incoming_transferable(
             data=b"",
             state=models.IncomingTransferableState.SUCCESS,
         ) as transferable:
-            minio.client.remove_object(
-                bucket_name=transferable.s3_bucket_name,
-                object_name=transferable.s3_object_name,
-            )
+            fs.delete(transferable)
 
             api_client.force_login(user=transferable.user_profile.user)
             url = reverse("transferable-download", kwargs={"pk": transferable.id})
@@ -411,7 +394,7 @@ class TestIncomingTransferable:
     ) -> None:
         data = faker.binary(1024)
 
-        with factory.s3_stored_incoming_transferable(
+        with factory.fs_stored_incoming_transferable(
             data=data,
             size=len(data),
             name=filename,
@@ -458,14 +441,7 @@ class TestIncomingTransferable:
                 state=models.IncomingTransferableState.SUCCESS,
             )
             data = b"Lorem ipsum dolor sit amet"
-
-            minio.client.make_bucket(bucket_name=obj.s3_bucket_name)
-            minio.client.put_object(
-                bucket_name=obj.s3_bucket_name,
-                object_name=obj.s3_object_name,
-                data=io.BytesIO(data),
-                length=len(data),
-            )
+            fs.write_bytes(obj, data)
 
         api_client.force_login(user=user_profile.user)
         url = reverse("transferable-destroy-all")

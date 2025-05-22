@@ -17,7 +17,7 @@ def _is_associated_user(user: models.User) -> bool:
         Whether this user is associated
     """
     return (
-        models.User.objects.filter(
+        models.User.objects.filter(  # type: ignore
             id=user.id,
             user_profile__associated_user_profile_id__isnull=False,
         )

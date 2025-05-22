@@ -54,9 +54,6 @@ class IncomingTransferableState(models.TextChoices):
         return self in self.get_final_states()
 
 
-S3_UPLOAD_ID_LENGTH = 98
-
-
 def _build_progress_annotation() -> expressions.Case:
     """Build the annotation for computing the progress when querying the Transferable(s).
 
@@ -94,7 +91,8 @@ def _build_expires_at_annotation() -> expressions.Case:
             | ~models.Q(state=IncomingTransferableState.SUCCESS),
             then=None,
         ),
-        default=models.F("finished_at") + settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER,
+        default=models.F("finished_at")
+        + settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER,
         output_field=models.DateTimeField(null=True),
     )
 
@@ -160,26 +158,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         null=True,
         default=None,
     )
-    s3_bucket_name = common_models.S3BucketNameField(
-        verbose_name=_("S3 bucket name"),
-        help_text=_(
-            "The name of the S3 bucket containing the file corresponding to this "
-            "IncomingTransferable"
-        ),
-    )
-    s3_object_name = common_models.S3ObjectNameField(
-        verbose_name=_("S3 object name"),
-        help_text=_(
-            "The name of the S3 object holding the data corresponding to this "
-            "IncomingTransferable"
-        ),
-    )
-    s3_upload_id = models.CharField(
-        validators=[validators.MinLengthValidator(S3_UPLOAD_ID_LENGTH)],
-        max_length=S3_UPLOAD_ID_LENGTH,
-        verbose_name=_("S3 upload ID"),
-        help_text=_("The ID for the S3 multipart upload of this IncomingTransferable."),
-    )
+
     user_profile = models.ForeignKey(
         "eurydice_destination_core.UserProfile",
         on_delete=models.RESTRICT,
@@ -212,7 +191,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
     )
 
     def _clear_multipart_data(self) -> None:
-        """Delete S3 Upload Parts from the database for this IncomingTransferable.
+        """Delete FileUploadParts from the database for this IncomingTransferable.
 
         This method is meant to clear entries from the database that point to parts of
         a multipart upload for a transferable that has no data anymore.
@@ -220,7 +199,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         This method should not be called if the state of the IncomingTransferable
         is SUCCESS.
         """
-        destination_models.S3UploadPart.objects.filter(
+        destination_models.FileUploadPart.objects.filter(
             incoming_transferable=self
         ).delete()
 
@@ -228,7 +207,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         self,
         state: IncomingTransferableState,
         save: bool = True,
-        remove_s3_uploaded_parts: bool = False,
+        remove_file_uploaded_parts: bool = False,
     ) -> None:
         """Mark the IncomingTransferable as `state` and set its finish date to now.
 
@@ -236,16 +215,16 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             state: the IncomingTransferableState the IncomingTransferable must be
                 set to.
             save: boolean indicating whether changed fields should be saved or not.
-            remove_s3_uploaded_parts: boolean indicating whether associated
-                S3UploadParts should be deleted or not.
+            remove_file_uploaded_parts: boolean indicating whether associated
+                FileUploadParts should be deleted or not.
+
         """
         self.state = state
         self.finished_at = timezone.now()
 
         if save:
             self.save(update_fields=["state", "finished_at"])
-
-        if remove_s3_uploaded_parts:
+        if remove_file_uploaded_parts:
             self._clear_multipart_data()
 
     def mark_as_error(self, save: bool = True) -> None:
@@ -258,7 +237,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         self._mark_as_finished(  # pytype: disable=wrong-arg-types
             IncomingTransferableState.ERROR,
             save,
-            remove_s3_uploaded_parts=True,
+            remove_file_uploaded_parts=True,
         )
 
     def mark_as_revoked(self, save: bool = True) -> None:
@@ -271,7 +250,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         self._mark_as_finished(  # pytype: disable=wrong-arg-types
             IncomingTransferableState.REVOKED,
             save,
-            remove_s3_uploaded_parts=True,
+            remove_file_uploaded_parts=True,
         )
 
     def mark_as_success(self, save: bool = True) -> None:
@@ -284,7 +263,6 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         self._mark_as_finished(  # pytype: disable=wrong-arg-types
             IncomingTransferableState.SUCCESS,
             save,
-            remove_s3_uploaded_parts=False,
         )
 
     def mark_as_expired(self, save: bool = True) -> None:
@@ -298,7 +276,6 @@ class IncomingTransferable(common_models.AbstractBaseModel):
 
         if save:
             self.save(update_fields=["state"])
-
         self._clear_multipart_data()
 
     def mark_as_removed(self, save: bool = True) -> None:
@@ -312,7 +289,6 @@ class IncomingTransferable(common_models.AbstractBaseModel):
 
         if save:
             self.save(update_fields=["state"])
-
         self._clear_multipart_data()
 
     class Meta:
@@ -326,11 +302,6 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             models.Index(fields=["created_at", "state"], name="created_at_state_idx"),
         ]
         constraints = [
-            models.UniqueConstraint(
-                name="%(app_label)s_%(class)s_s3_bucket_name_s3_object_name",
-                fields=["s3_bucket_name", "s3_object_name"],
-                condition=~models.Q(s3_bucket_name="", s3_object_name=""),
-            ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_finished_at_state",
                 check=(

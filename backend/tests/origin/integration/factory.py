@@ -1,25 +1,21 @@
 import contextlib
 import datetime
-import io
 from typing import Any
 from typing import ContextManager
 from typing import List
 from typing import Optional
 
-import django.contrib.auth.models
 import django.utils.timezone
 import factory
-import faker.utils.decorators
 from django.conf import settings
 from django.db import models
 from django.db.models import signals
 
 from eurydice.common import enums
-from eurydice.common import minio
-from eurydice.common.models import fields
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.core import models as origin_models
 from eurydice.origin.core import signals as eurydice_signals
+from eurydice.origin.storage import fs
 from tests import utils
 
 POSITIVE_SMALL_INTEGER_FIELD_MAX_VALUE: int = 32767
@@ -161,27 +157,6 @@ class TransferableRangeFactory(factory.django.DjangoModelFactory):
         "future_datetime", tzinfo=django.utils.timezone.get_current_timezone()
     )
 
-    _s3_bucket_name = factory.Faker(
-        "pystr",
-        min_chars=fields.S3BucketNameField.MIN_LENGTH,
-        max_chars=fields.S3BucketNameField.MAX_LENGTH,
-    )
-    _s3_object_name = factory.Faker(
-        "pystr",
-        min_chars=fields.S3ObjectNameField.MIN_LENGTH,
-        max_chars=fields.S3ObjectNameField.MAX_LENGTH,
-    )
-
-    @factory.lazy_attribute
-    @faker.utils.decorators.slugify
-    def s3_bucket_name(self) -> str:
-        return self._s3_bucket_name
-
-    @factory.lazy_attribute
-    @faker.utils.decorators.slugify
-    def s3_object_name(self) -> str:
-        return self._s3_object_name
-
     @classmethod
     def _create(cls, model_class: models.Model, *args, **kwargs) -> Any:
         if (
@@ -207,10 +182,6 @@ class TransferableRangeFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = origin_models.TransferableRange
-        exclude = (
-            "_s3_bucket_name",
-            "_s3_object_name",
-        )
 
 
 class TransferableRevocationFactory(factory.django.DjangoModelFactory):
@@ -229,54 +200,31 @@ class TransferableRevocationFactory(factory.django.DjangoModelFactory):
 
 
 @contextlib.contextmanager
-def s3_stored_transferable_range(
+def stored_transferable_range(
     data: bytes, **kwargs
 ) -> ContextManager[origin_models.TransferableRange]:
     obj = TransferableRangeFactory(**kwargs)
 
     try:
-        minio.client.make_bucket(bucket_name=obj.s3_bucket_name)
-        minio.client.put_object(
-            bucket_name=obj.s3_bucket_name,
-            object_name=obj.s3_object_name,
-            data=io.BytesIO(data),
-            length=len(data),
-        )
-
+        fs.write_bytes(obj, data)
         yield obj
     finally:
-        minio.client.remove_object(
-            bucket_name=obj.s3_bucket_name, object_name=obj.s3_object_name
-        )
-        minio.client.remove_bucket(bucket_name=obj.s3_bucket_name)
+        fs.delete(obj)
 
 
 @contextlib.contextmanager
-def s3_stored_transferable_ranges(
-    data: bytes, count: int, s3_bucket_name: str, **kwargs
+def stored_transferable_ranges(
+    data: bytes, count: int, **kwargs
 ) -> ContextManager[List[origin_models.TransferableRange]]:
-    kwargs["s3_bucket_name"] = s3_bucket_name
 
     transferable_ranges = [TransferableRangeFactory(**kwargs) for _ in range(count)]
-
     try:
-        minio.client.make_bucket(bucket_name=s3_bucket_name)
         for transferable_range in transferable_ranges:
-            minio.client.put_object(
-                bucket_name=s3_bucket_name,
-                object_name=transferable_range.s3_object_name,
-                data=io.BytesIO(data),
-                length=len(data),
-            )
-
+            fs.write_bytes(transferable_range, data)
         yield transferable_ranges
     finally:
         for transferable_range in transferable_ranges:
-            minio.client.remove_object(
-                bucket_name=s3_bucket_name,
-                object_name=transferable_range.s3_object_name,
-            )
-        minio.client.remove_bucket(bucket_name=s3_bucket_name)
+            fs.delete(transferable_range)
 
 
 __all__ = (
@@ -285,6 +233,6 @@ __all__ = (
     "OutgoingTransferableFactory",
     "TransferableRangeFactory",
     "TransferableRevocationFactory",
-    "s3_stored_transferable_range",
-    "s3_stored_transferable_ranges",
+    "stored_transferable_range",
+    "stored_transferable_ranges",
 )

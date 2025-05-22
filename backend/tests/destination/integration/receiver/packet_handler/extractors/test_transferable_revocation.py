@@ -13,7 +13,6 @@ from eurydice.destination.receiver.packet_handler.extractors import (
 )
 from tests.common.integration import factory as common_factory
 from tests.destination.integration import factory as destination_factory
-from tests.destination.integration.utils import s3 as s3_utils
 
 
 @pytest.mark.django_db()
@@ -113,7 +112,6 @@ def test_extract_transferable_revocation_success_ongoing_transferable(
     assert (
         ongoing_incoming_transferable.state == models.IncomingTransferableState.REVOKED
     )
-    assert not s3_utils.multipart_upload_exists(ongoing_incoming_transferable)
     assert [
         f"The IncomingTransferable {ongoing_incoming_transferable.id} has been marked "
         "as REVOKED and its data removed from the storage (if it had any)."
@@ -142,25 +140,3 @@ def test_extract_transferable_revocation_error_invalid_transferable_state(
         f"Only {models.IncomingTransferableState.ONGOING.value} transferables "
         f"can be revoked."
     ] == caplog.messages
-
-
-@pytest.mark.django_db()
-def test_extract_transferable_revocation_error_s3(
-    caplog: pytest.LogCaptureFixture,
-):
-    incoming_transferable = destination_factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.ONGOING
-    )
-    packet = protocol.OnTheWirePacket(
-        transferable_revocations=[
-            common_factory.TransferableRevocationFactory(
-                transferable_id=incoming_transferable.id
-            )
-        ]
-    )
-
-    extractors.TransferableRevocationExtractor().extract(packet)
-
-    assert "Cannot process revocation" in caplog.text
-    incoming_transferable.refresh_from_db()
-    assert incoming_transferable.state == models.IncomingTransferableState.ONGOING

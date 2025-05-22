@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+from pathlib import Path
 from typing import List
 from unittest import mock
 
@@ -12,7 +13,6 @@ from faker import Faker
 
 from eurydice.common import enums
 from eurydice.common import exceptions
-from eurydice.common import minio
 from eurydice.common import protocol
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.core import models
@@ -20,8 +20,8 @@ from eurydice.origin.sender.packet_generator.fillers import (
     transferable_range as transferable_range_filler,
 )
 from eurydice.origin.sender.user_selector import WeightedRoundRobinUserSelector
+from eurydice.origin.storage import fs
 from tests.origin.integration import factory as origin_factory
-from tests.origin.integration.utils import s3
 
 
 @pytest.mark.django_db()
@@ -89,54 +89,46 @@ def test__build_protocol_transferable_no_sha1():
 
 
 @pytest.mark.django_db()
-def test__delete_objects_from_s3__empty_list(faker: Faker) -> None:
-    transferable_range_filler._delete_objects_from_s3([])
+def test__delete_objects_from_fs__empty_list(faker: Faker) -> None:
+    transferable_range_filler._delete_objects_from_fs([])
 
 
 @pytest.mark.django_db()
-def test__delete_objects_from_s3(faker: Faker) -> None:
+def test__delete_objects_from_fs(faker: Faker, settings: Settings) -> None:
     data = faker.binary(length=10)
-    bucket_name = f"test-{faker.pystr().lower()}"
+    folder_path = Path(settings.TRANSFERABLE_STORAGE_DIR)
     with (
-        origin_factory.s3_stored_transferable_ranges(
+        origin_factory.stored_transferable_ranges(
             data,
             2,
-            bucket_name,
-        ) as transferable_ranges_in_same_bucket,
-        origin_factory.s3_stored_transferable_range(data) as other_transferable_range,
+        ) as transferable_ranges,
+        origin_factory.stored_transferable_range(data) as other_transferable_range,
     ):
-        transferable_range_filler._delete_objects_from_s3(
-            transferable_ranges_in_same_bucket + [other_transferable_range],
+        transferable_range_filler._delete_objects_from_fs(
+            transferable_ranges + [other_transferable_range],
         )
 
-        for transferable_range in transferable_ranges_in_same_bucket + [
-            other_transferable_range
-        ]:
-            assert not s3.object_exists(
-                bucket=transferable_range.s3_bucket_name,
-                key=transferable_range.s3_object_name,
-            )
+        for transferable_range in transferable_ranges + [other_transferable_range]:
+            file_path = folder_path / str(transferable_range.id)
+            assert not file_path.exists()
 
 
 @pytest.mark.django_db()
 def test__get_transferable_range_data_success(faker: Faker):
     data = faker.binary(length=10)
-    with origin_factory.s3_stored_transferable_range(data) as transferable_range:
-        s3_data = transferable_range_filler._get_transferable_range_data(
+    with origin_factory.stored_transferable_range(data) as transferable_range:
+        fs_data = transferable_range_filler._get_transferable_range_data(
             transferable_range
         )
-    assert hashlib.sha1(s3_data).digest() == hashlib.sha1(data).digest()
+    assert hashlib.sha1(fs_data).digest() == hashlib.sha1(data).digest()
 
 
 @pytest.mark.django_db()
 def test__get_transferable_range_data_missing(faker: Faker):
     data = faker.binary(length=10)
-    with origin_factory.s3_stored_transferable_range(data) as transferable_range:
-        minio.client.remove_object(
-            bucket_name=transferable_range.s3_bucket_name,
-            object_name=transferable_range.s3_object_name,
-        )
-        with pytest.raises(exceptions.S3ObjectNotFoundError):
+    with origin_factory.stored_transferable_range(data) as transferable_range:
+        fs.delete(transferable_range)
+        with pytest.raises(exceptions.FileNotFoundError):
             transferable_range_filler._get_transferable_range_data(transferable_range)
 
 
@@ -206,16 +198,16 @@ def test__fetch_next_transferable_ranges(
 
 @pytest.mark.django_db()
 class TestTransferableRangeFiller:
-    def test_fill_success(self, faker: Faker):
+    def test_fill_success(self, faker: Faker, settings: Settings):
         """
         Assert filler fills the packet with the correct transferable range
         Also assert that the TransferableRange's status was updated correctly.
         """
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
-
+        folder_path = Path(settings.TRANSFERABLE_STORAGE_DIR)
         data = faker.binary(length=10)
-        with origin_factory.s3_stored_transferable_range(
+        with origin_factory.stored_transferable_range(
             data, transfer_state=origin_enums.TransferableRangeTransferState.PENDING
         ) as transferable_range:
             a_date = timezone.now()
@@ -223,11 +215,9 @@ class TestTransferableRangeFiller:
                 filler.fill(packet=packet)
 
             transferable_range.refresh_from_db()
+            file_path = folder_path / str(transferable_range.id)
 
-            assert not s3.object_exists(
-                bucket=transferable_range.s3_bucket_name,
-                key=transferable_range.s3_object_name,
-            )
+            assert not file_path.exists()
 
         assert len(packet.transferable_ranges) == 1
         assert packet.transferable_ranges[0].data == data
@@ -273,10 +263,10 @@ class TestTransferableRangeFiller:
         assert packet.transferable_ranges == []
 
     @mock.patch(
-        "eurydice.origin.sender.packet_generator.fillers.transferable_range._delete_objects_from_s3"  # noqa: E501
+        "eurydice.origin.sender.packet_generator.fillers.transferable_range._delete_objects_from_fs"  # noqa: E501
     )
     def test_fill_cancel_revoked_transferable_ranges(
-        self, mocked_delete_objects_from_s3: mock.Mock
+        self, mocked_delete_objects_from_fs: mock.Mock
     ):
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
@@ -305,7 +295,7 @@ class TestTransferableRangeFiller:
             transferable_range.transfer_state
             == origin_enums.TransferableRangeTransferState.CANCELED
         )
-        mocked_delete_objects_from_s3.assert_called_once()
+        mocked_delete_objects_from_fs.assert_called_once()
 
         assert packet.transferable_ranges == []
 
@@ -313,11 +303,11 @@ class TestTransferableRangeFiller:
         "eurydice.origin.sender.packet_generator.fillers.transferable_range._get_transferable_range_data"  # noqa: E501
     )
     @mock.patch(
-        "eurydice.origin.sender.packet_generator.fillers.transferable_range._delete_objects_from_s3"  # noqa: E501
+        "eurydice.origin.sender.packet_generator.fillers.transferable_range._delete_objects_from_fs"  # noqa: E501
     )
     def test_transferable_range_filler_fill_packet_size_too_large(
         self,
-        patched_delete_objects_from_s3: mock.MagicMock,
+        patched_delete_objects_from_fs: mock.MagicMock,
         patched_next_tr_data: mock.MagicMock,
         settings: Settings,
     ):
@@ -341,7 +331,7 @@ class TestTransferableRangeFiller:
             b"It was a bright cold day in April, and the clocks were striking thirteen"
         )
 
-        patched_delete_objects_from_s3.return_value = None
+        patched_delete_objects_from_fs.return_value = None
 
         # also mock the user selector
         mocked_user_selector = mock.create_autospec(WeightedRoundRobinUserSelector)
@@ -367,21 +357,18 @@ class TestTransferableRangeFiller:
             packet.transferable_ranges[0].transferable.id
             == first_user_ranges[0].outgoing_transferable.id
         )
-        patched_delete_objects_from_s3.assert_called_once()
+        patched_delete_objects_from_fs.assert_called_once()
         mocked_user_selector.get_next_user.assert_called_once()
 
-    def test_fill_missing_s3_object(self, faker: Faker):
+    def test_fill_missing_file(self, faker: Faker):
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
 
         data = faker.binary(length=10)
-        with origin_factory.s3_stored_transferable_range(
+        with origin_factory.stored_transferable_range(
             data, transfer_state=origin_enums.TransferableRangeTransferState.PENDING
         ) as transferable_range:
-            minio.client.remove_object(
-                bucket_name=transferable_range.s3_bucket_name,
-                object_name=transferable_range.s3_object_name,
-            )
+            fs.delete(transferable_range)
             a_date = timezone.now()
             with freezegun.freeze_time(a_date):
                 filler.fill(packet=packet)
@@ -400,16 +387,17 @@ class TestTransferableRangeFiller:
 
 @pytest.mark.django_db()
 class TestFIFOTransferableRangeFiller:
-    def test_fill_success(self, faker: Faker):
+    def test_fill_success(self, faker: Faker, settings: Settings):
         """
         Assert filler fills the packet with the correct transferable range.
         Also assert that the TransferableRange's status was updated correctly.
         """
         filler = transferable_range_filler.FIFOTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
+        folder_path = Path(settings.TRANSFERABLE_STORAGE_DIR)
 
         data = faker.binary(length=10)
-        with origin_factory.s3_stored_transferable_range(
+        with origin_factory.stored_transferable_range(
             data, transfer_state=origin_enums.TransferableRangeTransferState.PENDING
         ) as transferable_range:
             a_date = timezone.now()
@@ -417,11 +405,8 @@ class TestFIFOTransferableRangeFiller:
                 filler.fill(packet=packet)
 
             transferable_range.refresh_from_db()
-
-            assert not s3.object_exists(
-                bucket=transferable_range.s3_bucket_name,
-                key=transferable_range.s3_object_name,
-            )
+            file_path = folder_path / str(transferable_range.id)
+            assert not file_path.exists()
 
         assert len(packet.transferable_ranges) == 1
         assert packet.transferable_ranges[0].data == data

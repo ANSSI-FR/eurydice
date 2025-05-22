@@ -168,6 +168,52 @@ incoming_transferable = spectacular_utils.extend_schema_view(
         ],
         tags=[_("Transferring files")],
     ),
+    delete=custom_spectacular.extend_schema(
+        operation_id="delete-all-transferable",
+        summary=_("Delete all transferables"),
+        description=_((settings.DOCS_PATH / "delete-all-transferables.md").read_text()),
+        responses={
+            status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
+                description=_("No transferable data remains on the storage"),
+                response=types.OpenApiTypes.STR,
+                examples=[
+                    spectacular_utils.OpenApiExample(
+                        _("No file to remove"),
+                        value={
+                            "response": "Aucun fichier n'a été supprimé",
+                        },
+                    ),
+                    spectacular_utils.OpenApiExample(
+                        _("1 file to remove"),
+                        value={
+                            "response": "1 fichier a été supprimé",
+                        },
+                    ),
+                    spectacular_utils.OpenApiExample(
+                        _("Multiple files to remove"),
+                        value={
+                            "response": "2 fichiers ont été supprimés",
+                        },
+                    ),
+                ],
+            ),
+            status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
+            status.HTTP_404_NOT_FOUND: docs.NotFoundResponse,
+            status.HTTP_409_CONFLICT: docs.create_open_api_response(
+                exceptions.UnsuccessfulTransferableError
+            ),
+        },
+        code_samples=[
+            {
+                "lang": "bash",
+                "label": "cURL",
+                "source": (
+                    settings.DOCS_PATH / "delete-all-transferables.sh"
+                ).read_text(),
+            }
+        ],
+        tags=[_("Transferring files")],
+    ),
     download=custom_spectacular.extend_schema(
         operation_id="download-transferable",
         summary=_("Retrieve a transferable"),

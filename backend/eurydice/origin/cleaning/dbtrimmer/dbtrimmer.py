@@ -33,9 +33,8 @@ class OriginDBTrimmer(repeated_task.RepeatedTask):
         """Delete old transferables in a final state.
 
         It is safe to remove the OutgoingTransferables in a final state,
-        since transaction atomicity guaranties their associated S3 objects do not
-        exist anymore.
-        """
+        since transaction atomicity guaranties their associated files do not
+        exist anymore."""
         logger.info("DBTrimmer is running")
 
         remove_created_before = (

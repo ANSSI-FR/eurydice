@@ -26,12 +26,6 @@ from eurydice.common.config.settings.base import MAX_PAGE_SIZE
 from eurydice.common.config.settings.base import METADATA_HEADER_PREFIX
 from eurydice.common.config.settings.base import METRICS_SLIDING_WINDOW
 from eurydice.common.config.settings.base import MIDDLEWARE
-from eurydice.common.config.settings.base import MINIO_ACCESS_KEY
-from eurydice.common.config.settings.base import MINIO_BUCKET_NAME
-from eurydice.common.config.settings.base import MINIO_ENABLED
-from eurydice.common.config.settings.base import MINIO_ENDPOINT
-from eurydice.common.config.settings.base import MINIO_SECRET_KEY
-from eurydice.common.config.settings.base import MINIO_SECURE
 from eurydice.common.config.settings.base import PAGE_SIZE
 from eurydice.common.config.settings.base import REMOTE_USER_HEADER
 from eurydice.common.config.settings.base import (
@@ -62,9 +56,9 @@ env = environ.Env(
     PACKET_RECEIVER_PORT=(int, 65432),
     PACKET_RECEIVER_TIMEOUT=(float, 0.1),
     EXPECT_PACKET_EVERY=(str, "5min"),
-    S3REMOVER_EXPIRE_TRANSFERABLES_AFTER=(str, "7days"),
-    S3REMOVER_RUN_EVERY=(str, "1min"),
-    S3REMOVER_POLL_EVERY=(str, "200ms"),
+    FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER=(str, "7days"),
+    FILE_REMOVER_RUN_EVERY=(str, "1min"),
+    FILE_REMOVER_POLL_EVERY=(str, "200ms"),
     DBTRIMMER_TRIM_TRANSFERABLES_AFTER=(str, "14days"),
     DBTRIMMER_RUN_EVERY=(str, "6h"),
     DBTRIMMER_POLL_EVERY=(str, "200ms"),
@@ -138,18 +132,18 @@ EXPECT_PACKET_EVERY = datetime.timedelta(
 
 # The duration after which incoming transferable data is removed and the corresponding
 # object in database is marked as EXPIRED.
-S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(
-    seconds=hf.parse_timespan(env("S3REMOVER_EXPIRE_TRANSFERABLES_AFTER"))
+FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(
+    seconds=hf.parse_timespan(env("FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER"))
 )
 
-# How often the s3remover is run.
-S3REMOVER_RUN_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("S3REMOVER_RUN_EVERY"))
+# How often the file_remover is run.
+FILE_REMOVER_RUN_EVERY = datetime.timedelta(
+    seconds=hf.parse_timespan(env("FILE_REMOVER_RUN_EVERY"))
 )
 
-# How often the s3remover polls for SIGINT.
-S3REMOVER_POLL_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("S3REMOVER_POLL_EVERY"))
+# How often the file_remover polls for SIGINT.
+FILE_REMOVER_POLL_EVERY = datetime.timedelta(
+    seconds=hf.parse_timespan(env("FILE_REMOVER_POLL_EVERY"))
 )
 
 # The duration after which transferables are deleted from the database.
@@ -166,5 +160,3 @@ DBTRIMMER_RUN_EVERY = datetime.timedelta(
 DBTRIMMER_POLL_EVERY = datetime.timedelta(
     seconds=hf.parse_timespan(env("DBTRIMMER_POLL_EVERY"))
 )
-
-MINIO_EXPIRATION_DAYS = S3REMOVER_EXPIRE_TRANSFERABLES_AFTER.days + 1

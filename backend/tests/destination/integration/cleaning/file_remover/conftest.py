@@ -11,7 +11,7 @@ from tests.destination.integration import factory as destination_factory
 def success_incoming_transferable(
     faker: Faker,
 ) -> Iterator[models.IncomingTransferable]:
-    with destination_factory.s3_stored_incoming_transferable(
+    with destination_factory.fs_stored_incoming_transferable(
         data=faker.binary(length=1024), state=models.IncomingTransferableState.SUCCESS
     ) as obj:
         yield obj

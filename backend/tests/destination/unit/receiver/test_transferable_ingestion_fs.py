@@ -1,5 +1,4 @@
 import hashlib
-from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -16,9 +15,7 @@ from eurydice.destination.utils import rehash
 @pytest.mark.django_db()
 def test__abort_ingestion(
     settings: Settings,
-    tmp_path: Path,
 ):
-    settings.TRANSFERABLE_STORAGE_DIR = tmp_path
     transferable = factory.IncomingTransferableFactory(
         state=IncomingTransferableState.ONGOING
     )
@@ -31,9 +28,7 @@ def test__abort_ingestion(
 @pytest.mark.django_db()
 def test__update_incoming_transferable(
     settings: Settings,
-    tmp_path: Path,
 ):
-    settings.TRANSFERABLE_STORAGE_DIR = tmp_path
     data = b"hello "
     sha1 = hashlib.sha1()
     sha1.update(data)

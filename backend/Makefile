@@ -8,7 +8,6 @@ SRC_DIR := eurydice
 PACKAGES := common origin destination
 TESTS_DIR := tests
 CODE_DIRS := $(SRC_DIR) $(TESTS_DIR)
-DUMMY_MINIO_ENV_VARIABLES := MINIO_ENDPOINT="" MINIO_ACCESS_KEY="" MINIO_SECRET_KEY="" TRANSFERABLE_STORAGE_DIR="/tmp/"
 DUMMY_DB_ENV_VARIABLES := DB_NAME="" DB_USER="" DB_PASSWORD="" DB_HOST="" DB_PORT=""
 DUMMY_LIDIS_ENV_VARIABLES := LIDIS_HOST="127.0.0.1" LIDIS_PORT="1"
 
@@ -52,9 +51,9 @@ run-sender: ## Run the eurydice sender.
 run-receiver: ## Run the eurydice receiver.
 	python -m eurydice.destination.receiver
 
-.PHONY: run-destination-s3remover
-run-destination-s3remover: ## Run the eurydice destination s3remover cleaning tool.
-	python -m eurydice.destination.cleaning.s3remover
+.PHONY: run-destination-file-remover
+run-destination-file-remover: ## Run the eurydice destination file_remover cleaning tool.
+	python -m eurydice.destination.cleaning.file_remover
 
 .PHONY: run-destination-dbtrimmer
 run-destination-dbtrimmer: ## Run the eurydice destination dbtrimmer cleaning tool.
@@ -85,10 +84,11 @@ migrations-check: ## Check that models are not changed without the appropriate m
 migrate: ## Apply migrations.
 	python manage.py migrate
 
+
 .PHONY: collectstatic
 collectstatic: ## Collect static files.
-	USER_ASSOCIATION_TOKEN_SECRET_KEY="" MINIO_ENABLED=false \
-	$(DUMMY_MINIO_ENV_VARIABLES) $(DUMMY_DB_ENV_VARIABLES) $(DUMMY_LIDIS_ENV_VARIABLES) \
+	USER_ASSOCIATION_TOKEN_SECRET_KEY="" \
+	$(DUMMY_DB_ENV_VARIABLES) $(DUMMY_LIDIS_ENV_VARIABLES) \
 	python manage.py collectstatic --no-input --clear --ignore rest_framework
 
 # ------------------------------------------------------------------------------
@@ -128,11 +128,10 @@ mypy: ## Run MyPy static type check across the code.
 		DS=eurydice.$$dir.config.settings.base \
 		USER_ASSOCIATION_TOKEN_SECRET_KEY="" \
 		DJANGO_ENV=TEST \
-		MINIO_ENABLED=false \
-		$(DUMMY_MINIO_ENV_VARIABLES) \
 		$(DUMMY_DB_ENV_VARIABLES) \
 		$(DUMMY_LIDIS_ENV_VARIABLES) \
 		mypy --check eurydice/$$dir \
+		--cache-dir=/dev/null \
 		|| EURYDICE_MYPY_ERROR=1; \
 	done;\
 	if [ "$$EURYDICE_MYPY_ERROR" = '1' ] ; then exit 1; fi
@@ -143,7 +142,7 @@ pytype: ## Run Pytype static type check across the code.
 
 .PHONY: bandit
 bandit: ## Run a security oriented static analysis of the code.
-	bandit -r --ini setup.cfg
+	bandit -r -c pyproject.toml $(SRC_DIR)
 
 .PHONY: safety
 safety:	## Check installed dependencies for known security vulnerabilities.

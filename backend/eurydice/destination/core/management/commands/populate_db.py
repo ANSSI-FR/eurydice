@@ -24,10 +24,10 @@ class Command(base.BaseCommand):  # noqa: D101
             help="Number of IncomingTransferables to create.",
         )
         parser.add_argument(
-            "--s3-uploaded-parts",
+            "--file-uploaded-parts",
             type=int,
             default=10000,
-            help="Number of S3UploadedParts to create.",
+            help="Number of FileUploadedParts to create.",
         )
 
     def handle(self, *args: Any, **options: str) -> None:
@@ -46,7 +46,7 @@ class Command(base.BaseCommand):  # noqa: D101
                 )
             )
 
-            destination_factory.S3UploadPartFactory.create_batch(
-                options["s3_uploaded_parts"],
+            destination_factory.FileUploadPartFactory.create_batch(
+                options["file_uploaded_parts"],
                 incoming_transferable=factory.Iterator(incoming_transferables),
             )

@@ -1,15 +1,12 @@
 import hashlib
 import logging
-import types
 from typing import Tuple
 
 import humanfriendly as hf
-from django.conf import settings
 
 import eurydice.common.protocol as protocol
 import eurydice.destination.core.models as models
 import eurydice.destination.receiver.packet_handler.extractors.base as base_extractor
-import eurydice.destination.receiver.transferable_ingestion as transferable_ingestion
 import eurydice.destination.receiver.transferable_ingestion_fs as transferable_ingestion_fs  # noqa: E501
 import eurydice.destination.utils.rehash as rehash
 
@@ -78,9 +75,6 @@ def _get_or_create_transferable(
             "bytes_received": 0,
             "size": transferable_range.transferable.size,
             "sha1": None,
-            "s3_bucket_name": settings.MINIO_BUCKET_NAME,
-            "s3_object_name": str(transferable_range.transferable.id),
-            "s3_upload_id": "",
             "user_provided_meta": transferable_range.transferable.user_provided_meta,
         },
     )
@@ -186,6 +180,7 @@ def _assert_transferable_sha1_is_consistent(
         FinalDigestMismatchError: when the two digests don't match
 
     """
+
     if computed_sha1.digest() != transferable_range.transferable.sha1:
         # in final TransferableRange the sha1 attribute should always be present
         expected_sha1_hex = transferable_range.transferable.sha1.hex()  # type: ignore
@@ -222,7 +217,7 @@ def _extract_data(
 def _prepare_ingestion(
     source: protocol.TransferableRange,
     destination: models.IncomingTransferable,
-) -> transferable_ingestion.PendingIngestionData:
+) -> transferable_ingestion_fs.PendingIngestionData:
     """
     Given a TransferableRange (the source), make sure it is valid and ready to be
     incorporated to the associated IncomingTransferable (the destination).
@@ -241,7 +236,7 @@ def _prepare_ingestion(
         _assert_transferable_size_is_consistent(source, destination)
         _assert_transferable_sha1_is_consistent(source, computed_sha1)
 
-    return transferable_ingestion.PendingIngestionData(
+    return transferable_ingestion_fs.PendingIngestionData(
         data=data,
         sha1=computed_sha1,
         eof=source.is_last,
@@ -259,12 +254,6 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
 
     transferable = _get_or_create_transferable(transferable_range)
 
-    ingestion: types.ModuleType
-    if settings.MINIO_ENABLED:
-        ingestion = transferable_ingestion
-    else:
-        ingestion = transferable_ingestion_fs
-
     if transferable.state == models.IncomingTransferableState.ERROR:
         logger.info(
             f"IncomingTransferable {transferable.id} has state "
@@ -279,7 +268,7 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
             destination=transferable,
         )
 
-        ingestion.ingest(transferable, to_ingest)
+        transferable_ingestion_fs.ingest(transferable, to_ingest)
 
         logger.info(
             f"Successfully extracted and ingested TransferableRange for "
@@ -290,7 +279,7 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
             logger.info(f"IncomingTransferable {transferable.id} fully received")
 
     except Exception:
-        ingestion.abort_ingestion(transferable)
+        transferable_ingestion_fs.abort_ingestion(transferable)
         logger.exception(
             f"Encountered an error when trying to extract and ingest "
             f"transferable range for transferable {transferable.id}"

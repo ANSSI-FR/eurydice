@@ -16,45 +16,31 @@ class TransferableRange(common_models.AbstractBaseModel):
     a user.
     """
 
-    byte_offset = models.PositiveBigIntegerField(
+    byte_offset: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
         validators=(validators.MaxValueValidator(settings.TRANSFERABLE_MAX_SIZE),),
         verbose_name=_("Byte offset"),
         help_text=_("The start position of this range in the associated Transferable"),
     )
-    size = models.PositiveIntegerField(
+    size: models.PositiveIntegerField = models.PositiveIntegerField(
         validators=(validators.MaxValueValidator(settings.TRANSFERABLE_RANGE_SIZE),),
         verbose_name=_("Size in bytes"),
         help_text=_("The size in bytes of this TransferableRange"),
     )
-    s3_bucket_name = common_models.S3BucketNameField(
-        verbose_name=_("S3 bucket name"),
-        help_text=_(
-            "The name of the S3 bucket containing the file chunk "
-            "corresponding to this TransferableRange"
-        ),
-    )
-    s3_object_name = common_models.S3ObjectNameField(
-        verbose_name=_("S3 object name"),
-        help_text=_(
-            "The name of the S3 object holding the data "
-            "corresponding to this TransferableRange"
-        ),
-    )
-    transfer_state = models.CharField(
+    transfer_state: models.CharField = models.CharField(
         max_length=11,
         choices=enums.TransferableRangeTransferState.choices,
         default=enums.TransferableRangeTransferState.PENDING,
         verbose_name=_("Transfer state"),
         help_text=_("The state of the transfer for this OutgoingTransferable"),
     )
-    finished_at = models.DateTimeField(
+    finished_at: models.DateTimeField = models.DateTimeField(
         null=True,
         verbose_name=_("Transfer finish date"),
         help_text=_(
             "A timestamp indicating the end of the transfer of the Transferable"
         ),
     )
-    outgoing_transferable = models.ForeignKey(
+    outgoing_transferable: models.ForeignKey = models.ForeignKey(
         "eurydice_origin_core.OutgoingTransferable",
         on_delete=models.CASCADE,
         related_name="transferable_ranges",
@@ -137,10 +123,6 @@ class TransferableRange(common_models.AbstractBaseModel):
     class Meta:
         db_table = "eurydice_transferable_ranges"
         constraints = [
-            models.UniqueConstraint(
-                name="%(app_label)s_%(class)s_s3_bucket_name_s3_object_name",
-                fields=["s3_bucket_name", "s3_object_name"],
-            ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_finished_at_transfer_state",
                 check=(

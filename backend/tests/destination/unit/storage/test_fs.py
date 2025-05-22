@@ -1,64 +1,52 @@
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 from django.conf import Settings
 
-import eurydice.destination.storage.fs as fs
+from eurydice.destination.storage import fs
 from tests.destination.integration import factory
 
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    ("storage_dir", "bucket_name", "object_name", "expected_path"),
+    ("storage_dir", "transferable_id", "expected_path"),
     [
         (
             "storage_dir",
-            "bucket_name",
-            "object_name",
-            Path("storage_dir/bucket_name/object_name"),
+            UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a"),
+            Path("storage_dir/a8fcc4dd-4448-42f0-b678-a99ae8a8189a"),
         ),
-        ("1", "2", "3", Path("1/2/3")),
-        ("/", "2", "3", Path("/2/3")),
+        (
+            "1",
+            UUID("fc7a8f27-cdca-486d-b55d-7a9d1e1b2fe7"),
+            Path("1/fc7a8f27-cdca-486d-b55d-7a9d1e1b2fe7"),
+        ),
+        (
+            "/",
+            UUID("c49190cd-16dc-4027-953d-d5c1a92f8560"),
+            Path("/c49190cd-16dc-4027-953d-d5c1a92f8560"),
+        ),
     ],
 )
 def test_fs_file_path(
     settings: Settings,
     storage_dir: str,
-    bucket_name: str,
-    object_name: str,
+    transferable_id: str,
     expected_path: Path,
 ):
     settings.TRANSFERABLE_STORAGE_DIR = storage_dir
 
-    obj = factory.IncomingTransferableFactory(
-        s3_bucket_name=bucket_name,
-        s3_object_name=object_name,
-    )
+    obj = factory.IncomingTransferableFactory(id=transferable_id)
     assert expected_path == fs.file_path(obj)
+    fs.delete(obj)
 
 
 @pytest.mark.django_db()
-@pytest.mark.parametrize(
-    ("bucket_name", "object_name"),
-    [
-        (
-            "bucket_name",
-            "object_name",
-        ),
-        ("2", "3"),
-    ],
-)
-def test_fs_delete(
-    settings: Settings,
-    tmp_path: Path,
-    bucket_name: str,
-    object_name: str,
-):
-    settings.TRANSFERABLE_STORAGE_DIR = tmp_path
+def test_fs_delete():
 
     obj = factory.IncomingTransferableFactory(
-        s3_bucket_name=bucket_name,
-        s3_object_name=object_name,
+        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
     )
 
     file_path = fs.file_path(obj)
@@ -68,3 +56,44 @@ def test_fs_delete(
     fs.delete(obj)
 
     assert not file_path.exists()
+
+
+@pytest.mark.django_db()
+def test_fs_write_bytes():
+    obj = factory.IncomingTransferableFactory(
+        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
+    )
+
+    fs.write_bytes(obj, b"test data")
+
+    assert fs.file_path(obj).exists()
+    assert fs.file_path(obj).read_text() == "test data"
+    fs.delete(obj)
+
+
+@pytest.mark.django_db()
+def test_fs_append_bytes():
+    obj = factory.IncomingTransferableFactory(
+        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189b")
+    )
+
+    fs.append_bytes(obj, b"test")
+    fs.append_bytes(obj, b" data")
+
+    assert fs.file_path(obj).exists()
+    assert fs.file_path(obj).read_text() == "test data"
+    fs.delete(obj)
+
+
+@pytest.mark.django_db()
+def test_fs_read_bytes():
+
+    obj = factory.IncomingTransferableFactory(
+        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
+    )
+
+    file_path = fs.file_path(obj)
+    file_path.write_bytes(b"test data")
+
+    assert fs.read_bytes(obj) == b"test data"
+    fs.delete(obj)

@@ -8,6 +8,6 @@ if __name__ == "__main__":
     )
     django.setup()
 
-    from eurydice.destination.cleaning.s3remover import s3remover
+    from eurydice.destination.cleaning.file_remover import file_remover
 
-    s3remover.DestinationS3Remover().start()
+    file_remover.DestinationFileRemover().start()

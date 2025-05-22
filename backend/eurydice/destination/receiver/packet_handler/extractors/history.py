@@ -4,12 +4,10 @@ import uuid
 from typing import Dict
 from typing import Set
 
-from django.conf import settings
 from django.utils import timezone
 
 from eurydice.common import protocol
 from eurydice.destination.core import models
-from eurydice.destination.receiver.packet_handler import s3_helpers
 from eurydice.destination.receiver.packet_handler.extractors import base
 from eurydice.destination.storage import fs
 
@@ -76,10 +74,8 @@ def _process_ongoing_transferables(ongoing_transferable_ids: UUIDSet) -> None:
     """
     for transferable_id in ongoing_transferable_ids:
         transferable = models.IncomingTransferable.objects.get(id=transferable_id)
-        if settings.MINIO_ENABLED:
-            s3_helpers.abort_multipart_upload(transferable)
-        else:
-            fs.delete(transferable)
+
+        fs.delete(transferable)
         transferable.mark_as_error()
 
         logger.error(
@@ -107,9 +103,6 @@ def _process_missed_transferables(
             sha1=history_entry_map[missed_id].sha1,
             bytes_received=0,
             size=None,
-            s3_bucket_name="",
-            s3_object_name="",
-            s3_upload_id="",
             user_profile=user_profile,
             user_provided_meta=history_entry_map[missed_id].user_provided_meta or {},
             created_at=now,

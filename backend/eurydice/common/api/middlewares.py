@@ -56,7 +56,7 @@ class AuthenticatedUserHeaderMiddleware:
         """
         response = self.get_response(request)
         if request.user.is_authenticated:
-            response.headers["Authenticated-User"] = request.user.username
+            response.headers["Authenticated-User"] = request.user.get_username()
 
         return response
 

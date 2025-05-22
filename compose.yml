@@ -6,8 +6,6 @@ x-backend-common-envs: &backend-common-envs
   DJANGO_ENV: DEV
   DEBUG: "True"
   DJANGO_MANAGEPY_MIGRATE: "off"
-  MINIO_ACCESS_KEY: minio
-  MINIO_SECRET_KEY: miniominio
   TZ: "Europe/Paris"
   SECURE_COOKIES: "false"
   USER_ASSOCIATION_TOKEN_SECRET_KEY: "Baby shark for 36 bytes dudududududu"
@@ -58,18 +56,12 @@ x-frontend: &frontend
 
 x-common-origin-envs: &common-origin-envs
   DB_HOST: db-origin
-  MINIO_ENABLED: true
-  MINIO_ENDPOINT: minio:9000
-  MINIO_BUCKET_NAME: eurydice-origin
-  # Maximum object size per operation allowed by minio (50 TiB)
-  # https://min.io/docs/minio/linux/operations/checklists/thresholds.html#minio-server-limits
+  TRANSFERABLE_STORAGE_DIR: /tmp/eurydice-data/origin/
   TRANSFERABLE_MAX_SIZE: 54975581388800
 
 x-common-destination-envs: &common-destination-envs
   DB_HOST: db-destination
-  MINIO_ENABLED: false
   TRANSFERABLE_STORAGE_DIR: /tmp/eurydice-data/
-  MINIO_BUCKET_NAME: eurydice-destination
 
 x-common-auth-envs: &common-auth-envs
   REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: "true"
@@ -143,37 +135,6 @@ services:
       traefik.http.routers.dashboard.rule: Host(`traefik.localhost`)
       traefik.http.routers.dashboard.service: api@internal
 
-  minio:
-    image: minio/minio:RELEASE.2023-08-23T10-07-06Z
-    networks:
-      - eurydice
-    environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: miniominio
-    volumes:
-      - minio-data:/data
-      - minio-config:/config
-    ports:
-      - 9000:9000
-    command:
-      - server
-      - /data
-      - --config-dir
-      - /config/
-      - --certs-dir
-      - /config/.certs/
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.minio.rule: Host(`minio.localhost`)
-    healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "curl http://127.0.0.1:9000/minio/health/live"
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 2s
-
   ################ Origin Services ################
   frontend-origin:
     <<: *frontend
@@ -193,10 +154,9 @@ services:
     depends_on:
       db-origin:
         condition: service_started
-      minio:
-        condition: service_healthy
     volumes:
       - backend-origin-logs:/var/log/app
+      - origin-data-storage:/tmp/eurydice-data/origin
     environment:
       <<: [*backend-common-envs, *common-origin-envs, *common-auth-envs]
       SECRET_KEY: GhSZiXkmYyty
@@ -233,18 +193,16 @@ services:
       #       the developement environment
       backend-origin:
         condition: service_healthy
-      minio:
-        condition: service_healthy
       lidis:
         condition: service_started
     volumes:
       - sender-logs:/var/log/app
+      - origin-data-storage:/tmp/eurydice-data/origin
     extra_hosts:
       - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
     environment:
       <<: [*backend-common-envs, *common-origin-envs]
       DB_HOST: db-origin
-      MINIO_BUCKET_NAME: eurydice-origin
       LIDIS_HOST: "lidis.docker.host"
       LIDIS_PORT: "5000"
       SENDER_RANGE_FILLER_CLASS: "UserRotatingTransferableRangeFiller"
@@ -330,8 +288,6 @@ services:
       #       the developement environment
       backend-destination:
         condition: service_healthy
-      minio:
-        condition: service_healthy
     volumes:
       - receiver-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
@@ -366,7 +322,7 @@ services:
       - make
       - run-destination-dbtrimmer
 
-  s3remover:
+  file-remover:
     <<: *backend
     depends_on:
       # NOTE: we await for the backend container to be healthy
@@ -374,26 +330,22 @@ services:
       #       the developement environment
       backend-destination:
         condition: service_healthy
-      minio:
-        condition: service_healthy
     volumes:
-      - s3remover-logs:/var/log/app
+      - file-remover-logs:/var/log/app
       - destination-data-storage:/tmp/eurydice-data
     environment:
       <<: [*backend-common-envs, *common-destination-envs]
-      S3REMOVER_EXPIRE_TRANSFERABLES_AFTER: "1hour"
-      S3REMOVER_RUN_EVERY: "30s"
-      S3REMOVER_POLL_EVERY: "200ms"
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: "1hour"
+      FILE_REMOVER_RUN_EVERY: "30s"
+      FILE_REMOVER_POLL_EVERY: "200ms"
     command:
       - make
-      - run-destination-s3remover
+      - run-destination-file-remover
 
   backend-destination:
     <<: *backend
     depends_on:
       db-destination:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     volumes:
       - backend-destination-logs:/var/log/app
@@ -467,8 +419,6 @@ volumes:
   db-origin-logs:
   db-destination-data:
   db-destination-logs:
-  minio-data:
-  minio-config:
   pgadmin:
   backend-origin-logs:
   sender-logs:
@@ -476,7 +426,8 @@ volumes:
   backend-destination-logs:
   receiver-logs:
   dbtrimmer-destination-logs:
-  s3remover-logs:
+  file-remover-logs:
+  origin-data-storage:
   destination-data-storage:
 
 networks:

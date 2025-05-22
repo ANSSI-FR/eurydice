@@ -143,8 +143,6 @@ def test_ranges_forbidden_inserts(faker: Faker):
         models.TransferableRange.objects.create(
             byte_offset=0,
             size=218,
-            s3_bucket_name="postgres <3",
-            s3_object_name="potatoe",
             transfer_state=enums.TransferableRangeTransferState.TRANSFERRED,
             finished_at=faker.future_datetime(tzinfo=timezone.get_current_timezone()),
             outgoing_transferable=transferable,

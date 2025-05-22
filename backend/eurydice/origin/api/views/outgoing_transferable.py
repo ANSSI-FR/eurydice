@@ -22,7 +22,6 @@ from rest_framework import throttling
 from rest_framework import viewsets
 
 from eurydice.common import enums
-from eurydice.common import minio
 from eurydice.common.api import pagination
 from eurydice.common.api import permissions
 from eurydice.origin.api import exceptions
@@ -32,6 +31,7 @@ from eurydice.origin.api import serializers
 from eurydice.origin.api import utils
 from eurydice.origin.api.docs import decorators as documentation
 from eurydice.origin.core import models
+from eurydice.origin.storage import fs
 
 logger = logging.getLogger(__name__)
 
@@ -41,41 +41,48 @@ _UNKNOWN_FILEOBJ_LENGTH = -1
 _hash_func = hashlib.sha1
 
 
+def _storage_exists(transferable_range: models.TransferableRange) -> bool:
+    return fs.file_path(transferable_range).parent.is_dir()
+
+
+def __create_storage_folder(transferable_range: models.TransferableRange) -> None:
+    """
+    Create the OutgoingTransferable folder to store data.
+    """
+    file_path = fs.file_path(transferable_range)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.debug("Folder for OutgoingTransferables created.")
+
+
 def _store_transferable_range(
     stream_partition: utils.StreamPartition,
     transferable: models.OutgoingTransferable,
 ) -> None:
-    """Upload TransferableRange's data to minio and update the transferable's size.
+    """Upload TransferableRange's data to fs and update the transferable's size.
 
     Args:
         stream_partition: StreamPartition to read the TransferableRange's data from
         transferable: The associated OutgoingTransferable django model instance
 
     """
-    transferable_range_id = uuid.uuid4()
-    s3_object_name = str(transferable_range_id)
 
+    transferable_range_id = uuid.uuid4()
     file_obj = cast(BinaryIO, stream_partition)
-    minio.client.put_object(
-        bucket_name=settings.MINIO_BUCKET_NAME,
-        object_name=s3_object_name,
-        data=file_obj,
-        length=_UNKNOWN_FILEOBJ_LENGTH,
-        part_size=settings.MULTIPART_PART_SIZE,
-        num_parallel_uploads=_UPLOAD_FILEOBJ_MAX_CONCURRENCY,
-    )
 
     transferable_range = models.TransferableRange(
         id=transferable_range_id,
         outgoing_transferable=transferable,
         byte_offset=transferable.bytes_received,
-        size=stream_partition.bytes_read,
-        s3_bucket_name=settings.MINIO_BUCKET_NAME,
-        s3_object_name=s3_object_name,
     )
 
+    if not _storage_exists(transferable_range):
+        __create_storage_folder(transferable_range)
+
+    fs.append_bytes(transferable_range, file_obj.read())
+
+    transferable_range.size = stream_partition.bytes_read
     transferable.bytes_received += transferable_range.size
-    transferable.save(update_fields=["bytes_received"])
+    transferable.save(update_fields=["bytes_received", "size"])
     transferable_range.save()
 
 
@@ -99,7 +106,7 @@ def _finalize_transferable(
 def _perform_create_empty_transferable_range(
     transferable: models.OutgoingTransferable,
 ) -> None:
-    """Create a transferable range of size 0 in the database and in the S3 storage."""
+    """Create a transferable range of size 0 in the database and in the filesystem."""
     empty_partition = utils.StreamPartition(lambda *args: b"", 0, b"")
     _store_transferable_range(empty_partition, transferable)
     _finalize_transferable(transferable, _hash_func())
@@ -144,16 +151,6 @@ def _perform_create_transferable_ranges(
                     read=transferable.bytes_received, expected=transferable.size
                 )
 
-            # The _get_content_length function already checks that the contents of
-            # requests containing a "Content-Length" header are smaller than the max
-            # allowed size. According to the HTTP semantics, requests containing a
-            # "Transfer-Encoding" header might not expose a "Content-Length" one;
-            # so in these cases we can't validate the size before having integrally
-            # read the request's payload. As a last ressort we can at least perform
-            # this check while partitioning  the transferable: if the current byte
-            # offset is beyond the maximum allowed size there's no need to read more
-            # data since minio won't accept such a big file.
-            # See: https://datatracker.ietf.org/doc/html/rfc9110#section-8.6-4
             if transferable.bytes_received > settings.TRANSFERABLE_MAX_SIZE:
                 raise exceptions.RequestEntityTooLargeError
 
@@ -211,9 +208,9 @@ def _create_transferable_ranges(
     """
     Create TransferableRanges and update Transferable progressively.
 
-    Upload TransferableRange's data to minio and save to DB.
+    Write TransferableRange's data to filesystem and save to DB.
     Creates an empty TransferableRange with corresponding empty
-    minio object if stream is None.
+    file if stream is None.
 
     Args:
         stream: the stream to read the OutgoingTransferable from
@@ -257,14 +254,14 @@ def _create_transferable(request: drf_request.Request) -> models.OutgoingTransfe
     logger.debug("Create OutgoingTransferable database object.")
     transferable: models.OutgoingTransferable = (
         models.OutgoingTransferable.objects.create(
-            user_profile=user.user_profile,
+            user_profile=user.user_profile,  # type: ignore
             user_provided_meta=user_provided_meta,
             name=filename,
             size=content_length,
         )
     )
 
-    logger.debug("Start file upload to MinIO.")
+    logger.debug("Start writing file to fs.")
     try:
         _create_transferable_ranges(stream, transferable)
     except exceptions.InconsistentContentLengthError:
@@ -283,7 +280,7 @@ def _create_transferable(request: drf_request.Request) -> models.OutgoingTransfe
     except Exception:
         _revoke_transferable_unexpected_exception(transferable)
         raise
-    logger.debug("File successfully uploaded to MinIO.")
+    logger.debug("File successfully saved.")
 
     if not transferable.submission_succeeded:
         raise exceptions.TransferableNotSuccessfullySubmittedError

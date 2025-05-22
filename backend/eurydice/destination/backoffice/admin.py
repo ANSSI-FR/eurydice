@@ -30,10 +30,6 @@ class UserAdmin(auth_admin.UserAdmin):
     list_display = auth_admin.UserAdmin.list_display + ("last_access",)
 
 
-class S3UploadPartInline(common_admin.BaseTabularInline):
-    model = models.S3UploadPart
-
-
 def _get_help_texts(*field_names: str) -> Dict[str, str]:
     fields = serializers.IncomingTransferableSerializer().fields
     return {name: fields[name].help_text for name in field_names}
@@ -45,7 +41,6 @@ class IncomingTransferableAdmin(common_admin.BaseModelAdmin):
     list_filter = ("state",)
     search_fields = ("id", "name", "state", "user_profile__user__username")
 
-    inlines = (S3UploadPartInline,)
     fields = (
         "name",
         "hex_sha1",
@@ -54,9 +49,6 @@ class IncomingTransferableAdmin(common_admin.BaseModelAdmin):
         "state",
         "user",
         "user_provided_meta",
-        "s3_bucket_name",
-        "s3_object_name",
-        "s3_upload_id",
         "created_at",
         "finished_at",
         "progress",

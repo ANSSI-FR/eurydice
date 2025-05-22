@@ -46,7 +46,10 @@ class SHA1Field(models.BinaryField):
 
 
 class S3BucketNameField(models.CharField):
-    """A field to store the name of a S3 bucket."""
+    """A field to store the name of a S3 bucket.
+
+    Deprecated: Only used in old migrations
+    """
 
     MIN_LENGTH: int = 3
     MAX_LENGTH: int = 63
@@ -62,7 +65,10 @@ class S3BucketNameField(models.CharField):
 
 
 class S3ObjectNameField(models.CharField):
-    """A field to store the name of a S3 object located in a S3 bucket."""
+    """A field to store the name of a S3 object located in a S3 bucket.
+
+    Deprecated: Only used in old migrations
+    """
 
     MIN_LENGTH: int = 1
     MAX_LENGTH: int = 255

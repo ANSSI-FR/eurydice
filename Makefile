@@ -84,8 +84,6 @@ install-dev: ## install local environments & dependencies
 
 .PHONY: prod-config
 prod-config: ## bootstrap the config folders for the prod stack
-	mkdir -p data/minio-data
-	mkdir -p data/minio-conf
 	mkdir -p data/db-data
 	mkdir -p data/db-logs
 	mkdir -p data/filebeat-logs

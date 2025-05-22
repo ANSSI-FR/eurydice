@@ -29,7 +29,8 @@ class IsTransferableOwner(permissions.IsAuthenticated):  # type: ignore
             # Using _default_manager, see:
             # https://docs.djangoproject.com/fr/2.2/topics/db/managers/#django.db.models.Model._default_manager
             ._default_manager.filter(
-                id=obj.id, user_profile__user__id=request.user.id
+                id=obj.id,
+                user_profile__user__id=request.user.id,  # type: ignore[union-attr]
             ).exists()
         ):
             return True
@@ -50,6 +51,8 @@ class CanViewMetrics(permissions.IsAuthenticated):  # type: ignore
 
     def has_permission(self, request: drf_request.Request, view: views.APIView) -> bool:
         """Returns true if and only if the current user is allowed to view metrics."""
-        return super().has_permission(request, view) and request.user.has_perm(
+        return super().has_permission(
+            request, view
+        ) and request.user.has_perm(  # type: ignore[union-attr]
             "eurydice_common_permissions.view_rolling_metrics"
         )

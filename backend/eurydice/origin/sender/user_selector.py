@@ -51,13 +51,13 @@ class WeightedRoundRobinUserSelector:
         Returns:
             The user selected by the weighted round robin algorithm.
         """
-
         if not self._pending_users_in_round:
             self._reset_current_user()
         elif self._current_user is None:
             self._select_arbitrary_pending_user()
         elif (
-            self._round_counter < self._current_user.user_profile.priority
+            self._round_counter
+            < self._current_user.user_profile.priority  # type: ignore
             and self._current_user.id in self._pending_users_in_round
         ):
             self._reselect_current_user()
@@ -78,7 +78,9 @@ class WeightedRoundRobinUserSelector:
         """Selects the user with pending TransferableRanges with the lowest UUID."""
 
         self._round_counter = 0
-        self._current_user = models.User.objects.select_related("user_profile").get(
+        self._current_user = models.User.objects.select_related(
+            "user_profile"
+        ).get(  # type: ignore
             id=self._pending_users_in_round.pop(0)
         )
 
@@ -92,11 +94,13 @@ class WeightedRoundRobinUserSelector:
         """Select the user that comes after the current one."""
 
         self._round_counter = 0
-        self._current_user = models.User.objects.select_related("user_profile").get(
+        self._current_user = models.User.objects.select_related(
+            "user_profile"
+        ).get(  # type: ignore
             id=self._select_next_pending_user_id()
         )
 
-        self._pending_users_in_round.remove(self._current_user.id)
+        self._pending_users_in_round.remove(self._current_user.id)  # type: ignore
 
     def _select_next_pending_user_id(self) -> UUID:
         """Select the user ID that comes right after the current one, sorted by ID."""

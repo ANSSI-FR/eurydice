@@ -1,7 +1,3 @@
 # Safety Security and License Configuration file
 security:
     ignore-vulnerabilities:
-        75744:
-          reason: no fix available yet
-        75976:
-          reason: no fix available yet

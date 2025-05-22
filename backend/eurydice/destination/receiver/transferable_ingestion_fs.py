@@ -40,8 +40,8 @@ def _create_storage_file(incoming_transferable: models.IncomingTransferable) -> 
     file_path = fs.file_path(incoming_transferable)
     logger.debug("Creating empty file on filesystem for multipart upload.")
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(b"")
+    fs.write_bytes(incoming_transferable, b"")
+
     logger.debug("File created.")
 
 
@@ -52,10 +52,8 @@ def _store_range(
     """
     Add data to an existing Multi-Part Upload.
     """
-    file_path = fs.file_path(incoming_transferable)
     logger.debug("Start writing data to filesystem.")
-    with open(file_path, "ab") as f:
-        f.write(data)
+    fs.append_bytes(incoming_transferable, data)
     logger.debug("Data successfully written to filesystem.")
 
 
@@ -103,14 +101,14 @@ def ingest(
         _update_incoming_transferable(incoming_transferable, to_ingest)
         _store_range(incoming_transferable, to_ingest.data)
 
-        # keep track of parts so that s3remover can clear broken ONGOING transferables
+        # keep track of parts so that file_remover
+        # can clear broken ONGOING transferables
         if not to_ingest.eof:
-            logger.debug("Create S3UploadPart object in database.")
+            logger.debug("Create FileUploadPart object in database.")
             part_number = ceil(
                 incoming_transferable.bytes_received // len(to_ingest.data)
             )
-            models.S3UploadPart.objects.create(
-                etag=bytes.fromhex("00" * 16),
+            models.FileUploadPart.objects.create(
                 incoming_transferable=incoming_transferable,
                 part_number=part_number,
             )

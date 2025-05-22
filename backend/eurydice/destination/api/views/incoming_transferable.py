@@ -1,8 +1,10 @@
 import base64
 import logging
 from typing import Union
+from typing import cast
 
-from django.conf import settings
+from django import http
+from django.contrib.auth.models import AnonymousUser
 from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework import decorators
@@ -13,15 +15,12 @@ from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from eurydice.common import exceptions
-from eurydice.common import minio
 from eurydice.common.api import pagination
 from eurydice.common.api import permissions
 from eurydice.destination.api import exceptions as api_exceptions
 from eurydice.destination.api import filters as destination_filters
 from eurydice.destination.api import negotiation
 from eurydice.destination.api import permissions as destination_permissions
-from eurydice.destination.api import responses
 from eurydice.destination.api import serializers
 from eurydice.destination.api.docs import decorators as documentation
 from eurydice.destination.core import models
@@ -38,32 +37,12 @@ _TRANSFERABLE_STATE_TO_ERROR = {
 }
 
 
-def _minio_response(
-    instance: models.IncomingTransferable, filename: str, headers: dict[str, str]
-) -> Union[responses.ForwardedS3FileResponse, Response]:
-    try:
-        return responses.ForwardedS3FileResponse(
-            bucket_name=instance.s3_bucket_name,
-            object_name=instance.s3_object_name,
-            filename=filename,
-            extra_headers=headers,
-        )
-    except exceptions.S3ObjectNotFoundError:
-        instance.mark_as_error()
-        # Manually return a 500 response instead of raising an error
-        # so that the DB transaction is committed.
-        return Response(
-            data="Couldn't retrieve transferable",
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-
 def _fs_response(
     instance: models.IncomingTransferable, filename: str, headers: dict[str, str]
-) -> Union[responses.http.FileResponse, Response]:  # type: ignore
+) -> Union[http.FileResponse, Response]:
     try:
         data = open(fs.file_path(instance), "rb")  # noqa: SIM115
-        resp = responses.http.FileResponse(  # type: ignore
+        resp = http.FileResponse(
             data,
             filename=filename,
             headers={
@@ -109,25 +88,17 @@ class IncomingTransferableViewSet(
         user.
         """
         queryset = super().get_queryset()
-        return queryset.filter(user_profile__user__id=self.request.user.id).order_by(
-            "-created_at"
-        )
+        user_id = cast(AnonymousUser, self.request.user).id
+        return queryset.filter(user_profile__user__id=user_id).order_by("-created_at")
 
     def perform_destroy(self, instance: models.IncomingTransferable) -> None:
         """Remove the IncomingTransferable from the storage and from the database."""
         if instance.state != models.IncomingTransferableState.SUCCESS:
             raise api_exceptions.UnsuccessfulTransferableError
 
-        if settings.MINIO_ENABLED:
-            logger.debug("Remove file from MinIO.")
-            minio.client.remove_object(
-                bucket_name=instance.s3_bucket_name, object_name=instance.s3_object_name
-            )
-            logger.debug("File successfully removed from MinIO.")
-        else:
-            logger.debug("Remove file from filesystem.")
-            fs.delete(instance)
-            logger.debug("File successfully removed from filesystem.")
+        logger.debug("Remove file from filesystem.")
+        fs.delete(instance)
+        logger.debug("File successfully removed from filesystem.")
 
         instance.mark_as_removed()
         logger.debug("IncomingTransferable marked as removed in database.")
@@ -137,8 +108,6 @@ class IncomingTransferableViewSet(
         url_path="download",
         url_name="download",
         renderer_classes=[
-            # JSONRenderer is only used for error responses and not for successful ones
-            # since successful requests use the ForwardedS3FileResponse
             renderers.JSONRenderer,
         ],
         content_negotiation_class=negotiation.IgnoreClientContentNegotiation,
@@ -148,9 +117,7 @@ class IncomingTransferableViewSet(
         request: Request,
         *args,
         **kwargs,
-    ) -> Union[  # type: ignore
-        responses.ForwardedS3FileResponse, responses.http.FileResponse, Response
-    ]:
+    ) -> Union[http.FileResponse, Response]:
         """Download the file corresponding to an IncomingTransferable."""
         logger.debug("Request IncomingTransferableState from database.")
         instance = self.get_object()
@@ -164,10 +131,7 @@ class IncomingTransferableViewSet(
             "Digest": "SHA=" + base64.b64encode(instance.sha1).decode("utf-8"),
         }
 
-        if settings.MINIO_ENABLED:
-            return _minio_response(instance, filename, headers)
-        else:
-            return _fs_response(instance, filename, headers)
+        return _fs_response(instance, filename, headers)
 
     @decorators.action(
         methods=["DELETE"],
@@ -175,8 +139,6 @@ class IncomingTransferableViewSet(
         url_path="",
         url_name="destroy-all",
         renderer_classes=[
-            # JSONRenderer is only used for error responses and not for successful ones
-            # since successful requests use the ForwardedS3FileResponse
             renderers.JSONRenderer,
         ],
         content_negotiation_class=negotiation.IgnoreClientContentNegotiation,

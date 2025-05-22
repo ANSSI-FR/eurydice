@@ -29,7 +29,7 @@ def _build_history_entries(
     return [
         protocol.HistoryEntry(
             transferable_id=transferable.id,
-            user_profile_id=transferable.user_profile_id,
+            user_profile_id=transferable.user_profile.id,
             # state is annotated
             state=transferable.state,  # type: ignore
             name=transferable.name,

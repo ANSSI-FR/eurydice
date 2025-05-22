@@ -50,7 +50,6 @@ services:
       - backend-destination-logs:/logs/destination/backend:ro
       - receiver-logs:/logs/destination/receiver:ro
       - dbtrimmer-destination-logs:/logs/destination/dbtrimmer:ro
-      - s3remover-logs:/logs/destination/s3remover:ro
 
   elasticsearch:
     image: elasticsearch:${ELK_VERSION:-7.17.11}

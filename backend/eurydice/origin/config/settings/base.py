@@ -27,12 +27,6 @@ from eurydice.common.config.settings.base import MAX_PAGE_SIZE
 from eurydice.common.config.settings.base import METADATA_HEADER_PREFIX
 from eurydice.common.config.settings.base import METRICS_SLIDING_WINDOW
 from eurydice.common.config.settings.base import MIDDLEWARE
-from eurydice.common.config.settings.base import MINIO_ACCESS_KEY
-from eurydice.common.config.settings.base import MINIO_BUCKET_NAME
-from eurydice.common.config.settings.base import MINIO_ENABLED
-from eurydice.common.config.settings.base import MINIO_ENDPOINT
-from eurydice.common.config.settings.base import MINIO_SECRET_KEY
-from eurydice.common.config.settings.base import MINIO_SECURE
 from eurydice.common.config.settings.base import PAGE_SIZE
 from eurydice.common.config.settings.base import REMOTE_USER_HEADER
 from eurydice.common.config.settings.base import (
@@ -61,7 +55,6 @@ from eurydice.common.config.settings.base import USER_ASSOCIATION_TOKEN_SECRET_K
 
 env = environ.Env(
     TRANSFERABLE_RANGE_SIZE=(str, "500MB"),
-    MULTIPART_PART_SIZE=(int, "5MiB"),  # minio minimum
     TRANSFERABLE_HISTORY_DURATION=(str, "5h"),
     TRANSFERABLE_HISTORY_SEND_EVERY=(str, "5min"),
     PACKET_SENDER_QUEUE_SIZE=(int, 1),
@@ -74,7 +67,6 @@ env = environ.Env(
     DBTRIMMER_TRIM_TRANSFERABLES_AFTER=(str, "1day"),
     DBTRIMMER_RUN_EVERY=(str, "6h"),
     DBTRIMMER_POLL_EVERY=(str, "200ms"),
-    MINIO_EXPIRATION_DAYS=(int, 8),
 )
 
 DOCS_PATH = pathlib.Path(BASE_DIR) / "origin" / "api" / "docs" / "static"
@@ -125,20 +117,6 @@ SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]["securitySchemes"]["tokenAuth"] = {
     "description": _((DOCS_PATH / "token-auth.md").read_text()),
 }
 
-# S3 Client
-
-# The minio client uploads TransferableRanges in a single threaded multi-part upload
-# This determines the size of each minio uploaded part
-MULTIPART_PART_SIZE = humanfriendly.parse_size(env("MULTIPART_PART_SIZE"), binary=False)
-
-# Multipart uploads part sizes cannot be smaller than 5MiB in minio
-if MULTIPART_PART_SIZE < humanfriendly.parse_size("5MiB"):
-    raise exceptions.ImproperlyConfigured(
-        f"MULTIPART_PART_SIZE must not be smaller than 5MiB"
-        f"(currently set to {humanfriendly.format_size(MULTIPART_PART_SIZE)})"
-    )
-
-
 # Eurydice
 
 # The size of the TransferableRanges in bytes
@@ -147,7 +125,7 @@ TRANSFERABLE_RANGE_SIZE = humanfriendly.parse_size(
     env("TRANSFERABLE_RANGE_SIZE"), binary=False
 )
 
-# Objects for multipart uploads cannot be smaller than 5MiB in minio
+# Ranges should not be smaller than 5MiB
 if TRANSFERABLE_RANGE_SIZE < humanfriendly.parse_size("5MiB"):
     raise exceptions.ImproperlyConfigured(
         f"TRANSFERABLE_RANGE_SIZE must not be smaller than 5MiB"
@@ -205,5 +183,3 @@ DBTRIMMER_RUN_EVERY = datetime.timedelta(
 DBTRIMMER_POLL_EVERY = datetime.timedelta(
     seconds=humanfriendly.parse_timespan(env("DBTRIMMER_POLL_EVERY"))
 )
-
-MINIO_EXPIRATION_DAYS = env("MINIO_EXPIRATION_DAYS")

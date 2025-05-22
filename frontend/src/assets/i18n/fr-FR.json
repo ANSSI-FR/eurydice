@@ -144,7 +144,7 @@
     "messageIntro": "Aucun fichier n'est à supprimer.|Vous êtes sur le point de supprimer le fichier suivant :|Vous êtes sur le point de supprimer les fichiers suivants :",
     "messageQuestion": "Aucune action de votre part est requise.|Il ne pourra plus être téléchargé. Cette action est définitive, êtes-vous sûr ?|Ils ne pourront plus être téléchargés. Cette action est définitive, êtes-vous sûr ?",
     "successMessageTitle": "Suppression réussie",
-    "successMessageMessage": "Aucun fichier n'a été supprimé | Le fichier {files} a bien été supprimé | Les fichiers {files} ont bien été supprimés."
+    "successMessageMessage": "Aucun fichier n'a été supprimé.|Le fichier {files} a bien été supprimé.|Les fichiers {files} ont bien été supprimés."
   },
   "TransferablePreviewDialog": {
     "copyAndClose": "Copier et Fermer",

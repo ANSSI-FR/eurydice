@@ -4,13 +4,8 @@ x-backend-common-envs: &backend-common-envs
   DB_USER: eurydice
   DB_PASSWORD: ${DB_PASSWORD}
   DB_PORT: "5432"
-  MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
-  MINIO_BUCKET_NAME: eurydice
-  MINIO_ACCESS_KEY: minio
-  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-  MINIO_ENABLED: ${MINIO_ENABLED:-true}
-  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY}
-  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION}
+  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY:-}
+  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION:-}
   EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
   EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-}
   UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-}
@@ -30,8 +25,6 @@ x-backend-common: &backend-common
   depends_on:
     db:
       condition: service_started
-    minio:
-      condition: service_healthy
 
 x-backend: &backend
   <<: *backend-common
@@ -97,42 +90,6 @@ x-filebeat: &filebeat
 
 services:
   ############# Common services #############
-
-  minio:
-    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/minio/minio:RELEASE.2023-08-23T10-07-06Z
-    user: ${PUID:-1000}:${PGID:-1000}
-    cpus: ${CPUS_MINIO:-4}
-    mem_limit: ${MEM_LIMIT_MINIO:-4GB}
-    ports:
-      - ${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:9001:9001
-    networks:
-      - eurydice
-    environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    read_only: true
-    restart: always
-    volumes:
-      - ${MINIO_DATA_DIR}:/data
-      - ${MINIO_CONF_DIR}:/config
-    command:
-      - server
-      - /data
-      - --config-dir
-      - /config/
-      - --certs-dir
-      - /config/.certs/
-      - --console-address
-      - :9001
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - curl http://localhost:9001/minio/health/live
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 2s
-
   db:
     image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/postgres:15
     read_only: true
@@ -218,6 +175,7 @@ services:
       - origin
     volumes:
       - "${PYTHON_LOGS_DIR}/backend-origin:/var/log/app"
+      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
     environment:
       <<: *backend-common-envs
       SECRET_KEY: ${DJANGO_SECRET_KEY}
@@ -266,7 +224,6 @@ services:
     depends_on:
       filebeat-origin:
         condition: service_healthy
-
   sender: &sender
     <<: *backend-common
     profiles:
@@ -275,6 +232,7 @@ services:
     mem_limit: ${MEM_LIMIT_SENDER:-6GB}
     volumes:
       - "${PYTHON_LOGS_DIR}/sender:/var/log/app"
+      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
     extra_hosts:
       - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
     environment:
@@ -288,8 +246,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      minio:
-        condition: service_healthy
       lidis:
         condition: service_started
     command:
@@ -302,8 +258,6 @@ services:
       - origin-with-elk-logging
     depends_on:
       db:
-        condition: service_healthy
-      minio:
         condition: service_healthy
       lidis:
         condition: service_started
@@ -356,8 +310,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      minio:
-        condition: service_healthy
 
   db-migrations-origin-with-elk:
     profiles:
@@ -365,8 +317,6 @@ services:
     <<: *db-migrations-origin
     depends_on:
       db:
-        condition: service_healthy
-      minio:
         condition: service_healthy
       filebeat-origin:
         condition: service_healthy
@@ -497,7 +447,7 @@ services:
       - "${PYTHON_LOGS_DIR}/backend-destination:/logs/destination/backend:ro"
       - "${PYTHON_LOGS_DIR}/receiver:/logs/destination/receiver:ro"
       - "${PYTHON_LOGS_DIR}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro"
-      - "${PYTHON_LOGS_DIR}/s3remover:/logs/destination/s3remover:ro"
+      - "${PYTHON_LOGS_DIR}/file_remover:/logs/destination/file_remover:ro"
       - "${PYTHON_LOGS_DIR}/db-migrations-destination:/logs/destination/db-migrations:ro"
 
   dbtrimmer-destination: &dbtrimmer-destination
@@ -518,29 +468,29 @@ services:
       filebeat-destination:
         condition: service_healthy
 
-  s3remover: &s3remover
+  file-remover: &file-remover
     profiles:
       - destination
     <<: *backend-common
     volumes:
-      - "${PYTHON_LOGS_DIR}/s3remover:/var/log/app"
+      - "${PYTHON_LOGS_DIR}/file_remover:/var/log/app"
       - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
-    cpus: ${CPUS_S3REMOVER:-2}
-    mem_limit: ${MEM_LIMIT_S3REMOVER:-1GB}
+    cpus: ${CPUS_FILE_REMOVER:-2}
+    mem_limit: ${MEM_LIMIT_FILE_REMOVER:-1GB}
     environment:
       <<: *backend-common-envs
-      S3REMOVER_EXPIRE_TRANSFERABLES_AFTER:
-      S3REMOVER_RUN_EVERY:
-      S3REMOVER_POLL_EVERY:
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER:
+      FILE_REMOVER_RUN_EVERY:
+      FILE_REMOVER_POLL_EVERY:
     restart: always
     command:
       - make
-      - run-destination-s3remover
+      - run-destination-file-remover
 
-  s3remover-with-elk:
+  file-remover-with-elk:
     profiles:
       - destination-with-elk-logging
-    <<: *s3remover
+    <<: *file-remover
     depends_on:
       filebeat-destination:
         condition: service_healthy
@@ -563,8 +513,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      minio:
-        condition: service_healthy
 
   db-migrations-destination-with-elk:
     profiles:
@@ -572,8 +520,6 @@ services:
     <<: *db-migrations-destination
     depends_on:
       db:
-        condition: service_healthy
-      minio:
         condition: service_healthy
       filebeat-destination:
         condition: service_healthy

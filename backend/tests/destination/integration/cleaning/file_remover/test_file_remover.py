@@ -5,13 +5,13 @@ import sys
 import pytest
 from django.conf import settings
 
-from eurydice.destination.cleaning import s3remover
+from eurydice.destination.cleaning import file_remover
 
 
 @pytest.mark.django_db()
 def test_start_and_graceful_shutdown():
     with subprocess.Popen(
-        [sys.executable, "-m", s3remover.__name__],
+        [sys.executable, "-m", file_remover.__name__],
         cwd=os.path.dirname(settings.BASE_DIR),
         stderr=subprocess.PIPE,
         env={
@@ -20,10 +20,6 @@ def test_start_and_graceful_shutdown():
             "DB_PASSWORD": settings.DATABASES["default"]["PASSWORD"],
             "DB_HOST": settings.DATABASES["default"]["HOST"],
             "DB_PORT": str(settings.DATABASES["default"]["PORT"]),
-            "MINIO_ENDPOINT": settings.MINIO_ENDPOINT,
-            "MINIO_ACCESS_KEY": settings.MINIO_ACCESS_KEY,
-            "MINIO_SECRET_KEY": settings.MINIO_SECRET_KEY,
-            "MINIO_BUCKET_NAME": settings.MINIO_BUCKET_NAME,
             "TRANSFERABLE_STORAGE_DIR": settings.TRANSFERABLE_STORAGE_DIR,
             "USER_ASSOCIATION_TOKEN_SECRET_KEY": settings.USER_ASSOCIATION_TOKEN_SECRET_KEY,  # noqa: E501
         },

@@ -18,12 +18,29 @@ const app = createApp(App);
 // Init Pinia
 app.use(createPinia());
 
+const darkPalette = {
+  50: '#fcfdfe',
+  100: '#eef6fa',
+  200: '#e1eff6',
+  300: '#d4e7f3',
+  400: '#c6e0ef',
+  500: '#3d505c',
+  600: '#34444e',
+  700: '#2b3840',
+  800: '#222c33',
+  900: '#182025',
+  950: '#0f1417',
+};
+
 const eurydicePreset = definePreset(Aura, {
   semantic: {
     primary: palette('#01426a'),
     colorScheme: {
       light: { surface: palette('#01426a'), primary: palette('#01426a') },
-      dark: { surface: palette('#3D505C'), primary: palette('#b9d9eb') },
+      dark: {
+        surface: darkPalette,
+        primary: darkPalette,
+      },
     },
   },
 });
@@ -32,6 +49,9 @@ const eurydicePreset = definePreset(Aura, {
 app.use(PrimeVue, {
   theme: {
     preset: eurydicePreset,
+    options: {
+      darkModeSelector: '.dark',
+    },
   },
 });
 app.use(ToastService);

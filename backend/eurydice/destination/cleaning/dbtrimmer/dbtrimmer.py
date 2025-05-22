@@ -33,7 +33,7 @@ class DestinationDBTrimmer(repeated_task.RepeatedTask):
 
         Final states are ERROR, EXPIRED, REMOVED and REVOKED.
         It is safe to remove the IncomingTransferables in the states listed above,
-        since transaction atomicity guaranties their associated S3 objects do not
+        since transaction atomicity guaranties their associated files do not
         exist anymore.
         """
         logger.info("DBTrimmer is running")

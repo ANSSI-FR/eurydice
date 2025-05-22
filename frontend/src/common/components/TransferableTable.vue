@@ -1,92 +1,88 @@
 <template>
-  <div
-    class="p-2 border rounded-(--p-content-border-radius) border-(--p-content-border-color) bg-(--p-content-background)"
+  <DataTable
+    :value="transferableList"
+    class="w-full border rounded-(--p-content-border-radius) border-(--p-content-border-color)"
+    scrollable
+    v-model:selection="selectedTransferables"
+    data-testid="TransferableTable"
+    paginator
+    :rows="pageSize"
+    :totalRecords="totalRecords"
+    lazy
+    @page="onPageChange"
+    :first="first"
   >
-    <DataTable
-      :value="transferableList"
-      class="w-full"
-      scrollable
-      v-model:selection="selectedTransferables"
-      data-testid="TransferableTable"
-      paginator
-      :rows="pageSize"
-      :totalRecords="totalRecords"
-      lazy
-      @page="onPageChange"
-      :first="first"
+    <template #empty>
+      <div class="flex w-full p-2 justify-center items-center">
+        <span class="text-xl">{{ $t('TransferableTable.empty') }}</span>
+      </div>
+    </template>
+    <template #header>
+      <div class="flex justify-between items-center w-full gap-2 flex-wrap">
+        <span class="text-xl"> {{ $t('TransferableTable.tableTitle') }}</span>
+        <div class="flex justify-end items-center gap-2 flex-wrap">
+          <slot name="header"></slot>
+          <MainButton
+            icon="pi pi-refresh"
+            tkey="TransferableTable.refreshNewItems"
+            @click="refreshNewItems"
+            data-testid="TransferableTable-refreshNewItemsButton"
+            v-if="newItems"
+          />
+        </div>
+      </div>
+    </template>
+    <Column
+      selectionMode="multiple"
+      headerStyle="width: 3rem"
+      v-if="selectedTransferables !== undefined"
+      frozen
+      align-frozen="left"
     >
-      <template #empty>
-        <div class="flex w-full p-2 justify-center items-center">
-          <span class="text-xl">{{ $t('TransferableTable.empty') }}</span>
+    </Column>
+    <Column field="name" :header="$t('TransferableTable.name')">
+      <template #body="{ data }">
+        <div class="max-w-10 sm:max-w-20 md:max-w-full">
+          <span class="truncate block" v-tooltip.bottom="decodeURI(data.name)">
+            {{ decodeURI(data.name) }}
+          </span>
         </div>
       </template>
-      <template #header>
-        <div class="flex justify-between items-center w-full gap-2 flex-wrap">
-          <span class="text-xl"> {{ $t('TransferableTable.tableTitle') }}</span>
-          <div class="flex justify-end items-center gap-2 flex-wrap">
-            <slot name="header"></slot>
-            <MainButton
-              icon="pi pi-refresh"
-              tkey="TransferableTable.refreshNewItems"
-              @click="refreshNewItems"
-              data-testid="TransferableTable-refreshNewItemsButton"
-              v-if="newItems"
-            />
-          </div>
+    </Column>
+    <Column field="sha1" :header="$t('TransferableTable.sha1')">
+      <template #body="{ data }">
+        <div class="max-w-10 sm:max-w-20 md:max-w-full">
+          <span class="truncate block" v-tooltip.bottom="data.sha1">
+            {{ data.sha1 }}
+          </span>
         </div>
       </template>
-      <Column
-        selectionMode="multiple"
-        headerStyle="width: 3rem"
-        v-if="selectedTransferables !== undefined"
-        frozen
-        align-frozen="left"
-      >
-      </Column>
-      <Column field="name" :header="$t('TransferableTable.name')">
-        <template #body="{ data }">
-          <div class="max-w-10 sm:max-w-20 md:max-w-full">
-            <span class="truncate block" v-tooltip.bottom="decodeURI(data.name)">
-              {{ decodeURI(data.name) }}
-            </span>
-          </div>
-        </template>
-      </Column>
-      <Column field="sha1" :header="$t('TransferableTable.sha1')">
-        <template #body="{ data }">
-          <div class="max-w-10 sm:max-w-20 md:max-w-full">
-            <span class="truncate block" v-tooltip.bottom="data.sha1">
-              {{ data.sha1 }}
-            </span>
-          </div>
-        </template>
-      </Column>
-      <Column field="size" :header="$t('TransferableTable.size')">
-        <template #body="{ data }">
-          {{ bytesToString(data.size) }}
-        </template>
-      </Column>
-      <Column field="state" :header="$t('TransferableTable.state')">
-        <template #body="{ data }">
-          <TransferableStateTag :state="data.state" :progress="data.progress" />
-        </template>
-      </Column>
-      <Column field="createdAt" :header="$t('TransferableTable.createdAt')">
-        <template #body="{ data }">
-          <span v-tooltip.bottom="$d(Date.parse(data.createdAt), 'long')">{{
-            $d(Date.parse(data.createdAt), 'short')
-          }}</span>
-        </template>
-      </Column>
-      <Column field="id" :header="$t('TransferableTable.actions')" frozen alignFrozen="right">
-        <template #body="{ data }">
-          <slot name="actionColumn" :data="data">
-            <span data-testid="TransferableTable.noAction">-</span>
-          </slot>
-        </template>
-      </Column>
-    </DataTable>
-  </div>
+    </Column>
+    <Column field="size" :header="$t('TransferableTable.size')">
+      <template #body="{ data }">
+        {{ bytesToString(data.size) }}
+      </template>
+    </Column>
+    <Column field="state" :header="$t('TransferableTable.state')">
+      <template #body="{ data }">
+        <TransferableStateTag :state="data.state" :progress="data.progress" />
+      </template>
+    </Column>
+    <Column field="createdAt" :header="$t('TransferableTable.createdAt')">
+      <template #body="{ data }">
+        <span v-tooltip.bottom="$d(Date.parse(data.createdAt), 'long')">{{
+          $d(Date.parse(data.createdAt), 'short')
+        }}</span>
+      </template>
+    </Column>
+    <Column field="id" :header="$t('TransferableTable.actions')" frozen alignFrozen="right">
+      <template #body="{ data }">
+        <slot name="actionColumn" :data="data">
+          <span data-testid="TransferableTable.noAction">-</span>
+        </slot>
+      </template>
+    </Column>
+  </DataTable>
 </template>
 
 <script setup lang="ts">
@@ -167,7 +163,7 @@ onUnmounted(async () => {
 });
 </script>
 
-<style scoped>
+<style>
 /* Note: This SCSS is present because Prime is not correctly supporting sticky columns for the moment...*/
 .p-datatable-frozen-column {
   position: sticky;
@@ -181,5 +177,13 @@ onUnmounted(async () => {
 table {
   border-collapse: separate;
   border-spacing: 0px;
+}
+
+.p-datatable-paginator-bottom {
+  border-width: 0 !important;
+}
+
+.p-datatable-header {
+  border-radius: var(--p-content-border-radius) var(--p-content-border-radius) 0 0;
 }
 </style>

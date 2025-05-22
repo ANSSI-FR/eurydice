@@ -1,6 +1,4 @@
 import logging
-from collections import defaultdict
-from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -8,17 +6,15 @@ from typing import Optional
 from django.conf import settings
 from django.db import models
 from django.db.models.query import QuerySet
-from minio.deleteobjects import DeleteObject
-from minio.error import S3Error
 
 import eurydice.common.protocol as protocol
 import eurydice.origin.core.models as origin_models
 import eurydice.origin.sender.user_selector as user_selector
 from eurydice.common import exceptions
-from eurydice.common import minio
 from eurydice.common.utils import orm
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.sender.packet_generator.fillers import base
+from eurydice.origin.storage import fs
 
 logging.config.dictConfig(settings.LOGGING)  # type: ignore
 logger = logging.getLogger(__name__)
@@ -75,7 +71,7 @@ def _fetch_next_transferable_ranges_for_user(
             "outgoing_transferable__revocation"
         )
         .filter(
-            outgoing_transferable__user_profile=user.user_profile,
+            outgoing_transferable__user_profile=user.user_profile,  # type: ignore
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
         )
         .order_by("created_at"),
@@ -122,7 +118,7 @@ def _get_transferable_range_data(
     transferable_range: origin_models.TransferableRange,
 ) -> bytes:
     """
-    Given a TransferableRange, fetch and return its data from minio.
+    Given a TransferableRange, fetch and return its data from the filesystem.
 
     Args:
         transferable_range: range for which to fetch data
@@ -131,24 +127,14 @@ def _get_transferable_range_data(
         TransferableRange data as bytes
 
     Raises:
-        S3ObjectNotFoundError: if object is not found in S3.
+        FileNotFoundError: if object is not found in filesystem.
 
     """
-    response = None
     try:
-        response = minio.client.get_object(
-            bucket_name=transferable_range.s3_bucket_name,
-            object_name=transferable_range.s3_object_name,
-        )
-        data = response.read()
-    except S3Error as e:
-        if e.code == "NoSuchKey":
-            raise exceptions.S3ObjectNotFoundError() from e
-        raise
-    finally:
-        if response:
-            response.close()
-            response.release_conn()
+        data = fs.read_bytes(transferable_range)
+    except FileNotFoundError as e:
+        raise exceptions.FileNotFoundError() from e
+
     return data
 
 
@@ -159,40 +145,17 @@ class OTWPacketAlreadyHasTransferableRanges(ValueError):
     """
 
 
-def __group_transferable_ranges_by_bucket(
-    transferable_ranges: List[origin_models.TransferableRange],
-) -> Dict[str, List[origin_models.TransferableRange]]:
-    result = defaultdict(list)
-    for transferable_range in transferable_ranges:
-        result[transferable_range.s3_bucket_name].append(
-            transferable_range,
-        )
-    return result
-
-
-def _delete_objects_from_s3(
+def _delete_objects_from_fs(
     transferable_ranges: List[origin_models.TransferableRange],
 ) -> None:
     """
-    Delete TransferableRanges data from S3.
+    Delete TransferableRanges data from filesystem.
 
     Args:
-        transferable_ranges: List of TransferableRanges to delete data from S3
+        transferable_ranges: List of TransferableRanges to delete data from fs
     """
-    transferable_ranges_by_bucket = __group_transferable_ranges_by_bucket(
-        transferable_ranges,
-    )
-
-    for bucket_name, transferable_ranges in transferable_ranges_by_bucket.items():
-        errors = minio.client.remove_objects(
-            bucket_name=bucket_name,
-            delete_object_list=iter(
-                DeleteObject(transferable_range.s3_object_name)
-                for transferable_range in transferable_ranges
-            ),
-        )
-        for error in errors:
-            logger.error("Error occurred when deleting object", error)
+    for transferable_range in transferable_ranges:
+        fs.delete(transferable_range)
 
 
 def _add(
@@ -201,7 +164,7 @@ def _add(
 ) -> None:
     """
     Add given TransferableRange to the given packet, mark it as TRANSFERRED
-    and delete its associated data from s3.
+    and delete its associated data from filesystem.
 
     Args:
         transferable_range: django model for the TransferableRange to add
@@ -217,10 +180,10 @@ def _add(
             byte_offset=transferable_range.byte_offset,
             data=_get_transferable_range_data(transferable_range),
         )
-    except exceptions.S3ObjectNotFoundError:
+    except exceptions.FileNotFoundError:
         transferable_range.mark_as_error()
         logger.error(
-            "Couldn't retrieve S3 object "
+            "Couldn't retrieve data file "
             f"for TransferableRange {transferable_range.id} "
             f"for Transferable {transferable_range.outgoing_transferable.id}."
         )
@@ -305,13 +268,13 @@ class TransferableRangeFiller(base.OnTheWirePacketFiller):
             try:
                 packet_size += _process(transferable_range, packet)
                 to_delete.append(transferable_range)
-            except exceptions.S3ObjectNotFoundError:
+            except exceptions.FileNotFoundError:
                 pass
 
             if packet_size >= settings.TRANSFERABLE_RANGE_SIZE:
                 break
 
-        _delete_objects_from_s3(to_delete)
+        _delete_objects_from_fs(to_delete)
 
 
 class UserRotatingTransferableRangeFiller(TransferableRangeFiller):

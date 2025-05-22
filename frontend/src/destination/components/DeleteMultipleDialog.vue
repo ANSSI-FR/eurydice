@@ -70,6 +70,7 @@ const stringOfFileNames = computed(() => {
 const isDeleting = ref<boolean>(false);
 
 const deleteMultiple = () => {
+  const filesToDelete = stringOfFileNames.value;
   isDeleting.value = true;
   const deletePromises = selectedTransferables.value
     ? selectedTransferables.value.map((transferable) => {
@@ -88,8 +89,8 @@ const deleteMultiple = () => {
         true,
         {
           paramsMessage: {
-            files: stringOfFileNames.value,
-            count: selectedTransferables.value?.length ?? 0,
+            files: filesToDelete,
+            count: deletePromises.length ?? 0,
           },
         },
       );

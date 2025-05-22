@@ -15,7 +15,6 @@ from eurydice.destination.receiver.packet_handler.extractors import history
 from eurydice.destination.storage import fs
 from tests.common.integration import factory as common_factory
 from tests.destination.integration import factory as destination_factory
-from tests.destination.integration.utils import s3 as s3_utils
 
 
 @pytest.mark.parametrize("state", set(IncomingTransferableState))
@@ -69,16 +68,12 @@ def test__list_missed_transferable_ids_success():
 def test__process_ongoing_transferables(
     ongoing_incoming_transferable: models.IncomingTransferable,
 ):
-    assert s3_utils.multipart_upload_exists(ongoing_incoming_transferable)
-
     ongoing_transferable_ids = {ongoing_incoming_transferable.id}
     history._process_ongoing_transferables(ongoing_transferable_ids)
     assert (
         models.IncomingTransferable.objects.get().state
         == models.IncomingTransferableState.ERROR
     )
-
-    assert not s3_utils.multipart_upload_exists(ongoing_incoming_transferable)
 
 
 @pytest.mark.django_db()
@@ -140,8 +135,6 @@ class TestOngoingHistoryExtractor:
             ongoing_incoming_transferable.state
             == models.IncomingTransferableState.ONGOING
         )
-        assert s3_utils.multipart_upload_exists(ongoing_incoming_transferable)
-
         packet = protocol.OnTheWirePacket(
             history=protocol.History(
                 entries=[
@@ -161,7 +154,6 @@ class TestOngoingHistoryExtractor:
             ongoing_incoming_transferable.state
             == models.IncomingTransferableState.ERROR
         )
-        assert not s3_utils.multipart_upload_exists(ongoing_incoming_transferable)
 
     def test_extract_history_success_process_ongoing_with_filesystem_storage(
         self,
@@ -169,7 +161,6 @@ class TestOngoingHistoryExtractor:
         tmp_path: Path,
     ):
         settings.TRANSFERABLE_STORAGE_DIR = tmp_path
-        settings.MINIO_ENABLED = False
         ongoing_incoming_transferable = destination_factory.IncomingTransferableFactory(
             state=models.IncomingTransferableState.ONGOING
         )
@@ -243,13 +234,13 @@ class TestOngoingHistoryExtractor:
     def test_extract_history_process_cleaned_entry(self):
         """
         Tests that an IncomingTransferable does not go to status ERROR if its status
-        is set to EXPIRED by the s3cleaner
+        is set to EXPIRED by the file remover
         """
         incoming_transferable = destination_factory.IncomingTransferableFactory(
             state=models.IncomingTransferableState.SUCCESS
         )
 
-        # simulate s3cleaner
+        # simulate file remover
         incoming_transferable.state = IncomingTransferableState.EXPIRED
         incoming_transferable.save()
 

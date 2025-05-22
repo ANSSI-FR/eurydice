@@ -47,13 +47,13 @@ filebeat.inputs:
       side: destination
       type: dbtrimmer
 - <<: *common-input-conf
-  id: s3remover-destination-logs
+  id: file-remover-destination-logs
   paths:
-    - /logs/destination/s3remover/log.json
+    - /logs/destination/file-remover/log.json
   fields:
     service:
       side: destination
-      type: s3remover
+      type: file-remover
 - <<: *common-input-conf
   id: db-migrations-destination-logs
   paths:

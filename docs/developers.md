@@ -32,7 +32,6 @@ The following URLs are available in the development environment:
 - http://destination.localhost/api/docs/: the destination API documentation.
 - http://destination.localhost/api/v1/: the destination API.
 - http://destination.localhost/admin/: the destination administration interface.
-- http://minio.localhost/: the Minio to store the origin and destination files.
 - http://pgadmin.localhost/: database management tool.
 - http://traefik.localhost/: the traefik dashboard
 

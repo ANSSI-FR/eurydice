@@ -12,7 +12,7 @@ from eurydice.destination.core import models
 from tests.destination.integration import factory
 
 
-@pytest.mark.parametrize("has_s3_upload_parts", [True, False])
+@pytest.mark.parametrize("has_file_upload_parts", [True, False])
 @pytest.mark.parametrize("save", [True, False])
 @pytest.mark.parametrize(
     ("update_state_func", "target_state"),
@@ -32,19 +32,19 @@ def test_mark_as(
     update_state_func: Callable[[models.IncomingTransferable, bool], None],
     target_state: models.IncomingTransferableState,
     save: bool,
-    has_s3_upload_parts: bool,
+    has_file_upload_parts: bool,
 ):
     transferable = factory.IncomingTransferableFactory(
         state=models.IncomingTransferableState.SUCCESS
     )
-    if has_s3_upload_parts:
-        factory.S3UploadPartFactory.create_batch(
+    if has_file_upload_parts:
+        factory.FileUploadPartFactory.create_batch(
             3,
             part_number=factory_boy.Iterator([1, 2, 3]),
             incoming_transferable=transferable,
         )
 
-    update_state_func(transferable, save=save)
+    update_state_func(transferable, save)
 
     if save:
         transferable.refresh_from_db()
@@ -52,7 +52,7 @@ def test_mark_as(
     assert transferable.state == target_state
 
     assert (
-        not models.S3UploadPart.objects.filter(incoming_transferable=transferable)
+        not models.FileUploadPart.objects.filter(incoming_transferable=transferable)
         .only("id")
         .exists()
     )
@@ -97,7 +97,7 @@ def test_incoming_transferable_progress(
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    ("finished_at", "state", "s3remover_retention", "expected_expires_at"),
+    ("finished_at", "state", "file_remover_retention", "expected_expires_at"),
     [
         (
             datetime.datetime(
@@ -138,11 +138,11 @@ def test_incoming_transferable_progress(
 def test_incoming_transferable_expires_at(
     finished_at: Optional[datetime.datetime],
     state: models.IncomingTransferableState,
-    s3remover_retention: datetime.timedelta,
+    file_remover_retention: datetime.timedelta,
     expected_expires_at: Optional[datetime.datetime],
     settings: conf.Settings,
 ):
-    settings.S3REMOVER_EXPIRE_TRANSFERABLES_AFTER = s3remover_retention
+    settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = file_remover_retention
 
     with freezegun.freeze_time(
         datetime.datetime(

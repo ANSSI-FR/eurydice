@@ -12,6 +12,7 @@
     </template>
     <template #end>
       <slot name="navbarAction" />
+      <DarkmodeSwitch></DarkmodeSwitch>
       <i class="pi pi-user"></i>
       <span>{{ userStore.getCurrentUser?.username }}</span>
     </template>
@@ -20,6 +21,7 @@
 
 <script setup lang="ts">
 import logo from '@assets/img/lyre.svg?no-inline';
+import DarkmodeSwitch from '@common/components/DarkmodeSwitch.vue';
 import EnvironmentBadge from '@common/components/EnvironmentBadge.vue';
 import VersionBadge from '@common/components/VersionBadge.vue';
 import MainNavBarLayout from '@common/layouts/MainNavBarLayout.vue';

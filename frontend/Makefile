@@ -97,14 +97,9 @@ e2e: install-dev	## Launch e2e test on app.
 # ------------------------------------------------------------------------------
 # Clean
 # ------------------------------------------------------------------------------
-
 .PHONY: clean
 clean: ## Clean useless folders
-		[ ! -d "./dist" ] || rm -r ./dist
-		[ ! -d "./coverage" ] || rm -r ./coverage
-		[ ! -d "./playwright-report" ] || rm -r ./playwright-report
-		[ ! -d "./test-results" ] || rm -r ./test-results
-		rm -rf node_modules
+	rm -rf node_modules
 
 # ------------------------------------------------------------------------------
 # Docker image build by stage
