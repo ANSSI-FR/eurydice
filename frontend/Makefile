@@ -104,6 +104,7 @@ clean: ## Clean useless folders
 		[ ! -d "./coverage" ] || rm -r ./coverage
 		[ ! -d "./playwright-report" ] || rm -r ./playwright-report
 		[ ! -d "./test-results" ] || rm -r ./test-results
+		rm -rf node_modules
 
 # ------------------------------------------------------------------------------
 # Docker image build by stage
@@ -132,22 +133,6 @@ build-docker-prod: ## Build docker image for stage prod
 # ------------------------------------------------------------------------------
 # Help
 # ------------------------------------------------------------------------------
-
-### misc
-
-.PHONY: clean
-clean: ## clean environments & dependencies
-	rm -rf node_modules
-
-### help
-
-### misc
-
-.PHONY: clean
-clean:
-	rm -rf node_modules
-
-### help
 
 .PHONY: help
 help:		## Show this help.
