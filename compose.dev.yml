@@ -1,0 +1,144 @@
+x-db: &db
+  image: postgres:15
+  networks:
+    - eurydice
+  environment:
+    POSTGRES_DB: ${DB_NAME:?}
+    POSTGRES_USER: ${DB_USER:?}
+    POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+    TZ: "Europe/Paris"
+    PGTZ: "Europe/Paris"
+  user: ${PUID:?}:${PGID:?}
+  read_only: true
+  tmpfs:
+    - /tmp:mode=770,uid=${PUID:?},gid=${PGID:?}
+    - /run:mode=770,uid=${PUID:?},gid=${PGID:?}
+  command:
+    - "postgres"
+    - "-c" # turn on csv logging
+    - "logging_collector=on"
+    - "-c"
+    - "log_destination=csvlog"
+    - "-c"
+    - "log_directory=/var/log/postgresql"
+    - "-c" # filebeat format
+    - "log_line_prefix=%m [%p] %q%u@%d "
+    - "-c" # turn on hour-based log rotation
+    - "log_truncate_on_rotation=on"
+    - "-c"
+    - "log_filename=postgresql-%H.log"
+    - "-c"
+    - "log_rotation_age=60"
+    - "-c"
+    - "log_file_mode=0644"
+    - "-c" # print statements that took more than 200ms...
+    - "log_min_duration_statement=200"
+    - "-c" # ...do not print other statements...
+    - "log_statement=none"
+    - "-c" # ...do not even print the duration of these other statements
+    - "log_duration=off"
+  healthcheck:
+    # NOTE: DB will become healthy as soon as it has created the eurydice table
+    test:
+      - CMD-SHELL
+      - 'psql -U ${DB_USER:?} -lqtA | grep -q "^${DB_NAME:?}|"'
+    interval: 5s
+    timeout: 5s
+    retries: 5
+
+services:
+  ################ Common Services ################
+  traefik:
+    image: traefik:2.10
+    networks:
+      - eurydice
+    command:
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--api.dashboard=true"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.dashboard.rule: Host(`traefik.localhost`)
+      traefik.http.routers.dashboard.service: api@internal
+
+  ################ Origin Services ################
+  db-origin:
+    <<: *db
+    ports:
+      - 5432:5432
+    volumes:
+      - ${ORIGIN_DB_DATA_DIR:?}:/var/lib/postgresql/data
+      - ${ORIGIN_DB_LOGS_DIR:?}:/var/log/postgresql/:rw
+
+  lidis:
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION}
+    network_mode: "host"
+    environment:
+      RUST_LOG: ${RUST_LOG}
+    depends_on:
+      lidir:
+        condition: service_started
+    read_only: true
+    command:
+      - "--from_tcp"
+      - "0.0.0.0:${LIDIS_PORT}"
+      - "--to_udp"
+      - "0.0.0.0:${LIDIR_PORT}"
+      - "--nb_clients"
+      - "1"
+
+  ################ Destination Services ################
+  lidir:
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-receive:${LIDI_VERSION}
+    network_mode: "host"
+    environment:
+      RUST_LOG: ${RUST_LOG}
+    read_only: true
+    command:
+      - "--from_udp"
+      - "0.0.0.0:${LIDIR_PORT}"
+      - "--to_tcp"
+      - "0.0.0.0:7000"
+      - "--nb_clients"
+      - "1"
+
+  db-destination:
+    <<: *db
+    ports:
+      - 5433:5432
+    volumes:
+      - ${DESTINATION_DB_DATA_DIR:?}:/var/lib/postgresql/data
+      - ${DESTINATION_DB_LOGS_DIR:?}:/var/log/postgresql/
+
+  ################ Dev Tools ################
+  pgadmin:
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/dpage/pgadmin4:9.4.0
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    networks:
+      - eurydice
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    labels:
+      traefik.enable: true
+      traefik.http.routers.pgadmin.rule: Host(`pgadmin.localhost`)
+
+volumes:
+  pgadmin:
+
+networks:
+  eurydice:
+    driver: bridge
+    name: eurydice
+    ipam:
+      config:
+        - subnet: ${EURYDICE_IPV4_SUBNET}

@@ -30,7 +30,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 8080,
+    port: Number(process.env.VITE_PORT || 8080),
     strictPort: true,
     allowedHosts: ['origin.localhost', 'destination.localhost'],
     headers: {

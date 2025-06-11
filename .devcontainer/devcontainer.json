@@ -1,0 +1,52 @@
+{
+  "name": "Eurydice",
+  "dockerComposeFile": ["compose.devcontainer.yml"],
+  "service": "devcontainer",
+  "initializeCommand": "bash .devcontainer/init.sh",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "workspaceFolder": "/home/abc/workdir/",
+  "remoteUser": "abc",
+  "forwardPorts": [7000, 8000, 8001, 8080, 8081],
+  "mounts": [
+    "source=${localEnv:NPM_CONFIG_USERCONFIG:~/.npmrc},target=/home/abc/.npmrc,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "backend/.venv/bin/python",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/.coverage": true,
+          "**/coverage.xml": true,
+          "**/.venv": true
+        },
+        "remote.autoForwardPorts": false,
+        "dev.containers.mountWaylandSocket": false
+      },
+      "extensions": [
+        "davidanson.vscode-markdownlint",
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
+        "foxundermoon.shell-format",
+        "gitlab.gitlab-workflow",
+        "gruntfuggly.todo-tree",
+        "iulian-radu-at.vscode-tasks-sidebar",
+        "ms-azuretools.vscode-containers",
+        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-vscode.makefile-tools",
+        "timonwong.shellcheck",
+        "vue.volar",
+        "wholroyd.jinja",
+        "exiasr.hadolint"
+      ]
+    }
+  }
+}

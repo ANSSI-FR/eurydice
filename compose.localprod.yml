@@ -1,0 +1,310 @@
+include:
+  - compose.dev.yml
+
+x-backend-common-envs: &backend-common-envs
+  DB_NAME: ${DB_NAME:?}
+  DB_USER: ${DB_USER:?}
+  DB_PASSWORD: ${DB_PASSWORD:?}
+  DB_PORT: 5432
+  DJANGO_MANAGEPY_MIGRATE: "off"
+  TZ: "Europe/Paris"
+  SECURE_COOKIES: "false"
+  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY:?}
+  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION}
+  EURYDICE_CONTACT: ${EURYDICE_CONTACT}
+  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR}
+  UI_BADGE_CONTENT: ${UI_BADGE_CONTENT}
+  UI_BADGE_COLOR: ${UI_BADGE_COLOR}
+  LOG_TO_FILE: ${LOG_TO_FILE}
+  LOG_LEVEL: ${LOG_LEVEL}
+
+x-backend: &backend
+  build:
+    context: "backend"
+    dockerfile: docker/Dockerfile
+    target: prod
+  image: eurydice_backend:localprod
+  user: ${PUID:?}:${PGID:?}
+  read_only: true
+  tmpfs:
+    - /tmp:uid=${PUID:?},gid=${PGID:?},mode=770
+  networks:
+    - eurydice
+
+x-common-origin-envs: &common-origin-envs
+  DB_HOST: db-origin
+  TRANSFERABLE_STORAGE_DIR: /home/eurydice/data
+  TRANSFERABLE_MAX_SIZE: 54975581388800
+
+x-common-destination-envs: &common-destination-envs
+  DB_HOST: db-destination
+  TRANSFERABLE_STORAGE_DIR: /home/eurydice/data
+
+x-common-auth-envs: &common-auth-envs
+  REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: ${REMOTE_USER_HEADER_AUTHENTICATION_ENABLED}
+
+x-frontend: &frontend
+  build:
+    context: "frontend"
+    dockerfile: docker/Dockerfile
+    target: prod
+  image: eurydice_frontend:localprod
+  networks:
+    - eurydice
+  user: ${PUID:?}:${PGID:?}
+  read_only: true
+  tmpfs:
+    - /tmp:uid=${PUID:?},gid=${PGID:?},mode=770
+    - /var/cache/nginx:uid=${PUID:?},gid=${PGID:?},mode=770
+    - /etc/nginx/conf.d:uid=${PUID:?},gid=${PGID:?},mode=770
+
+services:
+  ################ Origin Services ################
+  dbtrimmer-origin:
+    <<: *backend
+    depends_on:
+      # NOTE: we await for the backend container to be healthy
+      #       because it is the one runnning the migrations in
+      #       the developement environment
+      backend-origin:
+        condition: service_healthy
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/var/log/app
+    environment:
+      <<: [*backend-common-envs, *common-origin-envs]
+      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
+      DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
+      DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
+    command:
+      - make
+      - run-origin-dbtrimmer
+
+  db-migrations-origin:
+    <<: *backend
+    environment:
+      <<: [*backend-common-envs, *common-origin-envs]
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
+      EURYDICE_API: origin
+    tmpfs:
+      - /var/log/app:uid=${PUID:?},gid=${PGID:?},mode=770
+    command:
+      - make
+      - migrate
+    depends_on:
+      db-origin:
+        condition: service_healthy
+
+  frontend-origin:
+    <<: *frontend
+    networks:
+      - eurydice
+    environment:
+      NGINX_SERVER_NAME: origin.localhost
+      NGINX_ROOT_DIR: origin
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.frontend-origin.rule: Host(`origin.localhost`)
+      traefik.http.routers.frontend-origin.priority: "1"
+      traefik.http.routers.frontend-origin.service: frontend-origin-service
+      traefik.http.services.frontend-origin-service.loadbalancer.server.port: 8080
+      traefik.http.middlewares.frontend-origin-headers.headers.customrequestheaders.X-Remote-User: user
+      traefik.http.middlewares.frontend-origin-headers.headers.customrequestheaders.X-Remote-Roles: user
+      traefik.http.routers.frontend-origin.middlewares: frontend-origin-headers
+
+  backend-origin:
+    <<: *backend
+    depends_on:
+      db-migrations-origin:
+        condition: service_completed_successfully
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/backend-origin:/var/log/app
+      - ${ORIGIN_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    environment:
+      <<: [*backend-common-envs, *common-origin-envs, *common-auth-envs]
+      SECRET_KEY: GhSZiXkmYyty
+      EURYDICE_API: origin
+      ALLOWED_HOSTS: origin.localhost,backend-origin
+      CSRF_TRUSTED_ORIGINS: ""
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+      UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet origine localprod}
+      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
+    healthcheck:
+      test:
+        - "CMD"
+        - /healthcheck.py
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      # NOTE: in the dev image the stat period is longer because we expect
+      #       the container to apply migrations on first startup
+      #       (in production this should be done by a different service)
+      start_period: 5s
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.backend-origin.rule: Host(`origin.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
+      traefik.http.middlewares.backend-origin-headers.headers.customrequestheaders.X-Remote-User: user
+      traefik.http.middlewares.backend-origin-headers.headers.customrequestheaders.X-Remote-Roles: user
+      traefik.http.routers.backend-origin.middlewares: backend-origin-headers
+    command:
+      - make
+      - run-origin-api
+
+  sender:
+    <<: *backend
+    depends_on:
+      # NOTE: we await for the backend container to be healthy
+      #       because it is the one runnning the migrations in
+      #       the developement environment
+      backend-origin:
+        condition: service_healthy
+      lidis:
+        condition: service_started
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/sender:/var/log/app
+      - ${ORIGIN_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    extra_hosts:
+      - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
+    environment:
+      <<: [*backend-common-envs, *common-origin-envs]
+      DB_HOST: db-origin
+      LIDIS_HOST: lidis.docker.host
+      LIDIS_PORT: ${LIDIS_PORT}
+      TRANSFERABLE_HISTORY_DURATION: ${TRANSFERABLE_HISTORY_DURATION}
+      TRANSFERABLE_HISTORY_SEND_EVERY: ${TRANSFERABLE_HISTORY_SEND_EVERY}
+      SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS}
+    command:
+      - make
+      - run-sender
+
+  ################ Destination Services ################
+  receiver:
+    <<: *backend
+    depends_on:
+      # NOTE: we await for the backend container to be healthy
+      #       because it is the one runnning the migrations in
+      #       the developement environment
+      backend-destination:
+        condition: service_healthy
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/receiver:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    environment:
+      <<: [*backend-common-envs, *common-destination-envs]
+      PACKET_RECEIVER_HOST: "0.0.0.0"
+      PACKET_RECEIVER_PORT: "7000"
+      RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS}"
+    ports:
+      - "127.0.0.1:7000:7000"
+    command:
+      - make
+      - run-receiver
+
+  db-migrations-destination:
+    <<: *backend
+    environment:
+      <<: [*backend-common-envs, *common-destination-envs]
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
+      EURYDICE_API: destination
+    tmpfs:
+      - /var/log/app:uid=${PUID:?},gid=${PGID:?},mode=770
+    command:
+      - make
+      - migrate
+    depends_on:
+      db-destination:
+        condition: service_healthy
+
+  dbtrimmer-destination:
+    <<: *backend
+    depends_on:
+      # NOTE: we await for the backend container to be healthy
+      #       because it is the one runnning the migrations in
+      #       the developement environment
+      backend-destination:
+        condition: service_healthy
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    environment:
+      <<: [*backend-common-envs, *common-destination-envs]
+      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
+      DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
+      DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
+    command:
+      - make
+      - run-destination-dbtrimmer
+
+  backend-destination:
+    <<: *backend
+    depends_on:
+      db-migrations-destination:
+        condition: service_completed_successfully
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/backend-destination:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    environment:
+      <<: [*backend-common-envs, *common-destination-envs, *common-auth-envs]
+      SECRET_KEY: "${DJANGO_SECRET_KEY:?}"
+      EURYDICE_API: destination
+      ALLOWED_HOSTS: destination.localhost,backend-destination
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
+    healthcheck:
+      test:
+        - CMD
+        - /healthcheck.py
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      # NOTE: in the dev image the stat period is longer because we expect
+      #       the container to apply migrations on first startup
+      #       (in production this should be done by a different service)
+      start_period: 5s
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.backend-destination.rule: Host(`destination.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
+      traefik.http.middlewares.backend-destination-headers.headers.customrequestheaders.X-Remote-User: user
+      traefik.http.middlewares.backend-destination-headers.headers.customrequestheaders.X-Remote-Roles: user
+      traefik.http.routers.backend-destination.middlewares: backend-destination-headers
+    command:
+      - make
+      - run-destination-api
+
+  file-remover:
+    <<: *backend
+    depends_on:
+      # NOTE: we await for the backend container to be healthy
+      #       because it is the one runnning the migrations in
+      #       the developement environment
+      backend-destination:
+        condition: service_healthy
+    volumes:
+      - ${PYTHON_LOGS_DIR:?}/file-remover:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data
+    environment:
+      <<: [*backend-common-envs, *common-destination-envs]
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
+      FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
+      FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
+    command:
+      - make
+      - run-destination-file-remover
+
+  frontend-destination:
+    <<: *frontend
+    networks:
+      - eurydice
+    environment:
+      NGINX_SERVER_NAME: destination.localhost
+      NGINX_ROOT_DIR: destination
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.frontend-destination.rule: Host(`destination.localhost`)
+      traefik.http.routers.frontend-destination.priority: "1"
+      traefik.http.routers.frontend-destination.service: frontend-destination-service
+      traefik.http.services.frontend-destination-service.loadbalancer.server.port: 8080
+      traefik.http.middlewares.frontend-destination-headers.headers.customrequestheaders.X-Remote-User: user
+      traefik.http.middlewares.frontend-destination-headers.headers.customrequestheaders.X-Remote-Roles: user
+      traefik.http.routers.frontend-destination.middlewares: frontend-destination-headers

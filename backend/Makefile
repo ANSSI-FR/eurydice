@@ -16,16 +16,12 @@ DUMMY_LIDIS_ENV_VARIABLES := LIDIS_HOST="127.0.0.1" LIDIS_PORT="1"
 # ------------------------------------------------------------------------------
 
 .PHONY: install
-install: ## Install dependencies on production environment.
-	PIPENV_VENV_IN_PROJECT=true pipenv install --deploy --ignore-pipfile
+install-prod: ## Install dependencies on production environment.
+	uv venv && uv sync --no-dev
 
 .PHONY: install-dev
 install-dev: ## Install development dependencies.
-	PIPENV_VENV_IN_PROJECT=true pipenv install --dev --deploy
-
-.PHONY: install-dev-docker
-install-dev-docker: ## Install development dependencies.
-	pipenv install --dev --deploy --system
+	uv venv && uv sync
 
 # ------------------------------------------------------------------------------
 # Application management
@@ -142,10 +138,10 @@ pytype: ## Run Pytype static type check across the code.
 
 .PHONY: bandit
 bandit: ## Run a security oriented static analysis of the code.
-	bandit -r -c pyproject.toml $(SRC_DIR)
+	bandit -c pyproject.toml -r .
 
 .PHONY: safety
-safety:	## Check installed dependencies for known security vulnerabilities.
+safety: ## Check installed dependencies for known security vulnerabilities.
 	safety \
 	--disable-telemetry \
 	check \
@@ -179,12 +175,10 @@ tests: ## Run tests, iterate over test modules to configure DJANGO_SETTINGS_MODU
 
 .PHONY: clean
 clean: ## clean environments & dependencies
-	rm -rf .venv
+	rm -rf .venv venv
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
-	rm -rf .mypy_cache .pytest_cache .ruff_cache
-	rm -f coverage coverage.xml
-	rm -rf .report
+	rm -rf .mypy_cache .pytest_cache .ruff_cache .pytype .hypothesis coverage coverage.xml .report
 
 # ------------------------------------------------------------------------------
 # Help

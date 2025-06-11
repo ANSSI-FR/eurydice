@@ -11,11 +11,11 @@ MAKEFLAGS += --no-builtin-rules
 
 .PHONY: install
 install:		## Install dependencies for production environment.
-	NODE_ENV=production npm install
+	NODE_ENV=production npm install --loglevel verbose
 
 .PHONY: install-dev
 install-dev:	## Install development dependencies.
-	npm install --save-dev
+	npm install --loglevel verbose --save-dev
 
 # ------------------------------------------------------------------------------
 # Application management
@@ -85,14 +85,6 @@ audit:	## Checks production dependencies for vulnerabilities.
 .PHONY: checks
 checks:	## Runs all the static analysis tools (Flake8, MyPy, Bandit and Safety) at once.
 	$(MAKE) lint-check format-check && echo All checks succeeded!
-
-# ------------------------------------------------------------------------------
-# Make e2e tests
-# ------------------------------------------------------------------------------
-.PHONY: e2e
-e2e: install-dev	## Launch e2e test on app.
-	npm run build
-	npm run test:e2e
 
 # ------------------------------------------------------------------------------
 # Clean

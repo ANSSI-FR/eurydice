@@ -7,27 +7,32 @@ ARG EURYDICE_VERSION development
 # ------------------------------------------------------------------------------
 # Base
 # ------------------------------------------------------------------------------
-
 FROM ${REGISTRY}/node:${NODE_VERSION}-${DEBIAN_RELEASE} AS base
 
 # used for source command
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-WORKDIR /home/eurydice/frontend
-ENV PATH=/home/eurydice/frontend/node_modules/.bin:$PATH
+# root user is switched in entrypoint
+# hadolint ignore=DL3002
+USER root
 
-RUN chown node:node "$(pwd)"
+RUN groupadd --system --gid 1029 abc \
+  && useradd --uid 1029 --gid abc --no-log-init --create-home --shell /bin/bash abc \
+  && mkdir -p /home/abc/workdir \
+  && chown abc:abc /home/abc/workdir
 
-USER node
+ENV PATH=/home/abc/workdir/node_modules/.bin:$PATH
+
+USER abc
+WORKDIR /home/abc/workdir
+COPY --chown=abc:abc . .
+
+EXPOSE 8080
 
 # ------------------------------------------------------------------------------
 # Development
 # ------------------------------------------------------------------------------
 FROM base AS dev
-
-EXPOSE 8080
-
-COPY --chown=node:node . .
 
 CMD ["make", "run-watch"]
 
@@ -35,8 +40,6 @@ CMD ["make", "run-watch"]
 # CI
 # ------------------------------------------------------------------------------
 FROM base AS ci
-
-COPY --chown=node:node . .
 
 RUN make install-dev
 
@@ -51,7 +54,7 @@ RUN make build
 # ------------------------------------------------------------------------------
 # Production image
 # ------------------------------------------------------------------------------
-FROM nginx:1-alpine AS prod
+FROM nginx:1.28.0-alpine-slim AS prod
 
 ## rewrite nginx user UID and GID to 1000:1000
 RUN sed -i 's/nginx:x:101:101:nginx/nginx:x:1000:1000:nginx/g' /etc/passwd \
@@ -67,4 +70,4 @@ EXPOSE 8080
 
 # copy the dist folder built during the build stage
 COPY --from=build-prod --chown=nginx:nginx \
-  /home/eurydice/frontend/dist /var/www/html/app
+  /home/abc/workdir/dist /var/www/html/app

@@ -1,4 +1,3 @@
-bind = "0.0.0.0:8080"
 timeout = 30
 worker_class = "gthread"
 worker_connections = 1000

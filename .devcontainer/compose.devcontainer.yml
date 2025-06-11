@@ -1,0 +1,40 @@
+include:
+  - ../compose.dev.yml
+
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      target: devcontainer
+    image: eurydice:devcontainer
+    env_file: ".env.devcontainer"
+    volumes:
+      - "../:/home/abc/workdir/"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      traefik.enable: "true"
+      # origin backend
+      traefik.http.routers.backend_origin.rule: Host(`origin.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
+      traefik.http.routers.backend_origin.entrypoints: web
+      traefik.http.routers.backend_origin.service: backend_origin_service
+      traefik.http.services.backend_origin_service.loadbalancer.server.port: 8000
+      # origin frontend
+      traefik.http.routers.frontend_origin.rule: Host(`origin.localhost`)
+      traefik.http.routers.frontend_origin.entrypoints: web
+      traefik.http.routers.frontend_origin.service: frontend_origin_service
+      traefik.http.services.frontend_origin_service.loadbalancer.server.port: 8080
+      # destination backend
+      traefik.http.routers.backend_destination.rule: Host(`destination.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
+      traefik.http.routers.backend_destination.entrypoints: web
+      traefik.http.routers.backend_destination.service: backend_destination_service
+      traefik.http.services.backend_destination_service.loadbalancer.server.port: 8001
+      # destination frontend
+      traefik.http.routers.frontend_destination.rule: Host(`destination.localhost`)
+      traefik.http.routers.frontend_destination.entrypoints: web
+      traefik.http.routers.frontend_destination.service: frontend_destination_service
+      traefik.http.services.frontend_destination_service.loadbalancer.server.port: 8081
+    extra_hosts:
+      - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
+    networks:
+      - eurydice

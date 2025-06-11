@@ -1,21 +1,21 @@
 x-backend-common-envs: &backend-common-envs
   DB_HOST: db
-  DB_NAME: eurydice
-  DB_USER: eurydice
-  DB_PASSWORD: ${DB_PASSWORD}
-  DB_PORT: "5432"
-  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY:-}
-  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION:-}
-  EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
-  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-}
-  UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-}
-  UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
-  LOG_TO_FILE: ${LOG_TO_FILE:-true}
-  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  DB_NAME: ${DB_NAME:?}
+  DB_USER: ${DB_USER:?}
+  DB_PASSWORD: ${DB_PASSWORD:?}
+  DB_PORT: 5432
+  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY:?}
+  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION}
+  EURYDICE_CONTACT: ${EURYDICE_CONTACT}
+  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR}
+  UI_BADGE_CONTENT: ${UI_BADGE_CONTENT}
+  UI_BADGE_COLOR: ${UI_BADGE_COLOR}
+  LOG_TO_FILE: ${LOG_TO_FILE}
+  LOG_LEVEL: ${LOG_LEVEL}
 
 x-backend-common: &backend-common
-  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-backend:${EURYDICE_VERSION:-latest}
-  user: ${PUID:-1000}:${PGID:-1000}
+  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-backend:${EURYDICE_VERSION}
+  user: ${PUID}:${PGID}
   networks:
     - eurydice
   read_only: true
@@ -28,51 +28,51 @@ x-backend-common: &backend-common
 
 x-backend: &backend
   <<: *backend-common
-  cpus: ${CPUS_BACKEND:-4}
-  mem_limit: ${MEM_LIMIT_BACKEND:-8GB}
+  cpus: ${CPUS_BACKEND}
+  mem_limit: ${MEM_LIMIT_BACKEND}
   ports:
-    - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:8080:8080"
+    - "${HTTP_SERVICES_BIND_HOST}:8080:8080"
   restart: always
 
 x-dbtrimmer: &dbtrimmer
   <<: *backend-common
-  cpus: ${CPUS_DBTRIMMER:-2}
-  mem_limit: ${MEM_LIMIT_DBTRIMMER:-2GB}
+  cpus: ${CPUS_DBTRIMMER}
+  mem_limit: ${MEM_LIMIT_DBTRIMMER}
   environment:
     <<: *backend-common-envs
-    DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER:-7days}
-    DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY:-6h}
-    DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY:-200ms}
+    DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
+    DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
+    DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
   restart: always
 
 x-frontend: &frontend
-  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-frontend:${EURYDICE_VERSION:-latest}
-  user: ${PUID:-1000}:${PGID:-1000}
-  cpus: ${CPUS_FRONTEND:-4}
-  mem_limit: ${MEM_LIMIT_FRONTEND:-500M}
+  image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-frontend:${EURYDICE_VERSION}
+  user: ${PUID}:${PGID}
+  cpus: ${CPUS_FRONTEND}
+  mem_limit: ${MEM_LIMIT_FRONTEND}
   ports:
-    - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:8888:8080"
+    - "${HTTP_SERVICES_BIND_HOST}:8888:8080"
   networks:
     - eurydice
   read_only: true
   tmpfs:
-    - /tmp:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
-    - /var/cache/nginx:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
-    - /etc/nginx/conf.d:uid=${PUID:-1000},gid=${PGID:-1000},mode=700
+    - /tmp:uid=${PUID},gid=${PGID},mode=700
+    - /var/cache/nginx:uid=${PUID},gid=${PGID},mode=700
+    - /etc/nginx/conf.d:uid=${PUID},gid=${PGID},mode=700
   restart: always
 
 x-filebeat: &filebeat
-  image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elastic/filebeat:${ELK_VERSION:-7.17.11}
-  user: ${PUID:-1000}:${PGID:-1000}
-  cpus: ${CPUS_FILEBEAT:-2}
-  mem_limit: ${MEM_LIMIT_FILEBEAT:-500m}
+  image: ${REMOTE_DOCKER_REGISTRY}/elastic/filebeat:${ELK_VERSION}
+  user: ${PUID}:${PGID}
+  cpus: ${CPUS_FILEBEAT}
+  mem_limit: ${MEM_LIMIT_FILEBEAT}
   read_only: true
   networks:
     - eurydice
   restart: always
   environment:
-    ELASTICSEARCH_API_KEY:
-    ELASTICSEARCH_HOSTS:
+    ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
+    ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
   command:
     - filebeat
     - run
@@ -91,25 +91,25 @@ x-filebeat: &filebeat
 services:
   ############# Common services #############
   db:
-    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/postgres:15
+    image: ${REMOTE_DOCKER_REGISTRY}/postgres:15
     read_only: true
-    shm_size: ${SHM_SIZE_DATABASE:-1g}
-    cpus: ${CPUS_DATABASE:-4}
-    mem_limit: ${MEM_LIMIT_DATABASE:-8GB}
+    shm_size: ${SHM_SIZE_DATABASE}
+    cpus: ${CPUS_DATABASE}
+    mem_limit: ${MEM_LIMIT_DATABASE}
     networks:
       - eurydice
     restart: always
     environment:
-      POSTGRES_DB: eurydice
-      POSTGRES_USER: eurydice
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    user: ${PUID:-1000}:${PGID:-1000}
+      POSTGRES_DB: ${DB_NAME:?}
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+    user: ${PUID}:${PGID}
     tmpfs:
-      - /tmp:mode=770,uid=${PUID:-1000},gid=${PGID:-1000}
-      - /run:mode=770,uid=${PUID:-1000},gid=${PGID:-1000}
+      - /tmp:mode=770,uid=${PUID},gid=${PGID}
+      - /run:mode=770,uid=${PUID},gid=${PGID}
     volumes:
-      - ${DB_DATA_DIR}:/var/lib/postgresql/data
-      - ${DB_LOGS_DIR}:/var/log/postgresql
+      - ${DB_DATA_DIR:?}:/var/lib/postgresql/data
+      - ${DB_LOGS_DIR:?}:/var/log/postgresql
     command:
       - "postgres"
       - "-c" # turn on csv logging
@@ -137,12 +137,10 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - psql -U eurydice -lqtA | grep -q "^eurydice|"
+        - psql -U ${DB_USER:?} -lqtA | grep -q "^${DB_NAME:?}|"
       interval: 5s
       timeout: 5s
       retries: 5
-    ports:
-      - "${HTTP_SERVICES_BIND_HOST:-127.0.0.1}:5050:80"
 
   ############# Origin services #############
   frontend-origin:
@@ -151,7 +149,7 @@ services:
       - origin
       - origin-with-elk-logging
     environment:
-      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:-localhost}
+      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:?}
       NGINX_ROOT_DIR: origin
 
   filebeat-origin:
@@ -159,34 +157,34 @@ services:
     profiles:
       - origin-with-elk-logging
     volumes:
-      - "${FILEBEAT_CONFIG_PATH}:/usr/share/filebeat/filebeat.yml:ro"
-      - "${FILEBEAT_LOGS_DIR}:/usr/share/filebeat/logs"
-      - "${FILEBEAT_DATA_DIR}:/usr/share/filebeat/data"
-      - "${ELASTICSEARCH_CERT_PATH}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
-      - "${DB_LOGS_DIR}:/logs/origin/postgresql:ro"
-      - "${PYTHON_LOGS_DIR}/backend-origin:/logs/origin/backend:ro"
-      - "${PYTHON_LOGS_DIR}/sender:/logs/origin/sender:ro"
-      - "${PYTHON_LOGS_DIR}/dbtrimmer-origin:/logs/origin/dbtrimmer:ro"
-      - "${PYTHON_LOGS_DIR}/db-migrations-origin:/logs/origin/db-migrations:ro"
+      - "${FILEBEAT_CONFIG_PATH:?}:/usr/share/filebeat/filebeat.yml:ro"
+      - "${FILEBEAT_LOGS_DIR:?}:/usr/share/filebeat/logs"
+      - "${FILEBEAT_DATA_DIR:?}:/usr/share/filebeat/data"
+      - "${ELASTICSEARCH_CERT_PATH:?}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
+      - "${DB_LOGS_DIR:?}:/logs/origin/postgresql:ro"
+      - "${PYTHON_LOGS_DIR:?}/backend-origin:/logs/origin/backend:ro"
+      - "${PYTHON_LOGS_DIR:?}/sender:/logs/origin/sender:ro"
+      - "${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/logs/origin/dbtrimmer:ro"
+      - "${PYTHON_LOGS_DIR:?}/db-migrations-origin:/logs/origin/db-migrations:ro"
 
   backend-origin: &backend-origin
     <<: *backend
     profiles:
       - origin
     volumes:
-      - "${PYTHON_LOGS_DIR}/backend-origin:/var/log/app"
-      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+      - "${PYTHON_LOGS_DIR:?}/backend-origin:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
     environment:
       <<: *backend-common-envs
-      SECRET_KEY: ${DJANGO_SECRET_KEY}
-      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
       EURYDICE_API: origin
-      USER_ASSOCIATION_TOKEN_EXPIRES_AFTER: ${USER_ASSOCIATION_TOKEN_EXPIRES_AFTER:-30min}
-      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED:
-      REMOTE_USER_HEADER:
-      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
-      TRANSFERABLE_MAX_SIZE: ${EURYDICE_TRANSFERABLE_MAX_SIZE:-54975581388800}
+      USER_ASSOCIATION_TOKEN_EXPIRES_AFTER: ${USER_ASSOCIATION_TOKEN_EXPIRES_AFTER}
+      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: ${REMOTE_USER_HEADER_AUTHENTICATION_ENABLED}
+      REMOTE_USER_HEADER: ${REMOTE_USER_HEADER}
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
+      TRANSFERABLE_MAX_SIZE: ${EURYDICE_TRANSFERABLE_MAX_SIZE}
     command:
       - make
       - run-origin-api
@@ -210,7 +208,7 @@ services:
   dbtrimmer-origin: &dbtrimmer-origin
     <<: *dbtrimmer
     volumes:
-      - "${PYTHON_LOGS_DIR}/dbtrimmer-origin:/var/log/app"
+      - "${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/var/log/app"
     profiles:
       - origin
     command:
@@ -228,20 +226,20 @@ services:
     <<: *backend-common
     profiles:
       - origin
-    cpus: ${CPUS_SENDER:-2}
-    mem_limit: ${MEM_LIMIT_SENDER:-6GB}
+    cpus: ${CPUS_SENDER}
+    mem_limit: ${MEM_LIMIT_SENDER}
     volumes:
-      - "${PYTHON_LOGS_DIR}/sender:/var/log/app"
-      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+      - "${PYTHON_LOGS_DIR:?}/sender:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
     extra_hosts:
-      - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
+      - "lidis.docker.host:host-gateway"
     environment:
       <<: *backend-common-envs
       LIDIS_HOST: lidis.docker.host
-      LIDIS_PORT: "33010"
+      LIDIS_PORT: ${LIDIS_PORT}
       TRANSFERABLE_HISTORY_DURATION: ${TRANSFERABLE_HISTORY_DURATION}
       TRANSFERABLE_HISTORY_SEND_EVERY: ${TRANSFERABLE_HISTORY_SEND_EVERY}
-      SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS:-UserRotatingTransferableRangeFiller}
+      SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS}
     restart: always
     depends_on:
       db:
@@ -268,29 +266,29 @@ services:
     profiles:
       - origin
       - origin-with-elk-logging
-    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION:-latest}
-    cpus: ${CPUS_LIDIS:-4}
-    mem_limit: ${MEM_LIMIT_LIDIS:-4GB}
+    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION}
+    cpus: ${CPUS_LIDIS}
+    mem_limit: ${MEM_LIMIT_LIDIS}
     read_only: true
     network_mode: "host"
     environment:
-      RUST_LOG: ${RUST_LOG:-INFO}
+      RUST_LOG: ${RUST_LOG}
     restart: always
     command:
       - "--from_tcp"
-      - "${LIDIS_DOCKER_HOST:-0.0.0.0}:33010"
+      - "0.0.0.0:${LIDIS_PORT}"
       - "--to_udp"
-      - "${LIDIR_HOST}:${LIDIR_PORT:-11011}"
+      - "0.0.0.0:${LIDIR_PORT}"
       - "--to_udp_mtu"
-      - "${LIDI_UDP_MTU:-1500}"
+      - "${LIDI_UDP_MTU}"
       - "--nb_clients"
       - "1"
       - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE:-600000}"
+      - "${LIDI_ENCODING_BLOCK_SIZE}"
       - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE:-30000}"
+      - "${LIDI_REPAIR_BLOCK_SIZE}"
       - "--nb_encoding_threads"
-      - "${LIDIS_NB_ENCODING_THREADS:-2}"
+      - "${LIDIS_NB_ENCODING_THREADS}"
 
   ############# Origin tools #############
   db-migrations-origin: &db-migrations-origin
@@ -298,11 +296,11 @@ services:
       - migration-origin
     <<: *backend
     volumes:
-      - "${PYTHON_LOGS_DIR}/db-migrations-origin:/var/log/app"
+      - "${PYTHON_LOGS_DIR:?}/db-migrations-origin:/var/log/app"
     environment:
       <<: *backend-common-envs
-      SECRET_KEY: ${DJANGO_SECRET_KEY}
-      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
       EURYDICE_API: origin
     command:
       - make
@@ -329,28 +327,28 @@ services:
     depends_on:
       receiver:
         condition: service_started
-    cpus: ${CPUS_LIDIR:-4}
-    mem_limit: ${MEM_LIMIT_LIDIR:-4GB}
+    cpus: ${CPUS_LIDIR}
+    mem_limit: ${MEM_LIMIT_LIDIR}
     read_only: true
     network_mode: "host"
     environment:
-      RUST_LOG: ${RUST_LOG:-INFO}
+      RUST_LOG: ${RUST_LOG}
     restart: always
     command:
       - "--from_udp"
-      - "${LIDIR_HOST:-0.0.0.0}:${LIDIR_PORT:-11011}"
+      - "0.0.0.0:${LIDIR_PORT}"
       - "--from_udp_mtu"
-      - "${LIDI_UDP_MTU:-1500}"
+      - "${LIDI_UDP_MTU}"
       - "--to_tcp"
       - "127.0.0.1:65432"
       - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE:-600000}"
+      - "${LIDI_ENCODING_BLOCK_SIZE}"
       - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE:-30000}"
+      - "${LIDI_REPAIR_BLOCK_SIZE}"
       - "--nb_clients"
       - "1"
       - "--nb_decoding_threads"
-      - "${LIDIR_NB_DECODING_THREADS:-2}"
+      - "${LIDIR_NB_DECODING_THREADS}"
 
   lidir-with-elk:
     <<: *lidir
@@ -365,15 +363,15 @@ services:
       - destination
     <<: *backend-common
     volumes:
-      - "${PYTHON_LOGS_DIR}/receiver:/var/log/app"
-      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
-    cpus: ${CPUS_RECEIVER:-2}
-    mem_limit: ${MEM_LIMIT_RECEIVER:-6GB}
+      - "${PYTHON_LOGS_DIR:?}/receiver:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+    cpus: ${CPUS_RECEIVER}
+    mem_limit: ${MEM_LIMIT_RECEIVER}
     environment:
       <<: *backend-common-envs
       PACKET_RECEIVER_HOST: "0.0.0.0"
       PACKET_RECEIVER_PORT: "65432"
-      RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS:-6}"
+      RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS}"
     restart: always
     ports:
       - "127.0.0.1:65432:65432"
@@ -394,17 +392,17 @@ services:
       - destination
     <<: *backend
     volumes:
-      - "${PYTHON_LOGS_DIR}/backend-destination:/var/log/app"
-      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+      - "${PYTHON_LOGS_DIR:?}/backend-destination:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
     environment:
       <<: *backend-common-envs
-      SECRET_KEY: ${DJANGO_SECRET_KEY}
-      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
       EURYDICE_API: destination
-      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED:
-      REMOTE_USER_HEADER:
-      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
+      REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: ${REMOTE_USER_HEADER_AUTHENTICATION_ENABLED}
+      REMOTE_USER_HEADER: ${REMOTE_USER_HEADER}
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
     command:
       - make
       - run-destination-api
@@ -431,7 +429,7 @@ services:
       - destination
       - destination-with-elk-logging
     environment:
-      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:-localhost}
+      NGINX_SERVER_NAME: ${FRONTEND_HOSTNAMES:?}
       NGINX_ROOT_DIR: destination
 
   filebeat-destination:
@@ -439,23 +437,23 @@ services:
     profiles:
       - destination-with-elk-logging
     volumes:
-      - "${FILEBEAT_CONFIG_PATH}:/usr/share/filebeat/filebeat.yml:ro"
-      - "${FILEBEAT_LOGS_DIR}:/usr/share/filebeat/logs"
-      - "${FILEBEAT_DATA_DIR}:/usr/share/filebeat/data"
-      - "${ELASTICSEARCH_CERT_PATH}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
-      - "${DB_LOGS_DIR}:/logs/destination/postgresql:ro"
-      - "${PYTHON_LOGS_DIR}/backend-destination:/logs/destination/backend:ro"
-      - "${PYTHON_LOGS_DIR}/receiver:/logs/destination/receiver:ro"
-      - "${PYTHON_LOGS_DIR}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro"
-      - "${PYTHON_LOGS_DIR}/file_remover:/logs/destination/file_remover:ro"
-      - "${PYTHON_LOGS_DIR}/db-migrations-destination:/logs/destination/db-migrations:ro"
+      - "${FILEBEAT_CONFIG_PATH:?}:/usr/share/filebeat/filebeat.yml:ro"
+      - "${FILEBEAT_LOGS_DIR:?}:/usr/share/filebeat/logs:ro"
+      - "${FILEBEAT_DATA_DIR:?}:/usr/share/filebeat/data"
+      - "${ELASTICSEARCH_CERT_PATH:?}:/usr/share/elasticsearch/config/certs/cert.crt:ro"
+      - "${DB_LOGS_DIR:?}:/logs/destination/postgresql:ro"
+      - "${PYTHON_LOGS_DIR:?}/backend-destination:/logs/destination/backend:ro"
+      - "${PYTHON_LOGS_DIR:?}/receiver:/logs/destination/receiver:ro"
+      - "${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro"
+      - "${PYTHON_LOGS_DIR:?}/file_remover:/logs/destination/file_remover:ro"
+      - "${PYTHON_LOGS_DIR:?}/db-migrations-destination:/logs/destination/db-migrations:ro"
 
   dbtrimmer-destination: &dbtrimmer-destination
     profiles:
       - destination
     <<: *dbtrimmer
     volumes:
-      - "${PYTHON_LOGS_DIR}/dbtrimmer-destination:/var/log/app"
+      - "${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/var/log/app"
     command:
       - make
       - run-destination-dbtrimmer
@@ -473,15 +471,15 @@ services:
       - destination
     <<: *backend-common
     volumes:
-      - "${PYTHON_LOGS_DIR}/file_remover:/var/log/app"
-      - "${TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
-    cpus: ${CPUS_FILE_REMOVER:-2}
-    mem_limit: ${MEM_LIMIT_FILE_REMOVER:-1GB}
+      - "${PYTHON_LOGS_DIR:?}/file_remover:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+    cpus: ${CPUS_FILE_REMOVER}
+    mem_limit: ${MEM_LIMIT_FILE_REMOVER}
     environment:
       <<: *backend-common-envs
-      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER:
-      FILE_REMOVER_RUN_EVERY:
-      FILE_REMOVER_POLL_EVERY:
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
+      FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
+      FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
     restart: always
     command:
       - make
@@ -501,11 +499,11 @@ services:
       - migration-destination
     <<: *backend
     volumes:
-      - "${PYTHON_LOGS_DIR}/db-migrations-destination:/var/log/app"
+      - "${PYTHON_LOGS_DIR:?}/db-migrations-destination:/var/log/app"
     environment:
       <<: *backend-common-envs
-      SECRET_KEY: ${DJANGO_SECRET_KEY}
-      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:-localhost}
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ALLOWED_HOSTS: ${BACKEND_HOSTNAMES:?}
       EURYDICE_API: destination
     command:
       - make
@@ -530,4 +528,4 @@ networks:
     name: eurydice
     ipam:
       config:
-        - subnet: ${EURYDICE_IPV4_SUBNET:-172.18.0.0/24}
+        - subnet: ${EURYDICE_IPV4_SUBNET}

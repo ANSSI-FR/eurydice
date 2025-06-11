@@ -9,6 +9,7 @@
     :pt="{
       root: '!border-none',
     }"
+    ref="uploader"
   >
     <template #header="{ chooseCallback }">
       <div class="flex justify-between items-center w-full gap-2">
@@ -70,12 +71,12 @@ import type { UploadingFile } from '@origin/models/UploadingFile';
 import { createTransferable } from '@origin/services/transferables.service';
 import { uniqueId } from 'lodash';
 import { FileUpload, type FileUploadUploaderEvent } from 'primevue';
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const files = ref<UploadingFile[]>([]);
 const { t } = useI18n();
-
+const uploader = useTemplateRef('uploader');
 const inputFile = ref<HTMLElement | null>();
 
 const uploadFiles = (event: FileUploadUploaderEvent): void => {
@@ -99,6 +100,9 @@ const uploadFiles = (event: FileUploadUploaderEvent): void => {
     createTransferable(fileData, file.onUploadProgress, file.abortController.signal)
       .then(() => {
         onUploadSuccess(file);
+        // This is a tweak because of a "fix" in primevue : https://github.com/primefaces/primevue/commit/85a7ad3f53d3c53df0b3108b66cdbb7fbcd229c5
+        //@ts-expect-error Clear is not recognized as a method
+        uploader.value.clear();
       })
       .catch(() => {
         if (file.status !== 'aborted') {

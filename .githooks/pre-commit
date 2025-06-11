@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+# set -o xtrace
+
+if git diff --cached --name-only; then
+    (
+        make checks
+    )
+fi
+
+# warning about TODO
+OFFENDING_FILES=$(
+    git grep -rE "(TODO)" \
+        | tr ':' ' ' | awk '{ print $1 }' \
+        | sort | uniq
+)
+
+for WITH_TODO in $OFFENDING_FILES; do
+    fname=$(basename -- "$WITH_TODO")
+    if [[ $fname == "pre-commit" ]]; then
+        continue
+    fi
+    echo "! TODO found in: $WITH_TODO"
+done
+
+# error about FIXME
+OFFENDING_FILES=$(
+    git grep -rE "(FIXME)" \
+        | tr ':' ' ' | awk '{ print $1 }' \
+        | sort | uniq
+)
+for WITH_TODO in $OFFENDING_FILES; do
+    fname=$(basename -- "$WITH_TODO")
+    if [[ $fname == "pre-commit" ]]; then
+        continue
+    fi
+    echo "! FIXME found in: $WITH_TODO"
+done
+
+echo "git hooks : pre-commit"
+exit 0

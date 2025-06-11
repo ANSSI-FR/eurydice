@@ -1,220 +1,77 @@
-# 🚀 Deployment in production and administration
+# ☢️ Production
 
 Instructions to deploy Eurydice manually are available below.
 
-## 👷‍♀️ Manual deployment with docker compose
+## 🔨 Prerequisites
 
-- `compose.yml` allows for launching a local development environment
-  - ```bash
-    docker compose up -d
-    ```
-- `compose.prod.yml` allows for launching the origin or destination production stack
+- `Linux environment`
+- `make` (you can install it using `sudo apt-get install make`)
+- [`docker>=19.03.0`](https://docs.docker.com/engine/install/)
+  - support for the compose specification [was added in `19.03.0`](https://docs.docker.com/compose/compose-file/compose-versioning/#compatibility-matrix)
+- 2 servers :
+  - one for the origin
+  - the other for the destination
+- (Recommended) a reverse proxy (see Step 7 for configuration details)
+- (Optional) elasticsearch cluster for logs
 
-  1.  Configure the environment variables ([more details below](#️-environment-variables))
-  2.  Create the directories configured in the environment variables
-  3.  Set permissions to allow read/write access to these directories for the UID configured in the environment variables
+## 🚀 Deploy in production
 
-  **If you don't need elk logging:**
+### ✨️ Installation
 
-  4.  Configure the database by applying the migrations:
-      - Origin:
-        ```bash
-        docker compose -f compose.prod.yml --profile origin run --rm db-migrations-origin
-        ```
-      - Destination (on another machine):
-        ```bash
-        docker compose -f compose.prod.yml --profile destination run --rm db-migrations-destination
-        ```
-  5.  Launch the stack:
+#### Step 1: Create the app folder (both servers)
 
-      - Origin:
-        ```bash
-        docker compose -f compose.prod.yml --profile origin up -d
-        ```
-      - Destination (on another machine):
-        ```bash
-        docker compose -f compose.prod.yml --profile destination up -d
-        ```
+On **both** servers, create a folder to host the application files (for example /app/eurydice).
 
-  **If you want elk logging:**
+#### Step 2: Copy files (both servers)
 
-  4.  Configure the database by applying the migrations:
-      - Origin:
-        ```bash
-        docker compose -f compose.prod.yml --profile origin-with-elk-logging run --rm db-migrations-origin-with-elk
-        ```
-      - Destination (on another machine):
-        ```bash
-        docker compose -f compose.prod.yml --profile destination-with-elk-logging run --rm db-migrations-destination-with-elk
-        ```
-  5.  Launch the stack:
+On **both** servers, copy the following files:
 
-      - Origin:
-        ```bash
-        docker compose -f compose.prod.yml --profile origin-with-elk-logging up -d
-        ```
-      - Destination (on another machine):
-        ```bash
-        docker compose -f compose.prod.yml --profile destination-with-elk-logging up -d
-        ```
-      - Note: Additional environment variables are needed: see the list below. You will need an API key:
-        [more details below](#elasticsearch-api-key).
+- `.env.prod.example`
+- `docker.compose.prod.yml`
+- (optional) If you use elasticsearch for logs:
+  - for origin: `filebeat/filebeat.origin.yml`
+  - for destination: `filebeat/filebeat.destination.yml`
 
-  **Optional admin user**
+#### Step 3: Configure environment file (both servers)
 
-  6.  (optional) Create an administrator user for accessing the admin interface at `/admin` (default credentials are admin/admin)
-      - Origin:
-        ```bash
-        docker compose -f compose.prod.yml exec backend-origin make superuser
-        ```
-      - Destination (on another machine):
-        ```bash
-        docker compose -f compose.prod.yml exec backend-destination make superuser
-        ```
-
-## ⚙️ Environment Variables
-
-The `.env` file should be placed in the directory from which you are running `docker compose` (usually next to the `compose.yml` file).
-You can also name the file as you wish [and point compose to it using the `--env-file` flag](https://docs.docker.com/compose/environment-variables/#using-the---env-file--option).
-
-The following environment variables should be configured for the deployment (variables without a default value are mandatory):
-
-| Variable                                    | Default value                                       | Description                                                                                                                                                                                                                                                                                                      |
-| ------------------------------------------- | --------------------------------------------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `EURYDICE_VERSION`                          | `latest`                                            | Tag for the Eurydice docker image ([list of tags](https://github.com/ANSSI-FR/eurydice/tags))                                                                                                                                                                                |
-| `LIDI_VERSION`                              | `latest`                                            | Tag for the lidis/r docker images ([list of tags](https://github.com/ANSSI-FR/lidi/tags/))                                                                                                                                                                                    |
-| `LOCAL_DOCKER_REGISTRY`                     | `docker.io`       | Docker image registry hostname local                                                                                                                                                                                                                                                                             |
-| `REMOTE_DOCKER_REGISTRY`                    | `docker.io`                                         | Docker image registry hostname for images from the [docker hub](https://hub.docker.com/)                                                                                                                                                                                                                         |
-| `UID`                                       | `1000`                                              | Numeric identifier to the user under which the services of will run                                                                                                                                                                                                                                              |
-| `GID`                                       | `1000`                                              | Numeric identifier for the group under which the services will run                                                                                                                                                                                                                                               |
-| `GUNICORN_CONFIGURATION`                    | `""`                                                | Gunicorn commandline arguments                                                                                                                                                                                                                                                                                   |
-| `EURYDICE_IPV4_SUBNET`                      | `172.18.0.0/24`                                     | Range of IP addresses that will be assigned to containers within the eurydice network                                                                                                                                                                                                                            |
-| `BACKEND_HOSTNAMES`                         | `localhost`                                         | Hostname(s) for the backend API separated by a comma: `,`                                                                                                                                                                                                                                                        |
-| `CSRF_TRUSTED_ORIGINS`                      | `""`                                                | Additionnal origin(s) for CSRF validation, separated by a comma: `,`. SEE [Django documentation](https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins) Must include scheme ("http://", "https://") . May be left empty.                                                                      |
-| `FRONTEND_HOSTNAMES`                        | `localhost`                                         | Hostname(s) for the frontend UI separated by a space: ` `                                                                                                                                                                                                                                                        |
-| `KIBANA_HOSTNAME`                           | `localhost`                                         | Hostname for the Kibana UI.                                                                                                                                                                                                                                                                                      |
-| `LIDIR_HOST`                                | `0.0.0.0`(lidir)                                    | Lidir hostname                                                                                                                                                                                                                                                                                                   |
-| `LIDIR_PORT`                                | `11011`                                             | Lidir port number                                                                                                                                                                                                                                                                                                |
-| `LIDIR_NB_DECODING_THREADS`                         | `2`            | Value for lidi option `--nb_decoding_threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)                                                                                                                                                                                                                                   |
-| `LIDI_UDP_MTU`                              | `1500`                                              | Value for lidi option `--from_udp_mtu` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)                                                                                                                                                                              |
-| `LIDI_ENCODING_BLOCK_SIZE`                  | `60000`                                             | Value for lidi option `--encoding_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)                                                                                                                                                                       |
-| `LIDI_REPAIR_BLOCK_SIZE`                    | `6000`                                              | Value for lidi option `--repair_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)                                                                                                                                                                         |
-| `LIDIS_DOCKER_HOST`                         | `0.0.0.0`(lidis), `host-gateway`(sender)            | Host interface on which lidis will listen and to which the sender will connect                                                                                                                                                                                                                                   |
-| `LIDIS_NB_ENCODING_THREADS`                         | `2`            | Value for lidi option `--nb_encoding_threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)                                                                                                                                                                                                                                   |
-| `TRANSFERABLE_STORAGE_DIR`                  |                                                     | Host path to the directory containing transferable data                                                                                                                                                                                                                                                          |
-| `DB_DATA_DIR`                               |                                                     | Host path to the directory containing the database's data                                                                                                                                                                                                                                                        |
-| `LOG_LEVEL`                                 | `INFO`                                              | Django and Eurydice Log Level                                                                                                                                                                                                                                                                                    |
-| `LOG_TO_FILE`                               | `true`                                              | If true, python processes will configure their logger to log into json files. See `PYTHON_LOGS_DIR` .                                                                                                                                                                                                            |
-| `PYTHON_LOGS_DIR`                           |                                                     | Host path to the directory containing python logs. Each service will write into their own sub-directory, as such: `${PYTHON_LOGS_DIR}/sender-logs/log.json`                                                                                                                                                      |
-| `RUST_LOG`                                  | See compose.prod.yml                                | Rust log level (i.e. Lidi log level)                                                                                                                                                                                                                                                                             |
-| `DB_LOGS_DIR`                               |                                                     | Host path to the directory containing the database's logs                                                                                                                                                                                                                                                        |
-| `ELK_VERSION`                               | `7.17.11`                                           | Version of Filebeat service. Should match the version of the targeted elastic service.                                                                                                                                                                                                                           |
-| `FILEBEAT_CONFIG_PATH`                      |                                                     | Host path to the filebeat config. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                                                                                                                                                            |
-| `FILEBEAT_LOGS_DIR`                         |                                                     | Host path to the directory [containing logs created by filebeat](https://www.elastic.co/guide/en/beats/filebeat/8.0/directory-layout.html) . Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                                                 |
-| `FILEBEAT_DATA_DIR`                         |                                                     | Host path to the directory [containing filebeat's persistent data files](https://www.elastic.co/guide/en/beats/filebeat/8.0/directory-layout.html) . Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                                         |
-| `ELASTICSEARCH_API_KEY`                     | `""`                                                | API key used by filebeat to publish logs to elasticsearch. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                                                                                                                                   |
-| `ELASTICSEARCH_HOSTS`                       |                                                     | Elasticsearch URL. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). Should start with https.                                                                                                                                                                                  |
-| `ELASTICSEARCH_CERT_PATH`                   | `/usr/local/share/ca-certificates/ac-racine-np.crt` | Absolute path to SSL certificate that should be used to connect to elastic search. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                                                                                                           |
-| `EURYDICE_TRANSFERABLE_MAX_SIZE`            | `54975581388800`                                    | File upload size limit on the origin side. Should be less than your storage capacity. Default is 50TiB.                                                                                                            |
-| `DJANGO_SECRET_KEY`                         |                                                     | [Django secret key](https://docs.djangoproject.com/en/3.2/ref/settings/#secret-key) django                                                                                                                                                                                                                       |
-| `DB_PASSWORD`                               |                                                     | PostgreSQL database password d'Eurydice                                                                                                                                                                                                                                                                          |
-| `USER_ASSOCIATION_TOKEN_SECRET_KEY`         |                                                     | Secret key for generating association tokens (must be the same for the origin and destination APIs)                                                                                                                                                                                                              |
-| `FILE_REMOVER_RUN_EVERY`                       | `1min`                                              | Run frequency for the File Remover (service which removes files and sets Transferable to `EXPIRED` on the destination side)                                                                                                                                                                                 |
-| `FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER`      | `7days`                                             | Duration before which files received on the destination side are marked as `EXPIRED`.                                                                                                                                                                                                                            |
-| `FILE_REMOVER_POLL_EVERY`                      | `200ms`                                             | Maximum acceptable duration between the File Remover receiving a `SIGINT` signal and the process' termination                                                                                                                                                                                                       |
-| `DBTRIMMER_RUN_EVERY`                       | `6h`                                                | Launch frequency for the DBTrimmer (service which removes old transferables from the database)                                                                                                                                                                                                                   |
-| `DBTRIMMER_TRIM_TRANSFERABLES_AFTER`        | `7days`                                             | Availability duration for a transferable's metadata once it has been sent, received, or if either have failed (after this duration, a transferable will 404 if request)                                                                                                                                          |
-| `DBTRIMMER_POLL_EVERY`                      | `200ms`                                             | Maximum acceptable duration between the DBTrimmer receiving a `SIGINT` signal and the process' termination                                                                                                                                                                                                       |
-| `SENDER_RANGE_FILLER_CLASS`                 | `UserRotatingTransferableRangeFiller`               | Changes the Sender's Transferable fetch strategy. Available choices are `UserRotatingTransferableRangeFiller` (default, attempts to fairly distribute bandwidth for Transferables among Users) or `FIFOTransferableRangeFiller` (faster implementation that ignores User priority; good for single-user usages). |
-| `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` | `False`                                             | Enable authentication through the HTTP header set by `HTTP_X_REMOTE_USER` [**⚠️ beware of associated security implications**](#️-security-risks-associated-with-http-header-authentication)                                                                                                                      |
-| `REMOTE_USER_HEADER`                        | `HTTP_X_REMOTE_USER`                                | Select the remote user authentication method, note the `HTTP_` prefix for HTTP header based authentication                                                                                                                                                                                                       |
-| `THROTTLE_RATE`                             | `30/second`                                         | File upload rate limiting                                                                                                                                                                                                                                                                                        |
-| `RECEIVER_BUFFER_MAX_ITEMS`                 | `4`                                                 | Maximum amount of incoming transferables range awaiting processing that the receiver can hold before dropping incoming data. Should roughly match (`MEM_LIMIT_RECEIVER` / 2 \* `TRANSFERABLE_RANGE_SIZE`)                                                                                                        |
-| `CPUS_BACKEND`                              | See compose.prod.yml                                | CPU docker limit for each backend service                                                                                                                                                                                                                                                                        |
-| `CPUS_DATABASE`                             | See compose.prod.yml                                | CPU docker limit for database service                                                                                                                                                                                                                                                                            |
-| `CPUS_<CONTAINER_NAME>`                     | See compose.prod.yml                                | CPU docker limit                                                                                                                                                                                                                                                                                                 |
-| `MEM_LIMIT_BACKEND`                         | See compose.prod.yml                                | Memory docker limit for each backend service                                                                                                                                                                                                                                                                     |
-| `MEM_LIMIT_DATABASE`                        | See compose.prod.yml                                | Memory docker limit for database service                                                                                                                                                                                                                                                                         |
-| `MEM_LIMIT_<CONTAINER_NAME>`                | See compose.prod.yml                                | Memory docker limit                                                                                                                                                                                                                                                                                              |
-| `SHM_SIZE_DATABASE`                         | See compose.prod.yml                                | Shared memory docker limit for the database container                                                                                                                                                                                                                                                            |
-| `EURYDICE_CONTACT`                          | See compose.prod.yml                                | Contact information, useful to report bugs for example. It is displayed in the API documentation.                                                                                                                                                                                                                |
-| `EURYDICE_CONTACT_FR`                       | See compose.prod.yml                                | Contact information in French. It is displayed in the frontend.                                                                                                                                                                                                                                                  |
-| `UI_BADGE_CONTENT`                          | See compose.prod.yml                                | Configurable badge content to be displayed on the front page in the frontend.                                                                                                                                                                                                                                           |
-| `UI_BADGE_COLOR`                            | See compose.prod.yml                                | Color for the configurable frontpage badge. See the [list of available colors](https://www.w3schools.com/colors/colors_hex.asp). Please prefer using dark colors as the badge text color will be white.                                                                                                                                                                                  |
-| `METRICS_SLIDING_WINDOW`                    | See compose.prod.yml                                | Duration used to compute metrics for /metrics endpoints.                                                                                                                                                                                                                                                         |
-| `USER_ASSOCIATION_TOKEN_EXPIRES_AFTER`      | See compose.prod.yml                                | Expiration delay of user association token.                                                                                                                                                                                                                                                                      |
-| `TRANSFERABLE_HISTORY_DURATION`             |                                                     | Duration of the history.                                                                                                                                                                                                                                                                                         |
-| `TRANSFERABLE_HISTORY_SEND_EVERY`           |                                                     | Frequency of the history.                                                                                                                                                                                                                                                                                        |
-| `HTTP_SERVICES_BIND_HOST`                   | 127.0.0.1                                           | TCP bind address for docker services.                                                                                                                                                                                                                                                                            |
-
-**Warning: make sure that `DBTRIMMER_TRIM_TRANSFERABLES_AFTER` is greater than `TRANSFERABLE_HISTORY_DURATION`.**
-If `DBTRIMMER_TRIM_TRANSFERABLES_AFTER` is less than `TRANSFERABLE_HISTORY_DURATION`, the DBTrimmer on the destination side will remove transferables that the history from the origin will recreate.
-This will lead to previously deleted transferables being marked as `ERROR` on the destination side.
-
-### History management
-
-In some cases, the origin-side database may end up holding millions of Transferable entries. Combined with a long history duration, this may lead to the sender generating enormous quantities of data, just to send the history.
-
-If that happens, you may want to consider using a much smaller history duration, while keeping the same `DBTRIMMER_TRIM_TRANSFERABLES_AFTER`. This will allow you to manually ask the sender to send a complete history only when needed, with the following command:
-
+Rename .env.example into .env.
+EM_LIMIT_<C
 ```bash
-docker compose -f compose.prod.yml exec sender python manage.py send_history --duration 7days
+mv .env.prod.example .env
 ```
 
-## 👤 UID, GID and bind mounts
+You then will adapt the variables inside the .env file corresponding to your needs (see [env.md](env.md) for more informations about env variables).
 
-The `PUID` and `PGID` variables must have read/write permissions on the directories defined in the other variables.
+#### Step 4: Set up logging
 
-### Storing data
+If `LOG_TO_FILE` is true, Eurydice will write additional logs at `${PYTHON_LOGS_DIR}/<service>-logs/log.json`.
 
-Eurydice uses the filesystem to store Transferable files, at the location defined by `TRANSFERABLE_STORAGE_DIR`. The variable should be set to the path to a directory.
+This is necessary if you want to process your logs in ELK, so that filebeat may read, process and share applicative logs to a remote elk server.
 
-### Logging
+#### Step 5: Set up PUID, PGID
 
-If `LOG_TO_FILE` is true, Eurydice will write additional logs at `${PYTHON_LOGS_DIR}/<service>-logs/log.json`. This is useful when using a `-with-elk-logging` profile, so that filebeat may read, process and share applicative logs to a remote elk server.
+The `PUID` and `PGID` variables in `.env` file need not be any particular ID, the only requirement is that these UID/GID have read/write permissions on the directories defined in the other variables.
 
-## 🖥️ Reverse Proxy
+By default `PUID` and `PGID` are set to 1000.
 
-Eurydice needs to be setup behind a reverse proxy to work securely and optimally.
-Setting up a reverse proxy will also enable authentication at the reverse proxy level rather than relying on the application's authentication mechanism.
+#### Step 6: Create the folders (both servers)
 
-The application's services are exposed on `localhost` by the `compose.prod.yml`.
-It is advised to route them like so:
+The makefile recipes `create-prod-origin-volumes` and `create-prod-destionation-volumes` will try to import env variables from the `.env` file, and if they (`TRANSFERABLE_STORAGE_DIR`, `DB_DATA_DIR`, `DB_LOGS_DIR`, `FILEBEAT_LOGS_DIR`, `FILEBEAT_DATA_DIR`, `PYTHON_LOGS_DIR`) are not set, default values will be used.
 
-- Web UI at `http://localhost:8888`
-  - Should handle requests who don't match the rules for the services below
-- API at `http://localhost:8080`
-  - Should handle requests whose path is prefixed by `/api` `/admin` `/static`
-- pgadmin at `http://localhost:5050`
-  - Should handle requests whose path is prefixed by `/pgadmin` (the `/pgadmin` prefix should be removed by the reverse proxy)
-  - The reverse proxy should only allow authenticated users on this endpoint as all pgadmin authentication is disabled
+```bash
+make create-prod-origin-volumes
+make create-prod-destination-volumes
+```
 
-The reverse proxy should also serve all endpoints over TLS.
-It should also set the `X-Forwarded-Proto`, `X-Forwarded-For` and `X-Forwarded-Host` headers to forward information from the original request to the services.
+#### Step 7: Set correct permissions to folders (both servers)
 
-### ⚠️ Security risks associated with HTTP header authentication
+Set permissions to allow read/write access to these directories for the UID configured in the environment variables (see docker.compose.prod.yml).
 
-**Warning: [django normalizes HTTP headers](https://django.readthedocs.io/en/stable/releases/1.6.10.html#wsgi-header-spoofing-via-underscore-dash-conflation). So it is important to make sure that a user cannot forge an authentication HTTP header that would be considered safe by the reverse proxy, but would in fact be normalized by Django into a valid authentication header**
-
-This risk can be mitigated by configuring which header is used for authenticating the header with the `REMOTE_USER_HEADER` variable.
-This environment variable could for example be set to a purely alphanumeric value (not affected by normalization) which could not easily be guessed by the user.
-In such a scenario, one would still need to make sure that the reverse proxy correctly prevents users from submitting their own authentication header.
-
-### 🛣️ Basic authentication
-
-**Warning: Basic HTTP authentication passes your credentials over the network as clear text. As such, it is NOT the recommended method of authentication. If you need to run Eurydice using basic auth, at least use HTTPS.**
-
-In case you are unable to setup a reverse proxy and remote user authentication, Eurydice may support [Basic HTTP Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme).
-
-Basic HTTP Authentication is enabled when the `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` variable is set to `false`.
-
-If `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` is set to `false` the app won't use kerberos. Kerberos and basic auth **cannot** be used simultaneously.
-
-### Elasticsearch API key
+#### Step 8: (Optional) Configure Elasticsearch
 
 To send applicative logs into an ELK you need an API key for a user with following role restrictions:
 
-```
+```json
 {
   "filebeat_writer": {
     "cluster": ["monitor", "read_ilm", "read_pipeline"],
@@ -226,4 +83,113 @@ To send applicative logs into an ELK you need an API key for a user with followi
     ]
   }
 }
+```
+
+Go to your Elasticsearch instance and create a new API key with the previous restrictions.
+
+Copy the created key and paste it into the .env :
+
+```bash
+ELASTICSEARCH_API_KEY=<your_new_api_key>
+```
+
+#### Step 9: (Recommended) Reverse proxy configuration
+
+Eurydice needs to be setup behind a reverse proxy to work securely and optimally. Setting up a reverse proxy will also enable authentication at the reverse proxy level rather than relying on the application's authentication mechanism.
+
+The application's services are exposed on localhost by the compose.prod.yml. It is advised to route them like so:
+
+- Web UI at <http://localhost:8888>
+  - Should handle requests who don't match the rules for the services below
+- API at <http://localhost:8080>
+  - Should handle requests whose path is prefixed by /api /admin /static
+- pgadmin at <http://localhost:5050>
+  - Should handle requests whose path is prefixed by /pgadmin (the /pgadmin prefix should be removed by the reverse proxy)
+  - The reverse proxy should only allow authenticated users on this endpoint as all pgadmin authentication is disabled
+
+The reverse proxy should also serve all endpoints over TLS. It should also set the X-Forwarded-Proto, X-Forwarded-For and X-Forwarded-Host headers to forward information from the original request to the services.
+
+#### Step 10: (Recommended) Setup remote user header
+
+To do only if you have configured your reverse proxy to manage the authentication.
+
+**Warning: [Django normalizes HTTP headers](https://django.readthedocs.io/en/stable/releases/1.6.10.html#wsgi-header-spoofing-via-underscore-dash-conflation). So it is important to make sure that a user cannot forge an authentication HTTP header that would be considered safe by the reverse proxy, but would in fact be normalized by Django into a valid authentication header**
+
+This risk can be mitigated by configuring which header is used for authenticating the header with the `REMOTE_USER_HEADER` variable.
+This environment variable could for example be set to a purely alphanumeric value (not affected by normalization) which could not easily be guessed by the user.
+In such a scenario, one would still need to make sure that the reverse proxy correctly prevents users from submitting their own authentication header.
+
+#### Step 10: (Alternative without reverse proxy) Set up basic HTTP authentication
+
+**Warning: Basic HTTP authentication passes your credentials over the network as clear text. As such, it is NOT the recommended method of authentication. If you need to run Eurydice using basic auth, at least use HTTPS.**
+
+In case you are unable to setup a reverse proxy and remote user authentication, Eurydice may support [Basic HTTP Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme).
+
+Basic HTTP Authentication is enabled when the `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` variable is set to `false`.
+
+If `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` is set to `false` the app won't use Remote user headers. Authentication via reverse proxy and basic auth **cannot** be used simultaneously.
+
+#### Step 10: Migrate database
+
+Following your case, we will use different type of profile. In the rest of the documentation you will have to replace `<profile>` by the folloowing values:
+
+- Logging in filesystem:
+  - origin: `origin`
+  - destination: `destination`
+- Logging in Elasticsearch:
+  - origin: `origin-with-elk-logging`
+  - destination: `destination-with-elk-logging`
+
+Configure the database by applying the migrations:
+
+- On origin:
+
+```bash
+docker compose -f compose.prod.yml --profile <profile> run --rm db-migrations-origin
+```
+
+- On destination:
+
+```bash
+docker compose -f compose.prod.yml --profile <profile> run --rm db-migrations-destination
+```
+
+#### Step 11: Launch the stack
+
+- On origin:
+
+```bash
+docker compose -f compose.prod.yml --profile <profile> up -d
+```
+
+- On destination:
+
+```bash
+docker compose -f compose.prod.yml --profile <profile> up -d
+```
+
+#### Step 12: (Optional) Create an administrator user
+
+If you want to create an administrator user for accessing the admin interface at `/admin` (default credentials are admin/admin), run the following commands:
+
+- On origin:
+
+```bash
+docker compose -f compose.prod.yml exec backend-origin make superuser
+```
+
+- On destination:
+
+```bash
+docker compose -f compose.prod.yml exec backend-destination make superuser
+```
+
+## History management
+
+In some cases, the origin-side database may end up holding millions of Transferable entries. Combined with a long history duration, this may lead to the sender generating enormous quantities of data, just to send the history.
+
+If that happens, you may want to consider using a much smaller history duration, while keeping the same `DBTRIMMER_TRIM_TRANSFERABLES_AFTER`. This will allow you to manually ask the sender to send a complete history only when needed, with the following command:
+
+```bash
+docker compose -f compose.prod.yml exec sender python manage.py send_history --duration 7days
 ```

@@ -1,23 +1,29 @@
+include:
+  - compose.dev.yml
+
 x-backend-common-envs: &backend-common-envs
-  DB_NAME: eurydice
-  DB_USER: eurydice
-  DB_PASSWORD: eurydice
-  DB_PORT: "5432"
+  DB_NAME: ${DB_NAME:?}
+  DB_USER: ${DB_USER:?}
+  DB_PASSWORD: ${DB_PASSWORD:?}
+  DB_PORT: 5432
   DJANGO_ENV: DEV
   DEBUG: "True"
   DJANGO_MANAGEPY_MIGRATE: "off"
   TZ: "Europe/Paris"
   SECURE_COOKIES: "false"
-  USER_ASSOCIATION_TOKEN_SECRET_KEY: "Baby shark for 36 bytes dudududududu"
-  EURYDICE_CONTACT: ${EURYDICE_CONTACT:-the development team}
-  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR:-par courrier recommandé en 3 exemplaires}
-  UI_BADGE_CONTENT: Dev -> Dev
-  UI_BADGE_COLOR: "#01426a"
-  LOG_TO_FILE: true
+  USER_ASSOCIATION_TOKEN_SECRET_KEY: ${USER_ASSOCIATION_TOKEN_SECRET_KEY:?}
+  GUNICORN_CONFIGURATION: ${GUNICORN_CONFIGURATION}
+  EURYDICE_CONTACT: ${EURYDICE_CONTACT}
+  EURYDICE_CONTACT_FR: ${EURYDICE_CONTACT_FR}
+  UI_BADGE_CONTENT: ${UI_BADGE_CONTENT}
+  UI_BADGE_COLOR: ${UI_BADGE_COLOR}
+  LOG_TO_FILE: ${LOG_TO_FILE}
+  LOG_LEVEL: ${LOG_LEVEL}
+  PORT: 8080
 
 x-backend: &backend
   build:
-    context: "backend"
+    context: backend
     dockerfile: docker/Dockerfile
     target: dev
   image: eurydice/backend:dev
@@ -34,25 +40,31 @@ x-backend: &backend
         ignore:
           - .venv/
       - action: rebuild
-        path: ./backend/Pipfile.lock
+        path: ./backend/uv.lock
+      - action: rebuild
+        path: ./backend/docker/Dockerfile
 
 x-frontend: &frontend
   build:
-    context: "frontend"
+    context: frontend
     dockerfile: docker/Dockerfile
     target: dev
-  image: eurydice/frontend:dev
+  image: eurydice/frontend_dev:${EURYDICE_VERSION}
   environment:
-    NODE_ENV: ${NODE_ENV:-development}
+    NODE_ENV: development
   develop:
+    # Create a `watch` configuration to update the application
+    # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
     watch:
       - action: sync
         path: ./frontend
-        target: /home/abc/workdir/frontend
+        target: /home/abc/workdir
         ignore:
           - node_modules/
       - action: rebuild
         path: ./frontend/package-lock.json
+      - action: rebuild
+        path: ./frontend/docker/Dockerfile
 
 x-common-origin-envs: &common-origin-envs
   DB_HOST: db-origin
@@ -61,80 +73,12 @@ x-common-origin-envs: &common-origin-envs
 
 x-common-destination-envs: &common-destination-envs
   DB_HOST: db-destination
-  TRANSFERABLE_STORAGE_DIR: /tmp/eurydice-data/
+  TRANSFERABLE_STORAGE_DIR: /tmp/eurydice-data/destination/
 
 x-common-auth-envs: &common-auth-envs
-  REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: "true"
-
-x-db: &db
-  image: postgres:15
-  read_only: true
-  networks:
-    - eurydice
-  environment:
-    POSTGRES_DB: eurydice
-    POSTGRES_USER: eurydice
-    POSTGRES_PASSWORD: eurydice
-    TZ: "Europe/Paris"
-    PGTZ: "Europe/Paris"
-  tmpfs:
-    - /tmp
-    - /run
-  command:
-    - "postgres"
-    - "-c" # turn on csv logging
-    - "logging_collector=on"
-    - "-c"
-    - "log_destination=csvlog"
-    - "-c"
-    - "log_directory=/var/log/postgresql"
-    - "-c" # filebeat format
-    - "log_line_prefix=%m [%p] %q%u@%d "
-    - "-c" # turn on hour-based log rotation
-    - "log_truncate_on_rotation=on"
-    - "-c"
-    - "log_filename=postgresql-%H.log"
-    - "-c"
-    - "log_rotation_age=60"
-    - "-c"
-    - "log_file_mode=0644"
-    - "-c" # print statements that took more than 200ms...
-    - "log_min_duration_statement=200"
-    - "-c" # ...do not print other statements...
-    - "log_statement=none"
-    - "-c" # ...do not even print the duration of these other statements
-    - "log_duration=off"
-  healthcheck:
-    # NOTE: DB will become healthy as soon as it has created the eurydice table
-    test:
-      - "CMD-SHELL"
-      - 'psql -U eurydice -lqtA | grep -q "^eurydice|"'
-    interval: 5s
-    timeout: 5s
-    retries: 5
+  REMOTE_USER_HEADER_AUTHENTICATION_ENABLED: ${REMOTE_USER_HEADER_AUTHENTICATION_ENABLED}
 
 services:
-  ################ Common Services ################
-
-  traefik:
-    image: traefik:2.10
-    networks:
-      - eurydice
-    command:
-      - "--log.level=DEBUG"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--api.dashboard=true"
-    ports:
-      - "80:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.dashboard.rule: Host(`traefik.localhost`)
-      traefik.http.routers.dashboard.service: api@internal
-
   ################ Origin Services ################
   frontend-origin:
     <<: *frontend
@@ -143,9 +87,9 @@ services:
     environment:
       VITE_EURYDICE_GUICHET: origin
     labels:
-      traefik.enable: "true"
+      traefik.enable: true
       traefik.http.routers.frontend_origin.rule: Host(`origin.localhost`)
-      traefik.http.routers.frontend_origin.priority: "1"
+      traefik.http.routers.frontend_origin.priority: 1
       traefik.http.routers.frontend_origin.service: frontend_origin_service
       traefik.http.services.frontend_origin_service.loadbalancer.server.port: 8080
 
@@ -155,21 +99,21 @@ services:
       db-origin:
         condition: service_started
     volumes:
-      - backend-origin-logs:/var/log/app
-      - origin-data-storage:/tmp/eurydice-data/origin
+      - ${PYTHON_LOGS_DIR:?}/backend-origin:/var/log/app
+      - ${ORIGIN_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data/origin
     environment:
       <<: [*backend-common-envs, *common-origin-envs, *common-auth-envs]
-      SECRET_KEY: GhSZiXkmYyty
+      SECRET_KEY: ${DJANGO_SECRET_KEY:?}
       EURYDICE_API: origin
       ALLOWED_HOSTS: origin.localhost,backend-origin
-      CSRF_TRUSTED_ORIGINS: ""
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
       DJANGO_MANAGEPY_MIGRATE: "on"
-      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
-      UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet origine}
-      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
+      USER_ASSOCIATION_TOKEN_EXPIRES_AFTER: ${USER_ASSOCIATION_TOKEN_EXPIRES_AFTER}
+      EURYDICE_TRANSFERABLE_MAX_SIZE: ${EURYDICE_TRANSFERABLE_MAX_SIZE}
     healthcheck:
       test:
-        - "CMD"
+        - CMD
         - /healthcheck.py
       interval: 5s
       timeout: 5s
@@ -179,7 +123,7 @@ services:
       #       (in production this should be done by a different service)
       start_period: 5s
     labels:
-      traefik.enable: "true"
+      traefik.enable: true
       traefik.http.routers.backend-origin.rule: Host(`origin.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
     command:
       - make
@@ -196,16 +140,18 @@ services:
       lidis:
         condition: service_started
     volumes:
-      - sender-logs:/var/log/app
-      - origin-data-storage:/tmp/eurydice-data/origin
+      - ${PYTHON_LOGS_DIR:?}/sender:/var/log/app
+      - ${ORIGIN_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data/origin
     extra_hosts:
-      - "lidis.docker.host:${LIDIS_DOCKER_HOST:-host-gateway}"
+      - "lidis.docker.host:host-gateway"
     environment:
       <<: [*backend-common-envs, *common-origin-envs]
       DB_HOST: db-origin
-      LIDIS_HOST: "lidis.docker.host"
-      LIDIS_PORT: "5000"
-      SENDER_RANGE_FILLER_CLASS: "UserRotatingTransferableRangeFiller"
+      LIDIS_HOST: lidis.docker.host
+      LIDIS_PORT: ${LIDIS_PORT}
+      TRANSFERABLE_HISTORY_DURATION: ${TRANSFERABLE_HISTORY_DURATION}
+      TRANSFERABLE_HISTORY_SEND_EVERY: ${TRANSFERABLE_HISTORY_SEND_EVERY}
+      SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS}
     command:
       - make
       - run-sender
@@ -219,67 +165,17 @@ services:
       backend-origin:
         condition: service_healthy
     volumes:
-      - dbtrimmer-origin-logs:/var/log/app
+      - ${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/var/log/app
     environment:
       <<: [*backend-common-envs, *common-origin-envs]
-      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: "2h"
-      DBTRIMMER_RUN_EVERY: "6h"
-      DBTRIMMER_POLL_EVERY: "200ms"
+      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
+      DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
+      DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
     command:
       - make
       - run-origin-dbtrimmer
 
-  db-origin:
-    <<: *db
-    ports:
-      - 5432:5432
-    volumes:
-      - db-origin-data:/var/lib/postgresql/data
-      - db-origin-logs:/var/log/postgresql/:rw
-
-  lidis:
-    image: anssi/lidi-send:latest
-    network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG:-INFO}
-    depends_on:
-      lidir:
-        condition: service_started
-    read_only: true
-    command:
-      - "--from_tcp"
-      - "0.0.0.0:5000"
-      - "--to_udp"
-      - "0.0.0.0:6000"
-      - "--nb_clients"
-      - "1"
-
   ################ Destination Services ################
-  lidir:
-    image: anssi/lidi-receive:latest
-    network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG:-INFO}
-    depends_on:
-      receiver:
-        condition: service_started
-    read_only: true
-    command:
-      - "--from_udp"
-      - "0.0.0.0:6000"
-      - "--to_tcp"
-      - "0.0.0.0:7000"
-      - "--nb_clients"
-      - "1"
-
-  db-destination:
-    <<: *db
-    ports:
-      - 5433:5432
-    volumes:
-      - db-destination-data:/var/lib/postgresql/data
-      - db-destination-logs:/var/log/postgresql/
-
   receiver:
     <<: *backend
     depends_on:
@@ -289,13 +185,13 @@ services:
       backend-destination:
         condition: service_healthy
     volumes:
-      - receiver-logs:/var/log/app
-      - destination-data-storage:/tmp/eurydice-data
+      - ${PYTHON_LOGS_DIR:?}/receiver:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data
     environment:
       <<: [*backend-common-envs, *common-destination-envs]
       PACKET_RECEIVER_HOST: "0.0.0.0"
       PACKET_RECEIVER_PORT: "7000"
-      RECEIVER_BUFFER_MAX_ITEMS: "4"
+      RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS}"
     ports:
       - "127.0.0.1:7000:7000"
     command:
@@ -311,13 +207,13 @@ services:
       backend-destination:
         condition: service_healthy
     volumes:
-      - dbtrimmer-destination-logs:/var/log/app
-      - destination-data-storage:/tmp/eurydice-data
+      - ${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data
     environment:
       <<: [*backend-common-envs, *common-destination-envs]
-      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: "2h"
-      DBTRIMMER_RUN_EVERY: "6h"
-      DBTRIMMER_POLL_EVERY: "200ms"
+      DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
+      DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
+      DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
     command:
       - make
       - run-destination-dbtrimmer
@@ -331,13 +227,13 @@ services:
       backend-destination:
         condition: service_healthy
     volumes:
-      - file-remover-logs:/var/log/app
-      - destination-data-storage:/tmp/eurydice-data
+      - ${PYTHON_LOGS_DIR:?}/file-remover:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data
     environment:
       <<: [*backend-common-envs, *common-destination-envs]
-      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: "1hour"
-      FILE_REMOVER_RUN_EVERY: "30s"
-      FILE_REMOVER_POLL_EVERY: "200ms"
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
+      FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
+      FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
     command:
       - make
       - run-destination-file-remover
@@ -348,18 +244,16 @@ services:
       db-destination:
         condition: service_healthy
     volumes:
-      - backend-destination-logs:/var/log/app
-      - destination-data-storage:/tmp/eurydice-data
+      - ${PYTHON_LOGS_DIR:?}/backend-destination:/var/log/app
+      - ${DESTINATION_TRANSFERABLE_STORAGE_DIR:?}:/tmp/eurydice-data
     environment:
       <<: [*backend-common-envs, *common-destination-envs, *common-auth-envs]
-      SECRET_KEY: jBS0nmi4MOQIeXcN
+      SECRET_KEY: "${DJANGO_SECRET_KEY:?}"
       EURYDICE_API: destination
       ALLOWED_HOSTS: destination.localhost,backend-destination
-      CSRF_TRUSTED_ORIGINS: ""
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
       DJANGO_MANAGEPY_MIGRATE: "on"
-      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW:-60min}
-      UI_BADGE_CONTENT: ${UI_BADGE_CONTENT:-Guichet destination}
-      UI_BADGE_COLOR: ${UI_BADGE_COLOR:-#01426a}
+      METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
     healthcheck:
       test:
         - CMD
@@ -372,7 +266,7 @@ services:
       #       (in production this should be done by a different service)
       start_period: 5s
     labels:
-      traefik.enable: "true"
+      traefik.enable: true
       traefik.http.routers.backend-destination.rule: Host(`destination.localhost`) && PathPrefix(`/api`, `/admin`, `/static`)
     command:
       - make
@@ -385,55 +279,8 @@ services:
     environment:
       VITE_EURYDICE_GUICHET: destination
     labels:
-      traefik.enable: "true"
+      traefik.enable: true
       traefik.http.routers.frontend_destination.rule: Host(`destination.localhost`)
-      traefik.http.routers.frontend_destination.priority: "1"
+      traefik.http.routers.frontend_destination.priority: 1
       traefik.http.routers.frontend_destination.service: frontend_destination_service
       traefik.http.services.frontend_destination_service.loadbalancer.server.port: 8080
-
-  ################ Dev Tools ################
-
-  pgadmin:
-    build:
-      context: pgadmin
-      target: dev
-    # NOTE: we tag local dev images with our registry otherwise the image is tagged
-    # using the docker hub as a registry
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    image: eurydice/pgadmin4:dev
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    networks:
-      - eurydice
-    volumes:
-      - pgadmin:/var/lib/pgadmin
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.pgadmin.rule: Host(`pgadmin.localhost`)
-
-volumes:
-  db-origin-data:
-  db-origin-logs:
-  db-destination-data:
-  db-destination-logs:
-  pgadmin:
-  backend-origin-logs:
-  sender-logs:
-  dbtrimmer-origin-logs:
-  backend-destination-logs:
-  receiver-logs:
-  dbtrimmer-destination-logs:
-  file-remover-logs:
-  origin-data-storage:
-  destination-data-storage:
-
-networks:
-  eurydice:
-    driver: bridge
-    name: eurydice
-    ipam:
-      config:
-        - subnet: ${EURYDICE_IPV4_SUBNET:-172.42.0.0/24}

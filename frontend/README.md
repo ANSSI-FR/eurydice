@@ -1,8 +1,8 @@
 # Frontend Eurydice
 
-# Install
+## Install
 
-## Developer dependencies
+### Developer dependencies
 
 This command will install all developer dependencies:
 
@@ -10,34 +10,7 @@ This command will install all developer dependencies:
 make install-dev 
 ```
 
-## Production environment
-
-To install only production dependencies use:
-
-```bash
-make install
-```
-
-# Launch the project
-
-If you are developing the app, you should run the following command :
-
-```bash
-make run-watch
-```
-
-The app runs on 0.0.0.0:8080, watch for changes in code and reload the page automatically.
-/!\ The port is fixed and the app crashes if you are running on different ports /!\
-
-If you want to preview the built application, you can run the app in preview mode.
-
-```bash
-make run-preview
-```
-
-This command builds the app and launch a static website server to serve your app.
-
-# Lint the code
+## Lint the code
 
 If you want to lint and fix fixeable lint errors, you can launch this command:
 
@@ -57,7 +30,7 @@ If you only want to check the lint errors (in CI for example):
 make lint-check
 ```
 
-# Format the code
+## Format the code
 
 If you want to fix the format of all files :
 
@@ -77,7 +50,7 @@ If you want to check the format of all files (for example in CI):
 make format-check
 ```
 
-# Test
+## Test
 
 To run unit and component tests run:
 
@@ -87,8 +60,29 @@ make tests
 
 TODO: playwright
 
-# Build the frontend
+## Build the frontend
 
 ```bash
 make build
 ```
+
+## Launch the frontend alone
+
+**Note:** If you want to run the frontend alone locally you can use the following commands. Otherwise you should use the method described in the [developper.md](../docs/developers.md) guide.
+
+If you are developing the app, you can run the following command:
+
+```bash
+make run-watch
+```
+
+The app runs on 0.0.0.0:8080, watch for changes in code and reload the page automatically.
+⚠️ The port is fixed and the app crashes if you are running on different ports. ⚠️
+
+If you want to preview the built application, you can run the app in preview mode.
+
+```bash
+make run-preview
+```
+
+This command builds the app and launch a static website server to serve your app.

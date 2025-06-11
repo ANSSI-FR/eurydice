@@ -1,0 +1,161 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[devcontainer][origin] 5Run frontend-origin",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.origin && make -C frontend run-watch",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][origin] 3Run backend-origin",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.origin && cd backend && uv run make run-origin-api",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][origin] 4Run sender",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.origin && cd backend && uv run make run-sender",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][origin] 2Run dbtrimmer-origin",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.origin && cd backend && uv run make run-origin-dbtrimmer",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][origin] 1Run db-migrations-origin",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.origin && cd backend && uv run make migrate",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "close": true
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 5Run receiver",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && cd backend && uv run make run-receiver",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 2Run dbtrimmer-destination",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && cd backend && uv run make run-destination-dbtrimmer",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 1Run db-migrations-destination",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && cd backend && uv run make migrate",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "close": true
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 3Run file-remover-destination",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && cd backend && uv run make run-destination-file-remover",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 4Run backend-destination",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && cd backend && uv run make run-destination-api",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "[devcontainer][destination] 6Run frontend-destination",
+      "type": "shell",
+      "command": "set -a && source .devcontainer/.env.destination && make -C frontend run-watch",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

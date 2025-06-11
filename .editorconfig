@@ -19,12 +19,6 @@ indent_style = tab
 [*.md]
 trim_trailing_whitespace = false
 
-[Pipfile.lock]
-indent_size = 2
-
-[{Pipfile,*.toml}]
-indent_size = 4
-
 [*.{js,jsx,ts,tsx,vue}]
 indent_style = space
 indent_size = 2

@@ -1,3 +1,6 @@
 # Safety Security and License Configuration file
 security:
-    ignore-vulnerabilities:
+  ignore-vulnerabilities:
+    77119:
+    76910:
+      reason: django-stubs can be updated, but needed compatibility with djangorestframework-stubs isn't ready yet
