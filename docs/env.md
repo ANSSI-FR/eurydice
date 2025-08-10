@@ -69,6 +69,7 @@
 | `LIDI_ENCODING_BLOCK_SIZE`  | `60000`       | Value for lidi option `--encoding_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes) |
 | `LIDI_REPAIR_BLOCK_SIZE`    | `6000`        | Value for lidi option `--repair_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)   |
 | `LIDIS_NB_ENCODING_THREADS` | `2`           | Value for lidi option `--nb_encoding_threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)                       |
+| `LIDI_BANDWIDTH_LIMIT`      | `1000`        | Value fir lidi option `--bandwidth_limit` (not yet documented) limit bandwith for the lidis/r. This Parameter affects performance and reliability and avoid lost blocks for 10Go/s )      |
 
 ## Network configuration
 
