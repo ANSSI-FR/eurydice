@@ -1,6 +1,5 @@
 from django.conf import settings
-from rest_framework import generics
-from rest_framework import permissions
+from rest_framework import generics, permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 

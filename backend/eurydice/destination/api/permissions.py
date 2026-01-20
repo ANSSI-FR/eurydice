@@ -1,9 +1,8 @@
 """Custom permissions for the destination API."""
 
 from django.utils.translation import gettext_lazy as _
-from rest_framework import permissions
+from rest_framework import permissions, views
 from rest_framework import request as drf_request
-from rest_framework import views
 
 from eurydice.destination.core import models
 
@@ -31,9 +30,7 @@ class IsAssociatedUser(permissions.IsAuthenticated):  # type: ignore
     Permission to only allow actions to a user that has undergone association.
     """
 
-    message = _(
-        "Your destination user account must be associated with its origin user account."
-    )
+    message = _("Your destination user account must be associated with its origin user account.")
 
     def has_permission(
         self,

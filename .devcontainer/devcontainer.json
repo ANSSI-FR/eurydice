@@ -1,6 +1,6 @@
 {
   "name": "Eurydice",
-  "dockerComposeFile": ["compose.devcontainer.yml"],
+  "dockerComposeFile": ["compose.devcontainer.yml", "compose.override.yml"],
   "service": "devcontainer",
   "initializeCommand": "bash .devcontainer/init.sh",
   "postCreateCommand": "bash .devcontainer/setup.sh",
@@ -28,6 +28,7 @@
       },
       "extensions": [
         "davidanson.vscode-markdownlint",
+        "charliermarsh.ruff",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
         "esbenp.prettier-vscode",
@@ -36,7 +37,6 @@
         "gruntfuggly.todo-tree",
         "iulian-radu-at.vscode-tasks-sidebar",
         "ms-azuretools.vscode-containers",
-        "ms-python.black-formatter",
         "ms-python.mypy-type-checker",
         "ms-python.python",
         "ms-python.vscode-pylance",

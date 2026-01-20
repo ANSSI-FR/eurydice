@@ -6,7 +6,7 @@
 
 <div align="center">
 
-Eurydice (<b>E</b>metteur <b>U</b>nidirectionnel <b>R</b>edondant de <b>Y</b>ottabit pour le <b>D</b>ialogue <b>I</b>ntergiciel avec <b>C</b>orrection d'<b>E</b>rreur) provides an interface to transfer files through a physical diode using the [Lidi](https://github.com/ANSSI-FR/lidi/) utility.
+Eurydice (<b>E</b>metteur <b>U</b>nidirectionnel <b>R</b>edondant de <b>Y</b>ottabit pour le <b>D</b>ialogue <b>I</b>ntergiciel avec <b>C</b>orrection d'<b>E</b>rreur) provides an interface to transfer files through a physical diode using the Lidi utility.
 
 </div>
 

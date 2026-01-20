@@ -1,4 +1,3 @@
-import apiClient from '@common/api/api-client';
 import {
   errorInterceptor,
   setUserFromResponseInterceptor,
@@ -6,7 +5,9 @@ import {
 } from '@common/api/response-interceptors';
 import * as toastMessageService from '@common/services/toast-message.service';
 import { useUserStore } from '@common/store/user.store';
-import { router } from '@destination/router';
+import { router as destinationRouter } from '@destination/router';
+import { router as originRouter } from '@origin/router';
+import { flushPromises } from '@vue/test-utils';
 import type { AxiosResponse, RawAxiosResponseHeaders } from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,56 +15,72 @@ const TEST_CASES = [
   {
     response: undefined,
     expectedAlertTitle: 'Error.Network.title',
-    expectedAlertMessage: undefined,
+    expectedAlertMessage: 'Error.Network.message',
     expectAlertToHaveBeenCalled: true,
+    autoExpires: false,
+    paramsMessage: { paramsMessage: { errorMessage: undefined } },
   },
   {
     response: { status: 404 },
     expectedAlertTitle: 'Error.404.title',
     expectedAlertMessage: 'Error.404.message',
     expectAlertToHaveBeenCalled: true,
+    autoExpires: true,
   },
   {
     response: { status: 500 },
     expectedAlertTitle: 'Error.500.title',
     expectedAlertMessage: 'Error.500.message',
     expectAlertToHaveBeenCalled: true,
+    autoExpires: true,
   },
   {
     response: { status: 503 },
     expectedAlertTitle: 'Error.503.title',
     expectedAlertMessage: 'Error.503.message',
     expectAlertToHaveBeenCalled: true,
+    autoExpires: true,
   },
   {
     response: { status: 400 },
     expectedAlertTitle: '',
     expectedAlertMessage: 'Cette erreur ne passera pas par toastMessage',
     expectAlertToHaveBeenCalled: false,
-  },
-  {
-    response: { status: 401, config: { url: '/user/login/' } },
-    expectedAlertTitle: 'Error.401.title',
-    expectedAlertMessage: 'Error.401.message',
-    expectAlertToHaveBeenCalled: true,
+    autoExpires: true,
   },
 ];
 
 describe('Error response interceptor', () => {
   it.each(TEST_CASES)(
     "raises '$expectedAlertMessage' when given response '$response'",
-    ({ response, expectedAlertTitle, expectedAlertMessage, expectAlertToHaveBeenCalled }) => {
+    ({
+      response,
+      expectedAlertTitle,
+      expectedAlertMessage,
+      expectAlertToHaveBeenCalled,
+      autoExpires,
+      paramsMessage,
+    }) => {
       const spyOnToast = vi.spyOn(toastMessageService, 'toastMessage').mockImplementation(vi.fn());
-
       // We expect the interceptor to pass the exception even after treating it
       expect(() => errorInterceptor({ response })).toThrow();
       if (expectAlertToHaveBeenCalled) {
-        expect(spyOnToast).toHaveBeenCalledWith(
-          expectedAlertTitle,
-          expectedAlertMessage,
-          'error',
-          true,
-        );
+        if (paramsMessage) {
+          expect(spyOnToast).toHaveBeenCalledWith(
+            expectedAlertTitle,
+            expectedAlertMessage,
+            'error',
+            autoExpires,
+            paramsMessage,
+          );
+        } else {
+          expect(spyOnToast).toHaveBeenCalledWith(
+            expectedAlertTitle,
+            expectedAlertMessage,
+            'error',
+            autoExpires,
+          );
+        }
       } else {
         expect(spyOnToast).not.toHaveBeenCalled();
       }
@@ -71,9 +88,9 @@ describe('Error response interceptor', () => {
   );
   it('redirects to /user-association on 403 error', () => {
     vi.stubEnv('VITE_EURYDICE_GUICHET', 'destination');
-    const spyOnToast = vi.spyOn(toastMessageService, 'toastMessage').mockImplementation(vi.fn());
-    const spyOnRouterPush = vi.spyOn(router, 'push').mockImplementation(vi.fn());
-
+    const spyOnRouterPush = vi.spyOn(destinationRouter, 'push').mockImplementation(vi.fn());
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
     expect(spyOnRouterPush).not.toBeCalled();
 
     const response = { status: 403 };
@@ -81,66 +98,46 @@ describe('Error response interceptor', () => {
     // We expect the interceptor to pass the exception even after treating it
     expect(() => errorInterceptor({ response })).toThrow();
 
-    expect(spyOnToast).toHaveBeenCalledWith('Error.403.title', 'Error.403.message', 'error', true);
     expect(spyOnRouterPush).toHaveBeenCalledWith({ name: 'userAssociation' });
   });
 
   it('correctly handles errors without an HTTP response', () => {
     const spyOnToast = vi.spyOn(toastMessageService, 'toastMessage').mockImplementation(vi.fn());
     const axiosError = {
-      message: 'Evil breaks its chains and runs through the world like a mad dog.',
+      message: 'Network error from server',
     };
 
     expect(() => errorInterceptor(axiosError)).toThrow();
     expect(spyOnToast).toHaveBeenCalledWith(
       'Error.Network.title',
-      axiosError.message,
+      'Error.Network.message',
       'error',
-      true,
+      false,
+      {
+        paramsMessage: {
+          errorMessage: axiosError.message,
+        },
+      },
     );
   });
 
-  it('correctly gets session cookie after a 401 error', async () => {
+  it.each([
+    { name: 'origin', router: originRouter },
+    { name: 'destination', router: destinationRouter },
+  ])('redirects to login page after a 401 for $name', async ({ name, router }) => {
+    vi.stubEnv('VITE_EURYDICE_GUICHET', name);
+    const spyOnRouterPush = vi.spyOn(router, 'push').mockImplementation(vi.fn());
+
     const axiosError = {
-      response: { status: 401 },
-      config: 'Evil breaks its chains and runs through the world like a mad dog.',
+      response: { status: 401, config: { url: '/' } },
+      config: 'Error 401 text',
     };
-
-    const fullfilledResponse = "I'm Worried I Fucked With Your Gender Expression";
-    apiClient.request = vi.fn().mockResolvedValue(fullfilledResponse);
-    const requestRetryData = await errorInterceptor(axiosError);
-    // expect original request to be fullfilled after retry
-    expect(requestRetryData).toBe(fullfilledResponse);
-    expect(apiClient.request).toHaveBeenCalledTimes(2);
-    // expect initial login attempt
-    expect(apiClient.request).toHaveBeenNthCalledWith(1, '/user/login/');
-    // expect subsequent retry of original request
-    expect(apiClient.request).toHaveBeenNthCalledWith(2, axiosError.config);
-  });
-
-  it('notifies errors when getting session cookie after a 401 error', async () => {
-    const axiosError = {
-      response: { status: 401 },
-      config: 'Evil breaks its chains and runs through the world like a mad dog.',
-    };
-    const rejectedResponse = {
-      message: "That's Not A Kid, That's My Business Partner",
-    };
-    const spyOnToast = vi.spyOn(toastMessageService, 'toastMessage').mockImplementation(vi.fn());
-
-    apiClient.request = vi.fn().mockRejectedValue(rejectedResponse);
 
     await errorInterceptor(axiosError);
-    // expect a login attempt
-    expect(apiClient.request).toHaveBeenCalledTimes(1);
-    expect(apiClient.request).toHaveBeenCalledWith('/user/login/');
-    // expect returned error to have been logged
-    expect(spyOnToast).toHaveBeenCalledWith(
-      'Error.401.title',
-      rejectedResponse.message,
-      'error',
-      true,
-    );
+
+    await flushPromises();
+
+    expect(spyOnRouterPush).toHaveBeenCalledWith({ name: 'login' });
   });
 });
 

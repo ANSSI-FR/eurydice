@@ -1,4 +1,5 @@
 import apiClient from '@common/api/api-client';
+import { useUserStore } from '@common/store/user.store';
 import { router } from '@destination/router';
 import UserAssociation from '@destination/views/UserAssociation.vue';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -6,6 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 describe('Main View Origin', () => {
   it('Contains the Token textarea, its messages and buttons', () => {
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
     // We mount origin MainView without content
     const wrapper = mount(UserAssociation, {
       global: {
@@ -35,6 +38,8 @@ describe('Main View Origin', () => {
     expect(wrapper.find('[data-testid="TokenErrorMsg"]').text()).toBe(item.errorMsg);
   });
   it('Shows success message when sent token is correct', async () => {
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
     const mockFunction = async () => Promise.resolve(new Response(null, { status: 203 }));
 
     const spyOnPostAssociationToken = vi.spyOn(apiClient, 'post').mockImplementation(mockFunction);
@@ -64,6 +69,8 @@ describe('Main View Origin', () => {
     expect(wrapper.find('[data-testid="ContinueBtn"]').exists()).toBe(true);
   });
   it('Shows success message when sent token is correct but user is already connected', async () => {
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
     const mockFunction = async () =>
       Promise.reject(Object.assign(new Error('Conflict Error'), { status: 409 }));
 
@@ -94,6 +101,8 @@ describe('Main View Origin', () => {
     expect(wrapper.find('[data-testid="ContinueBtn"]').exists()).toBe(true);
   });
   it('Shows errors when sent token is incorrect', async () => {
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
     const mockFunction = async () =>
       Promise.reject(Object.assign(new Error('Error'), { status: 400 }));
 
@@ -122,6 +131,8 @@ describe('Main View Origin', () => {
   });
   it('Shows errors when sent token returns a server error 500', async () => {
     vi.stubEnv('VITE_TOKEN_WORD_COUNT', '18');
+    const userStore = useUserStore();
+    userStore.setCurrentUser({ username: 'billmuray' });
 
     const mockFunction = async () =>
       Promise.reject(Object.assign(new Error('Error'), { status: 500 }));

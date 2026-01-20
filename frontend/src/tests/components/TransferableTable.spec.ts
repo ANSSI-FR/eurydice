@@ -76,7 +76,7 @@ describe('TransferableTable.vue', () => {
     const nextPageButton = wrapper.findAll('.p-paginator-next');
     expect(nextPageButton.length).toEqual(1);
 
-    await nextPageButton[0].trigger('click');
+    await nextPageButton[0]!.trigger('click');
     await flushPromises();
     expect(spyOnListTransferables).toBeCalledWith({
       delta: 1,
@@ -129,7 +129,7 @@ describe('TransferableTable.vue', () => {
       pageSize,
     });
 
-    await nextPageButton[0].trigger('click');
+    await nextPageButton[0]!.trigger('click');
     await flushPromises();
     expect(spyOnListTransferables).toBeCalledWith({
       delta: 1,

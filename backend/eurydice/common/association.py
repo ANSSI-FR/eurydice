@@ -2,11 +2,9 @@ import datetime
 import hmac
 import struct
 import uuid
-from typing import Optional
 
 from django.conf import settings
-from django.utils import crypto
-from django.utils import timezone
+from django.utils import crypto, timezone
 
 
 class MalformedToken(ValueError):
@@ -55,7 +53,7 @@ class AssociationToken:
     def __init__(
         self,
         user_profile_id: uuid.UUID,
-        expires_at: Optional[datetime.datetime] = None,
+        expires_at: datetime.datetime | None = None,
     ):
         self.user_profile_id: uuid.UUID = user_profile_id
         self.expires_at: datetime.datetime = expires_at  # type: ignore
@@ -66,16 +64,12 @@ class AssociationToken:
         return self._expires_at
 
     @expires_at.setter
-    def expires_at(self, value: Optional[datetime.datetime]) -> None:
+    def expires_at(self, value: datetime.datetime | None) -> None:
         """Sets the token expiration datetime."""
         if value is None:
-            value = timezone.now() + datetime.timedelta(
-                seconds=settings.USER_ASSOCIATION_TOKEN_EXPIRES_AFTER
-            )
+            value = timezone.now() + datetime.timedelta(seconds=settings.USER_ASSOCIATION_TOKEN_EXPIRES_AFTER)
         elif timezone.is_naive(value):
-            raise ValueError(
-                "Received naive datetime instead of timezone aware datetime"
-            )
+            raise ValueError("Received naive datetime instead of timezone aware datetime")
 
         # remove microseconds as they are lost when serializing the token to bytes
         self._expires_at = value.replace(microsecond=0)
@@ -175,9 +169,7 @@ class AssociationToken:
             raise MalformedToken()
 
         user_profile_id = uuid.UUID(bytes=uuid_bytes)
-        expires_at = datetime.datetime.fromtimestamp(
-            timestamp, tz=timezone.get_current_timezone()
-        )
+        expires_at = datetime.datetime.fromtimestamp(timestamp, tz=timezone.get_current_timezone())
 
         obj = cls(user_profile_id, expires_at)
         obj.verify(hmac_md5)

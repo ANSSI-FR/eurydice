@@ -1,19 +1,14 @@
-import logging
 import queue
 import socketserver
 import threading
 from socket import socket
 from types import TracebackType
-from typing import Optional
-from typing import Tuple
 from typing import Type
-from typing import Union
 
 from django.conf import settings
 
 from eurydice.common import protocol
-
-logger = logging.getLogger(__name__)
+from eurydice.common.logging.logger import LOG_KEY, logger
 
 
 class _RequestHandler(socketserver.StreamRequestHandler):
@@ -22,16 +17,16 @@ class _RequestHandler(socketserver.StreamRequestHandler):
     def handle(self) -> None:
         """Put the data of each socket request in the server queue."""
         try:
-            self.server.queue.put(
-                self.rfile.read(), block=False
-            )  # pytype: disable=attribute-error
+            self.server.queue.put(self.rfile.read(), block=False)
         except queue.Full:
             logger.error(
-                "Dropped Transferable - Receiver received data while "
-                "processing queue is at full capacity"
+                {
+                    LOG_KEY: "dropped_transferable",
+                    "message": "Receiver received data while processing queue is at full capacity",
+                }
             )
         else:
-            logger.debug("New block added to queue.")
+            logger.debug({LOG_KEY: "new_block_added_to_queue"})
 
 
 class _Server(socketserver.TCPServer):
@@ -47,13 +42,11 @@ class _Server(socketserver.TCPServer):
 
     def handle_error(
         self,
-        request: Union[socket, Tuple[bytes, socket]],
-        client_address: Union[Tuple[str, int], str],
+        request: socket | tuple[bytes, socket],
+        client_address: tuple[str, int] | str,
     ) -> None:
         """Log the exception arising when a socket request fails."""
-        logger.exception(
-            f"Exception occurred during processing of request from {client_address}"
-        )
+        logger.exception({LOG_KEY: "tcp_server_error", "client_address": str(client_address)})
 
 
 class _ReceiverThread(threading.Thread):
@@ -92,9 +85,7 @@ class PacketReceiver:
     """
 
     def __init__(self) -> None:
-        self._queue: queue.Queue = queue.Queue(
-            maxsize=settings.RECEIVER_BUFFER_MAX_ITEMS
-        )
+        self._queue: queue.Queue = queue.Queue(maxsize=settings.RECEIVER_BUFFER_MAX_ITEMS)
         self._receiver_thread = _ReceiverThread(self._queue)
 
     def start(self) -> None:
@@ -113,9 +104,7 @@ class PacketReceiver:
         self._receiver_thread.stop()
         self._receiver_thread.join()
 
-    def receive(
-        self, block: bool = True, timeout: Optional[float] = None
-    ) -> protocol.OnTheWirePacket:
+    def receive(self, block: bool = True, timeout: float | None = None) -> protocol.OnTheWirePacket:
         """Receive and deserialize an OnTheWirePacket.
 
         Args:
@@ -150,9 +139,9 @@ class PacketReceiver:
 
     def __exit__(
         self,
-        exctype: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        exc_traceback: Optional[TracebackType],
+        exctype: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_traceback: TracebackType | None,
     ) -> None:
         self.stop()
 

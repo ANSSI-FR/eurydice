@@ -124,7 +124,7 @@ const isPreviewDisabled = (transferable: Transferable) => {
     const MIO = 1048576;
     if (
       parts.length > 1 &&
-      extensions.includes(parts[parts.length - 1].toLowerCase()) &&
+      extensions.includes(parts[parts.length - 1]!.toLowerCase()) &&
       transferable.size &&
       transferable.size < MAX_PREVIEW_MIO * MIO
     ) {

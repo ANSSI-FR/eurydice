@@ -32,7 +32,6 @@ import { Message } from 'primevue';
 import { onMounted } from 'vue';
 
 onMounted(async () => {
-  refreshServerStatus();
-  setInterval(refreshServerStatus, import.meta.env.VITE_APP_REFRESH_INTERVAL_IN_MS ?? 5000);
+  await refreshServerStatus();
 });
 </script>

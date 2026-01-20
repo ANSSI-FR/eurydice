@@ -21,7 +21,7 @@ docker compose exec backend-origin sh
 
 Once in the container, you can access the project files. The directory of the project is by default mounted at the location `/home/eurydice`.
 
-The code must be formatted with [Black](https://black.readthedocs.io/en/stable/) and [isort](https://github.com/timothycrosley/isort).
+The code must be formatted with [Ruff](https://docs.astral.sh/ruff/).
 
 ```bash
 make format
@@ -30,33 +30,31 @@ make format
 To check that the code is properly formatted, run the following commands:
 
 ```bash
-make black-check
-make isort-check
+make ruff-check
 ```
 
 ## 🔎 Static analysis
 
-[Flake8](http://flake8.pycqa.org/en/latest/) is the _linter_ integrated in the project. Run it with the command below:
+[Ruff](https://docs.astral.sh/ruff/) is the _linter_ integrated in the project. Run it with the command below:
 
 ```bash
-make flake8
+make ruff
 ```
 
-[MyPy](http://mypy-lang.org/) and [Pytype](https://google.github.io/pytype/) are used to check the typing of the code.
+We use [MyPy](http://mypy-lang.org/) to check the typing of the code.
 
 ```bash
 make mypy
-make pytype
 ```
 
-[Bandit](https://bandit.readthedocs.io/en/latest/) and [Safety](https://github.com/pyupio/safety) allow to analyze respectively the security of the code and the security of the dependencies.
+[Bandit](https://bandit.readthedocs.io/en/latest/) and trivy allow to analyze respectively the security of the code and the security of the dependencies.
 
 ```bash
 make bandit
-make safety
+make trivy-uv
 ```
 
-All tools to check code quality (Flake8, MyPy, Pytype, Bandit, Safety, Isort, and Black) can be launched with a single command.
+All tools to check code quality (Ruff, MyPy, Bandit) can be launched with a single command except for trivy.
 
 ```bash
 make checks
@@ -94,3 +92,15 @@ In development and testing, it is necessary to set the value of the environment 
 | Base            | /              | Corresponds to the production environment.                                 | base.py           |
 | Development     | DEV            | Corresponds to the environment used by the developer locally.              | dev.py            |
 | Test            | TEST           | Corresponds to the environment used to perform the tests (used by the CI). | test.py           |
+
+
+## 📦 Release
+
+The project follows [Conventional Commits](https://www.conventionalcommits.org) and [Semantic Versioning (SemVer)](https://semver.org). Since we don’t use [release-please](https://github.com/googleapis/release-please), tagging the repository must be done manually.
+
+To publish a new release, you first need to update the application version in `pyproject.toml`.
+
+After committing this change to the master branch, you can create and push the new tag.
+
+⚠️It’s important that the version in `pyproject.toml` and the Git tag match exactly.
+

@@ -30,9 +30,7 @@ def _do_the_job(
 def test_boolean_condition_success(sig: signal.Signals, clean_exit: bool):
     ready_condition = multiprocessing.Condition()
     shared_running = multiprocessing.Value("i", -1)
-    process = multiprocessing.Process(
-        target=_do_the_job, args=(shared_running, ready_condition)
-    )
+    process = multiprocessing.Process(target=_do_the_job, args=(shared_running, ready_condition))
 
     process.start()
     with ready_condition:

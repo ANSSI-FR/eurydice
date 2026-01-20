@@ -9,12 +9,12 @@
       <span class="text-xl">{{ appTitle }}</span>
       <EnvironmentBadge />
       <VersionBadge />
+      <EncryptionBadge />
     </template>
     <template #end>
       <slot name="navbarAction" />
       <DarkmodeSwitch></DarkmodeSwitch>
-      <i class="pi pi-user"></i>
-      <span>{{ userStore.getCurrentUser?.username }}</span>
+      <UserMenu />
     </template>
   </MainNavBarLayout>
 </template>
@@ -22,11 +22,11 @@
 <script setup lang="ts">
 import logo from '@assets/img/lyre.svg?no-inline';
 import DarkmodeSwitch from '@common/components/DarkmodeSwitch.vue';
+import EncryptionBadge from '@common/components/EncryptionBadge.vue';
 import EnvironmentBadge from '@common/components/EnvironmentBadge.vue';
+import UserMenu from '@common/components/UserMenu.vue';
 import VersionBadge from '@common/components/VersionBadge.vue';
 import MainNavBarLayout from '@common/layouts/MainNavBarLayout.vue';
-import { useUserStore } from '@common/store/user.store';
 
-const userStore = useUserStore();
 const appTitle = import.meta.env.APP_TITLE ?? 'Eurydice';
 </script>

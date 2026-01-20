@@ -16,3 +16,4 @@
 !pyproject.toml
 !setup.cfg
 !settings.py
+!check_logging_format.sh

@@ -10,24 +10,20 @@ For example from 16 bytes, 8 words will be generated like this:
 
 import pathlib
 import re
-from typing import Dict
-from typing import List
 from typing import Literal
 
 from django.conf import settings
 
 _BYTE_ORDER: Literal["big"] = "big"
 
-_DEFAULT_WORDLIST_PATH: pathlib.Path = (
-    pathlib.Path(__file__).resolve().parent / "word_list.txt"
-)
+_DEFAULT_WORDLIST_PATH: pathlib.Path = pathlib.Path(__file__).resolve().parent / "word_list.txt"
 _WORDLIST_PATH: str = getattr(settings, "BYTES2WORDS_DICT", str(_DEFAULT_WORDLIST_PATH))
 
 # List of words in the file
-_WORDS: List[str] = pathlib.Path(_WORDLIST_PATH).read_text().split("\n")
+_WORDS: list[str] = pathlib.Path(_WORDLIST_PATH).read_text().split("\n")
 
 # From a word, retrieves the index of that word in _WORDS
-_INDEX: Dict[str, int] = {word: i for i, word in enumerate(_WORDS)}
+_INDEX: dict[str, int] = {word: i for i, word in enumerate(_WORDS)}
 
 _NON_ALPHANUMERIC = r"[^a-zA-Z]+"
 
@@ -67,10 +63,7 @@ def encode(data: bytes) -> str:
         raise EncodingError("Data length must be even.")
 
     return _SEPARATOR.join(
-        [
-            _WORDS[int.from_bytes(data[i * 2 : i * 2 + 2], _BYTE_ORDER)]
-            for i in range(int(len(data) / 2))
-        ]
+        [_WORDS[int.from_bytes(data[i * 2 : i * 2 + 2], _BYTE_ORDER)] for i in range(int(len(data) / 2))]
     )
 
 

@@ -1,8 +1,7 @@
 from unittest import mock
 
 import pytest
-from rest_framework import request
-from rest_framework import views
+from rest_framework import request, views
 
 from eurydice.destination.api import permissions
 from tests.destination.integration import factory
@@ -30,9 +29,7 @@ def test__is_associated_user_when_user_is_not_associated():
         (True, True, True),
     ],
 )
-@mock.patch(
-    "eurydice.destination.api.permissions.permissions.IsAuthenticated.has_permission"
-)
+@mock.patch("eurydice.destination.api.permissions.permissions.IsAuthenticated.has_permission")
 @mock.patch("eurydice.destination.api.permissions._is_associated_user")
 def test_is_associated_user_has_permission(
     mocked_is_authenticated_has_permission: mock.Mock,
@@ -51,8 +48,6 @@ def test_is_associated_user_has_permission(
     mocked_view = mock.Mock(spec=views.APIView)
 
     assert (
-        permissions.IsAssociatedUser.has_permission(
-            mocked_is_associated_user, mocked_request, mocked_view
-        )
+        permissions.IsAssociatedUser.has_permission(mocked_is_associated_user, mocked_request, mocked_view)
         is expected_result
     )

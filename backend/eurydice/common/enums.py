@@ -22,7 +22,7 @@ class OutgoingTransferableState(models.TextChoices):
         Returns: a set containing the final states.
 
         """
-        return {cls.ERROR, cls.CANCELED, cls.SUCCESS}  # pytype: disable=bad-return-type
+        return {cls.ERROR, cls.CANCELED, cls.SUCCESS}
 
     @property
     def is_final(self) -> bool:
@@ -38,16 +38,13 @@ class TransferableRevocationReason(models.TextChoices):
     """The set of all possible revocation reasons for an a TransferableRevocation."""
 
     USER_CANCELED = "USER_CANCELED", _("Canceled by the user")
-    UPLOAD_SIZE_MISMATCH = "UPLOAD_SIZE_MISMATCH", _(
-        "The size of the uploaded Transferable did "
-        "not match the size given in the Content-Length header."
+    UPLOAD_SIZE_MISMATCH = (
+        "UPLOAD_SIZE_MISMATCH",
+        _("The size of the uploaded Transferable did not match the size given in the Content-Length header."),
     )
-    OBJECT_STORAGE_FULL = "OBJECT_STORAGE_FULL", _(
-        "No more space on API object storage"
-    )
-    UNEXPECTED_EXCEPTION = "UNEXPECTED_EXCEPTION", _(
-        "Unexpected error occurred while handling Transferable"
-    )
+    OBJECT_STORAGE_FULL = "OBJECT_STORAGE_FULL", _("No more space on API object storage")
+    UNEXPECTED_EXCEPTION = "UNEXPECTED_EXCEPTION", _("Unexpected error occurred while handling Transferable")
+    UPLOAD_INTERRUPTION = "UPLOAD_INTERRUPTION", _("Multipart upload was interrupted")
 
 
 __all__ = (

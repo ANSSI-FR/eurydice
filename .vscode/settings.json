@@ -2,6 +2,7 @@
   // Configure formater
   "editor.formatOnSave": true,
   "prettier.enable": true,
+  "ruff.lint.enable": true,
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -17,7 +18,7 @@
   "[python]": {
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
-    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnType": true,
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {

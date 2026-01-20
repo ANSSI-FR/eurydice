@@ -1,5 +1,5 @@
-ARG DEBIAN_RELEASE="bullseye"
-ARG NODE_VERSION="22"
+ARG DEBIAN_RELEASE="bookworm"
+ARG NODE_VERSION="24"
 ARG REGISTRY="docker.io"
 
 ARG EURYDICE_VERSION development
@@ -54,12 +54,13 @@ RUN make build
 # ------------------------------------------------------------------------------
 # Production image
 # ------------------------------------------------------------------------------
-FROM nginx:1.28.0-alpine-slim AS prod
+FROM nginx:1-alpine AS prod
 
 ## rewrite nginx user UID and GID to 1000:1000
 RUN sed -i 's/nginx:x:101:101:nginx/nginx:x:1000:1000:nginx/g' /etc/passwd \
   && chown -R nginx:nginx /etc/nginx
-
+# no mirror for alpine in CI, can't update packages
+# RUN apk update && apk upgrade
 COPY --chown=nginx:nginx docker/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx docker/default.conf.template /etc/nginx/templates/default.conf.template
 

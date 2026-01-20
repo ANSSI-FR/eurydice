@@ -5,7 +5,8 @@
   },
   "Error": {
     "Network": {
-      "title": "Erreur réseau"
+      "title": "Erreur réseau",
+      "message": "Une erreur réseau est survenue. N'hésitez pas à rafraîchir la page plus tard. Message d'erreur serveur : {errorMessage}"
     },
     "401": { "title": "Non autorisé", "message": "Authentification nécessaire." },
     "403": {
@@ -123,8 +124,9 @@
     "state": "État",
     "actions": "Actions",
     "empty": "Aucun transfert trouvé",
-    "refreshNewItems": "Nouveaux fichiers",
-    "previewTooltip": "Prévisualisation seulement sur les fichiers txt, md, json, xml et dont la taille à {nbMio}Mio"
+    "refreshNewItems": "Rafraîchir",
+    "previewTooltip": "Prévisualisation seulement sur les fichiers txt, md, json, xml et dont la taille à {nbMio}Mio",
+    "lockTooltip": "Ce fichier a été chiffré avant envoi."
   },
   "Actions": {
     "deleteSelected": "Ne rien supprimer| Supprimer |Supprimer les fichiers sélectionnés",
@@ -167,5 +169,17 @@
   },
   "ScrollToTopButton": {
     "tooltip": "Revenir en haut de la page"
+  },
+  "UserMenu": {
+    "associationToken": "Jeton d'association",
+    "apiToken": "API Token"
+  },
+  "ApiTokenDialog": {
+    "initBtn": "Réinitialiser",
+    "copyBtn": "Copier",
+    "successToast": {
+      "title": "Token copié",
+      "message": "Le token a été copié dans votre presse papier."
+    }
   }
 }

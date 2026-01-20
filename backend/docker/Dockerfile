@@ -1,7 +1,7 @@
 ARG EURYDICE_VERSION development
 
 ARG DEBIAN_RELEASE="bullseye"
-ARG PYTHON_BUILD_VERSION="3.10"
+ARG PYTHON_BUILD_VERSION="3.12"
 # packages required to build project dependencies
 ARG BUILD_DEBIAN_PACKAGES="libpq-dev build-essential"
 # packages required to run the project
@@ -29,6 +29,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 RUN apt-get update \
   && apt-get --no-install-recommends --no-install-suggests --yes --quiet install $BUILD_DEBIAN_PACKAGES $RUN_DEBIAN_PACKAGES \
   && pip install --no-cache-dir --upgrade pip==25.0 \
+  && apt-get upgrade --yes \
   && apt-get clean \
   && chmod +x /usr/local/bin/uv /usr/local/bin/uvx \
   && apt-get --yes --quiet autoremove --purge \
@@ -90,6 +91,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3008
 RUN apt-get update \
   && apt-get --no-install-recommends --no-install-suggests --yes --quiet install $RUN_DEBIAN_PACKAGES \
+  && apt-get upgrade --yes \
   && apt-get clean \
   && apt-get --yes --quiet autoremove --purge \
   && rm -rf \
@@ -116,6 +118,7 @@ COPY --chown=eurydice:eurydice --from=compile-prod /home/eurydice/backend/.venv 
 COPY --chown=eurydice:eurydice manage.py .
 COPY --chown=eurydice:eurydice docker/entrypoint.sh /entrypoint.sh
 COPY --chown=eurydice:eurydice docker/healthcheck.py /healthcheck.py
+COPY --chown=eurydice:eurydice pyproject.toml .
 
 # hadolint ignore=DL3044
 ENV PATH="/home/eurydice/backend/.venv/bin:$PATH"

@@ -7,13 +7,14 @@ MAKEFLAGS += --no-builtin-rules
 
 COMPOSE := docker compose
 COMPOSE_DEV := PUID=$(shell id -u) PGID=$(shell id -g) $(COMPOSE) -f compose.yml
-COMPOSE_LOCAL_PROD := PUID=$(shell id -u) PGID=$(shell id -g) $(COMPOSE) -f compose.localprod.yml
 COMPOSE_PROD := $(COMPOSE) -f compose.prod.yml
 
 SYSCTL_OPTIONS = net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog net.ipv4.udp_mem
 SYSCTL_BACKUP_FILE = sysctl_backup.conf
 
-### config
+# ------------------------------------------------------------------------------
+# Config
+# ------------------------------------------------------------------------------
 
 .PHONY: backup-sysctl
 backup-sysctl: ## export sysctl config to backup file
@@ -76,7 +77,7 @@ create-common-destination-volumes: ## bootstrap the common destination volumes f
 	else \
 		echo "no .env file found, using default values"; \
 	fi
-	@mkdir -p "$${PYTHON_LOGS_DIR:-data/python-logs}/"{backend-destination,receiver,dbtrimmer-destination,db-migrations-destination,file-remover}
+	@mkdir -p "$${PYTHON_LOGS_DIR:-data/python-logs}/"{backend-destination,receiver,dbtrimmer-destination,db-migrations-destination,file-remover-destination}
 
 .PHONY: create-common-origin-volumes
 create-common-origin-volumes: ## bootstrap the common origin volumes folders
@@ -85,9 +86,11 @@ create-common-origin-volumes: ## bootstrap the common origin volumes folders
 	else \
 		echo "no .env file found, using default values"; \
 	fi
-	@mkdir -p "$${PYTHON_LOGS_DIR:-data/python-logs}/"{backend-origin,sender,dbtrimmer-origin,db-migrations-origin,file-remover}
+	@mkdir -p "$${PYTHON_LOGS_DIR:-data/python-logs}/"{backend-origin,sender,dbtrimmer-origin,db-migrations-origin,file-remover-origin}
 
-### dev
+# ------------------------------------------------------------------------------
+# Dev
+# ------------------------------------------------------------------------------
 
 .PHONY: create-dev-volumes
 create-dev-volumes: ## bootstrap the dev volumes folders
@@ -109,30 +112,40 @@ create-dev-volumes: ## bootstrap the dev volumes folders
 	@mkdir -p "$${FILEBEAT_LOGS_DIR:-data/filebeat-logs}/destination"
 	@mkdir -p "$${FILEBEAT_DATA_DIR:-data/filebeat-data}/origin"
 	@mkdir -p "$${FILEBEAT_DATA_DIR:-data/filebeat-data}/destination"
+	@mkdir -p "$${KEYPAIR_DIR:-data/keys}"
 
 .PHONY: dev-config
 dev-config: ## run dev configuration recipes
 	$(MAKE) config-sysctl
 	$(MAKE) config-ufw
 	$(MAKE) create-dev-volumes
+	$(MAKE) generate-keys
+	$(MAKE) generate-apache-dev-config
+	mv ./eurydice* "$${KEYPAIR_DIR:-data/keys}"
 
 .PHONY: dev-up
 dev-up: ## start the dev stack
 	$(MAKE) dev-config
+	$(COMPOSE_DEV) build --pull
 	$(COMPOSE_DEV) watch
 
 .PHONY: dev-up-elk
 dev-up-elk: ## start the dev stack with ELK
 	$(MAKE) dev-config
+	$(COMPOSE_DEV) build --pull
 	$(COMPOSE_DEV) -f compose.kibana.yml watch
 
-.PHONY: dev-down
-dev-down: ## stop the dev stack and remove volumes
-	$(COMPOSE_DEV) down --volumes --remove-orphans
+.PHONY: dev-stop
+dev-stop: ## stop the dev stack
+	$(COMPOSE_DEV) down --remove-orphans
+
+.PHONY: dev-stop-elk
+dev-stop-elk: ## stop the dev stack with ELK
+	$(COMPOSE_DEV) -f compose.kibana.yml down --remove-orphans
 
 .PHONY: dev-clean
 dev-clean: ## stop and clean the dev stack
-	$(MAKE) dev-down
+	$(COMPOSE_DEV) -f compose.kibana.yml down --volumes --remove-orphans
 	rm -rf data/
 
 .PHONY: dev-reset
@@ -145,39 +158,19 @@ install-dev: ## install local environments & dependencies
 	$(MAKE) -C backend install-dev
 	$(MAKE) -C frontend install-dev
 
+.PHONY: generate-apache-dev-config
+generate-apache-dev-config:
+	@set -a
+	source apache2/configs/.env
+	AppSide=origin envsubst < apache2/configs/dev-local-oidc.conf.tmpl > apache2/configs/dev-local-origin.conf
+	AppSide=destination envsubst < apache2/configs/dev-local-oidc.conf.tmpl > apache2/configs/dev-local-destination.conf
 
-### local prod
-
-.PHONY: local-prod-up
-local-prod-up: ## start the localprod stack
-	$(MAKE) dev-config
-	$(COMPOSE_LOCAL_PROD) build
-	$(COMPOSE_LOCAL_PROD) up -d
-
-.PHONY: local-prod-up-elk
-local-prod-up-elk: ## start the localprod stack with ELK
-	$(MAKE) dev-config
-	$(COMPOSE_LOCAL_PROD) build
-	$(COMPOSE_LOCAL_PROD) -f compose.kibana.yml up -d
-
-.PHONY: local-prod-stop
-local-prod-stop: ## stop the localprod stack
-	$(COMPOSE_LOCAL_PROD) down --remove-orphans
-
-.PHONY: local-prod-clean
-local-prod-clean: ## clean the localprod stack
-	$(COMPOSE_LOCAL_PROD) down --volumes --remove-orphans
-	rm -rf ./data
-
-.PHONY: local-prod-reset
-local-prod-reset: ## stop, remove volumes and data, then restart the localprod stack
-	$(MAKE) local-prod-clean
-	$(MAKE) local-prod-up
-
-### prod
+# ------------------------------------------------------------------------------
+# Production Volumes
+# ------------------------------------------------------------------------------
 
 .PHONY: create-common-prod-volumes
-create-prod-volumes: ## bootstrap the common production volumes folders
+create-common-prod-volumes: ## bootstrap the common production volumes folders
 	$(MAKE) create-common-volumes
 	@if [ -f .env ]; then \
 		set -a && source .env && set +a; \
@@ -198,27 +191,71 @@ create-prod-origin-volumes: ## bootstrap the common production volumes folders
 	$(MAKE) create-common-prod-volumes
 	$(MAKE) create-common-origin-volumes
 
+.PHONY: generate-apache-prod-config
+generate-apache-prod-config:
+	@set -a
+	source deployment/prod/.env
+	envsubst < deployment/prod/config-ssl.conf.tmpl > deployment/prod/config-ssl.conf
+
+# ------------------------------------------------------------------------------
+# Production Origin
+# ------------------------------------------------------------------------------
+
 .PHONY: prod-up-origin
 prod-up-origin: ## start the production origin stack
 	$(MAKE) create-prod-origin-volumes
-	$(COMPOSE_PROD) --profile origin --env-file .env.prod run --rm db-migrations-origin
-	$(COMPOSE_PROD) --profile origin --env-file .env.prod up -d
+	$(COMPOSE_PROD) --profile origin run --rm db-migrations-origin
+	$(COMPOSE_PROD) --profile origin up -d
 
 .PHONY: prod-stop-origin
 prod-stop-origin: ## stop the production origin stack
-	$(COMPOSE_PROD) --profile origin --env-file .env.prod stop
+	$(COMPOSE_PROD) --profile origin stop
+
+# ------------------------------------------------------------------------------
+# Production Origin with ELK
+# ------------------------------------------------------------------------------
+
+.PHONY: prod-up-origin-elk
+prod-up-origin-elk: ## start the production origin stack
+	$(MAKE) create-prod-origin-volumes
+	$(COMPOSE_PROD) --profile origin-with-elk-logging run --rm db-migrations-origin
+	$(COMPOSE_PROD) --profile origin-with-elk-logging up -d
+
+.PHONY: prod-stop-origin-elk
+prod-stop-origin-elk: ## stop the production origin stack
+	$(COMPOSE_PROD) --profile origin-with-elk-logging stop
+
+# ------------------------------------------------------------------------------
+# Production Destination
+# ------------------------------------------------------------------------------
 
 .PHONY: prod-up-destination
 prod-up-destination: ## start the production destination stack
 	$(MAKE) create-prod-destination-volumes
-	$(COMPOSE_PROD) --profile destination --env-file .env.prod run --rm db-migrations-destination
-	$(COMPOSE_PROD) --profile destination --env-file .env.prod up -d
+	$(COMPOSE_PROD) --profile destination run --rm db-migrations-destination
+	$(COMPOSE_PROD) --profile destination up -d
 
 .PHONY: prod-stop-destination
 prod-stop-destination: ## stop the production destination stack
-	$(COMPOSE_PROD) --profile destination --env-file .env.prod stop
+	$(COMPOSE_PROD) --profile destination stop
 
-### static analysis
+# ------------------------------------------------------------------------------
+# Production Origin with ELK
+# ------------------------------------------------------------------------------
+
+.PHONY: prod-up-destination-elk
+prod-up-destination-elk: ## start the production destination stack
+	$(MAKE) create-prod-destination-volumes
+	$(COMPOSE_PROD) --profile destination-with-elk-logging run --rm db-migrations-destination
+	$(COMPOSE_PROD) --profile destination-with-elk-logging up -d
+
+.PHONY: prod-stop-destination-elk
+prod-stop-destination-elk: ## stop the production destination stack
+	$(COMPOSE_PROD) --profile destination-with-elk-logging stop
+
+# ------------------------------------------------------------------------------
+# Static Analysis
+# ------------------------------------------------------------------------------
 
 .PHONY: hadolint
 hadolint:	## Lint the Dockerfiles.
@@ -226,7 +263,9 @@ hadolint:	## Lint the Dockerfiles.
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < frontend/docker/Dockerfile
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < pgadmin/Dockerfile
 
-### Tests
+# ------------------------------------------------------------------------------
+# Tests
+# ------------------------------------------------------------------------------
 
 .PHONY: tests
 tests:
@@ -237,9 +276,11 @@ tests:
 compose-check:
 	docker compose -f compose.yml --env-file .env.dev.example config --quiet
 	docker compose -f compose.yml -f compose.kibana.yml --env-file .env.dev.example config --quiet
-	docker compose -f compose.prod.yml --env-file .env.dev.example config --quiet
+	DB_PASSWORD=xxx docker compose -f compose.prod.yml --env-file .env.prod.example config --quiet
 
-### Checks and format
+# ------------------------------------------------------------------------------
+# Checks and Format
+# ------------------------------------------------------------------------------
 
 .PHONY: checks
 checks:
@@ -252,7 +293,9 @@ format:
 	$(MAKE) -C backend format
 	$(MAKE) -C frontend format
 
-### misc
+# ------------------------------------------------------------------------------
+# Miscellaneous
+# ------------------------------------------------------------------------------
 
 .PHONY: clean
 clean: ## clean environments & dependencies
@@ -263,7 +306,14 @@ clean: ## clean environments & dependencies
 install-git-hooks:
 	git config --local core.hooksPath .githooks
 
-### help
+.PHONY: generate-keys
+generate-keys: ## generate a pair of keys (pub/priv) in the current folder (eurydice + eurydice.pub) to encrypt the files
+	docker build -t eurydice/keygen:latest ./keygen
+	docker run --rm -u $${PUID:-$(shell id -u)}:$${PGID:-$(shell id -g)} -v "$(shell pwd):/keys" eurydice/keygen:latest
+
+# ------------------------------------------------------------------------------
+# Help
+# ------------------------------------------------------------------------------
 
 .PHONY: help
 help: ## Show this help

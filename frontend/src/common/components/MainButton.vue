@@ -6,11 +6,13 @@ const {
   tkey,
   severity = 'primary',
   tooltipTkey,
+  isLoading = false,
 } = defineProps<{
   icon?: string;
   tkey?: string;
   severity?: string;
   tooltipTkey?: string;
+  isLoading?: boolean;
 }>();
 
 const emit = defineEmits(['click']);
@@ -27,6 +29,7 @@ const emit = defineEmits(['click']);
     :outlined="severity !== 'primary'"
     @click="emit('click')"
     :severity="severity"
+    :loading="isLoading"
     v-tooltip.bottom="tooltipTkey ? $t(tooltipTkey) : undefined"
   />
 </template>

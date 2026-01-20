@@ -3,9 +3,7 @@ if __name__ == "__main__":
 
     import django
 
-    os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE", "eurydice.origin.config.settings.base"
-    )
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eurydice.origin.config.settings.base")
     django.setup()
 
     from eurydice.origin.sender import main

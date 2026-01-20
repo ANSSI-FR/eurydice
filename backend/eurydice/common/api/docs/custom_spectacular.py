@@ -1,17 +1,14 @@
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 from drf_spectacular import utils
 
-_RedocCodeSample = Dict[str, str]
-_code_samples: Dict[str, List[_RedocCodeSample]] = {}
+_RedocCodeSample = dict[str, str]
+_code_samples: dict[str, list[_RedocCodeSample]] = {}
 
 
 def extend_schema(
     operation_id: str,
-    code_samples: Optional[List[_RedocCodeSample]] = None,
+    code_samples: list[_RedocCodeSample] | None = None,
     **kwargs,
 ) -> Any:
     """Wrapper of drf_spectacular's extend schema that supports Redoc code samples."""

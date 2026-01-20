@@ -23,7 +23,7 @@ describe('MainNavbar.vue', () => {
 
     const homeLink = wrapper.findAll('a');
     expect(homeLink.length).toEqual(1);
-    expect(homeLink[0].attributes('href')).toEqual('/');
+    expect(homeLink[0]!.attributes('href')).toEqual('/');
 
     expect(wrapper.text()).toContain('test-version');
     expect(wrapper.text()).toContain('badgeContent');

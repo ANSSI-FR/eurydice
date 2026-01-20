@@ -1,14 +1,11 @@
-import logging
 from datetime import datetime
 
 from django.conf import settings
 from django.utils import timezone
 
 from eurydice.common.cleaning import repeated_task
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.core import models
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
 
 BULK_DELETION_SIZE = 65_536
 
@@ -26,7 +23,7 @@ class DestinationDBTrimmer(repeated_task.RepeatedTask):
 
     def _ready(self) -> None:
         """Logs that the DestinationDBTrimmer is ready before first loop."""
-        logger.info("Ready")
+        logger.info({LOG_KEY: "dbtrimmer_destination", "status": "ready"})
 
     def _run(self) -> None:
         """Delete old transferables in a final state.
@@ -36,17 +33,15 @@ class DestinationDBTrimmer(repeated_task.RepeatedTask):
         since transaction atomicity guaranties their associated files do not
         exist anymore.
         """
-        logger.info("DBTrimmer is running")
+        logger.info({LOG_KEY: "dbtrimmer_destination", "status": "running"})
 
-        remove_finished_before = (
-            timezone.now() - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-        )
+        remove_finished_before = timezone.now() - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
 
         finished = False
         while not finished:
             finished = self.trim_bulk(remove_finished_before)
 
-        logger.info("DBTrimmer finished running")
+        logger.info({LOG_KEY: "dbtrimmer_destination", "status": "done"})
 
     def trim_bulk(self, remove_finished_before: datetime) -> bool:
         """Delete a bulk of old transferables in a final state.
@@ -74,22 +69,22 @@ class DestinationDBTrimmer(repeated_task.RepeatedTask):
         if delete_count == 0:
             return True
 
-        logger.info(f"DBTrimmer will remove {delete_count} entries.")
-
         # Django will implicitly split the to_delete list into blocks
         # of 100 IDs each, but this seems unavoidable :
         # https://code.djangoproject.com/ticket/9519
-        total_deletions, _ = models.IncomingTransferable.objects.filter(
-            id__in=to_delete
-        ).delete()
-
-        logger.info(f"DBTrimmer successfully removed {total_deletions} entries.")
+        total_deletions, _ = models.IncomingTransferable.objects.filter(id__in=to_delete).delete()
 
         if total_deletions != delete_count:
             logger.error(
-                f"DBTrimmer deleted {total_deletions} entries, "
-                f"instead of the expected {delete_count}."
+                {
+                    LOG_KEY: "dbtrimmer_destination",
+                    "status": "error",
+                    "delete_count": total_deletions,
+                    "expected_delete_count": delete_count,
+                }
             )
             return True
+
+        logger.info({LOG_KEY: "dbtrimmer_destination", "status": "success", "delete_count": total_deletions})
 
         return False

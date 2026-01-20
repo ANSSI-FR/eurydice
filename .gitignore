@@ -102,3 +102,13 @@ sysctl_backup.conf
 !frontend/.env.*
 # devcontainer
 .devcontainer/customize.sh
+dump*.sql
+# encryption keypair
+eurydice
+!eurydice/
+eurydice.pub
+# dev deployment
+apache2/configs/dev-local-origin.conf
+apache2/configs/dev-local-destination.conf
+# prod deployment
+deployment/prod/config-ssl.conf

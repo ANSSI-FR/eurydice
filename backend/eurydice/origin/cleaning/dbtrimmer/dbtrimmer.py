@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 
 from django.conf import settings
@@ -6,10 +5,8 @@ from django.utils import timezone
 
 from eurydice.common.cleaning import repeated_task
 from eurydice.common.enums import OutgoingTransferableState
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.origin.core import models
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
 
 BULK_DELETION_SIZE = 65_536
 
@@ -27,7 +24,7 @@ class OriginDBTrimmer(repeated_task.RepeatedTask):
 
     def _ready(self) -> None:
         """Logs that the OriginDBTrimmer is ready before first loop."""
-        logger.info("Ready")
+        logger.info({LOG_KEY: "db_trimmer_origin", "status": "ready"})
 
     def _run(self) -> None:
         """Delete old transferables in a final state.
@@ -35,17 +32,15 @@ class OriginDBTrimmer(repeated_task.RepeatedTask):
         It is safe to remove the OutgoingTransferables in a final state,
         since transaction atomicity guaranties their associated files do not
         exist anymore."""
-        logger.info("DBTrimmer is running")
+        logger.info({LOG_KEY: "db_trimmer_origin", "status": "running"})
 
-        remove_created_before = (
-            timezone.now() - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-        )
+        remove_created_before = timezone.now() - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
 
         finished = False
         while not finished:
             finished = self.trim_bulk(remove_created_before)
 
-        logger.info("DBTrimmer finished running")
+        logger.info({LOG_KEY: "db_trimmer_origin", "status": "done"})
 
     def trim_bulk(self, remove_created_before: datetime) -> bool:
         """Delete a bulk of old transferables in a final state.
@@ -58,7 +53,7 @@ class OriginDBTrimmer(repeated_task.RepeatedTask):
         This function can be called in a loop as long as it returns True, meaning
         transferables were successfully deleted.
         """
-        to_delete = models.OutgoingTransferable.objects.filter(
+        to_delete = models.OutgoingTransferable.objects.filter(  # type: ignore[misc]
             state__in=OutgoingTransferableState.get_final_states(),
             created_at__lt=remove_created_before,
         )[:BULK_DELETION_SIZE].values_list("id", flat=True)
@@ -68,37 +63,40 @@ class OriginDBTrimmer(repeated_task.RepeatedTask):
             return True
 
         logger.info(
-            f"DBTrimmer will remove {delete_count} OutgoingTransferables "
-            f"and all associated objects."
+            {
+                LOG_KEY: "db_trimmer_origin",
+                "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+                "outgoing_transferables_count": delete_count,
+            }
         )
 
         # Django will implicitly split the to_delete list into blocks
         # of 100 IDs each, but this seems unavoidable :
         # https://code.djangoproject.com/ticket/9519
-        _, deletions_by_class = models.OutgoingTransferable.objects.filter(
-            id__in=to_delete
-        ).delete()
+        _, deletions_by_class = models.OutgoingTransferable.objects.filter(id__in=to_delete).delete()
 
-        deleted_ranges = deletions_by_class.get(
-            "eurydice_origin_core.TransferableRange", 0
-        )
-        deleted_revocations = deletions_by_class.get(
-            "eurydice_origin_core.TransferableRevocation", 0
-        )
-        deleted_transferables = deletions_by_class.get(
-            "eurydice_origin_core.OutgoingTransferable", 0
-        )
+        deleted_ranges = deletions_by_class.get("eurydice_origin_core.TransferableRange", 0)
+        deleted_revocations = deletions_by_class.get("eurydice_origin_core.TransferableRevocation", 0)
+        deleted_transferables = deletions_by_class.get("eurydice_origin_core.OutgoingTransferable", 0)
 
         logger.info(
-            f"DBTrimmer successfully removed {deleted_transferables} transferables, "
-            f"{deleted_ranges} ranges, "
-            f"and {deleted_revocations} revocations."
+            {
+                LOG_KEY: "db_trimmer_origin",
+                "message": "DBTrimmer finished successfully",
+                "deleted_transferables": deleted_transferables,
+                "deleted_ranges": deleted_ranges,
+                "deleted_revocations": deleted_revocations,
+            }
         )
 
         if deleted_transferables != delete_count:
             logger.error(
-                f"DBTrimmer deleted {deleted_transferables} OutgoingTransferables, "
-                f"instead of the expected {delete_count}."
+                {
+                    LOG_KEY: "db_trimmer_origin",
+                    "message": "DBTrimmer deletion mismatch",
+                    "deleted_transferables": deleted_transferables,
+                    "expected_deleted_transferables": delete_count,
+                }
             )
             return True
 

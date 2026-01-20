@@ -8,8 +8,6 @@ Adapted from:
 
 """
 
-# pytype: disable=invalid-typevar  # noqa: E800
-
 import ctypes
 import hashlib
 
@@ -50,9 +48,7 @@ def sha1_to_bytes(sha1_hashlib: "hashlib._Hash") -> bytes:
 
     """
     raw = ctypes.cast(ctypes.c_void_p(id(sha1_hashlib)), ctypes.POINTER(EVPobject))
-    return raw.contents.ctx.contents.md_data[  # pytype: disable=attribute-error
-        :SHA1_HASHLIB_BUFSIZE
-    ]
+    return raw.contents.ctx.contents.md_data[:SHA1_HASHLIB_BUFSIZE]
 
 
 def sha1_from_bytes(data: bytes) -> "hashlib._Hash":
@@ -68,7 +64,7 @@ def sha1_from_bytes(data: bytes) -> "hashlib._Hash":
     sha1_hashlib = hashlib.sha1()  # nosec
     raw = ctypes.cast(ctypes.c_void_p(id(sha1_hashlib)), ctypes.POINTER(EVPobject))
     ctypes.memmove(
-        raw.contents.ctx.contents.md_data,  # pytype: disable=attribute-error
+        raw.contents.ctx.contents.md_data,
         data,
         SHA1_HASHLIB_BUFSIZE,
     )

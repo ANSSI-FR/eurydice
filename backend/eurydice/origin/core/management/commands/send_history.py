@@ -9,19 +9,20 @@ from django.core.management import base
 import eurydice.common.protocol as protocol
 import eurydice.origin.sender.packet_generator.fillers as fillers
 import eurydice.origin.sender.utils as sender_utils
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.origin.sender import packet_sender
 
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
+
+def _print_and_log(message: str, level: int = logging.INFO) -> None:
+    print(message)
+    if level == logging.INFO:
+        logger.info({LOG_KEY: "send_history_command", "message": message})
+    else:
+        logger.debug({LOG_KEY: "send_history_command", "message": message})
 
 
-def _print_and_log(log: str, level: int = logging.INFO) -> None:
-    print(log)
-    logger.log(level, log)
-
-
-class Command(base.BaseCommand):  # noqa: D101
-    help = "Force-send a history of given duration. Bypasses Maintenance mode. Only sends history, does not send Transferable ranges or revocations."  # noqa: VNE003 E501
+class Command(base.BaseCommand):
+    help = "Force-send a history of given duration. Bypasses Maintenance mode. Only sends history, does not send Transferable ranges or revocations."  # noqa: E501
 
     def add_arguments(self, parser: base.CommandParser) -> None:  # noqa: D102
         parser.add_argument(
@@ -35,9 +36,7 @@ class Command(base.BaseCommand):  # noqa: D101
         """
         Sends an OTWPacket using only the History filler.
         """
-        settings.TRANSFERABLE_HISTORY_DURATION = humanfriendly.parse_timespan(
-            options["duration"]
-        )
+        settings.TRANSFERABLE_HISTORY_DURATION = humanfriendly.parse_timespan(options["duration"])
 
         sender_utils.check_configuration()
 

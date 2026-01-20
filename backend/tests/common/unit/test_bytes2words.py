@@ -53,7 +53,5 @@ def test_decode_separator(separator: str, faker: Faker):
     ],
 )
 def test_decode_error_unknown_word(words: str):
-    with pytest.raises(
-        bytes2words.DecodingError, match=r".*cannot be found in the index"
-    ):
+    with pytest.raises(bytes2words.DecodingError, match=r".*cannot be found in the index"):
         bytes2words.decode(words)

@@ -1,14 +1,12 @@
 import base64
 import contextlib
-from typing import Dict
 
 import dateutil.parser
 import pytest
 from django.conf import Settings
 from django.urls import reverse
 from faker import Faker
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 
 from eurydice.destination.core import models
 from eurydice.destination.storage import fs
@@ -17,9 +15,7 @@ from tests.destination.integration import factory
 
 @contextlib.contextmanager
 def fs_stored_incoming_transferable():
-    obj = factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.SUCCESS
-    )
+    obj = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.SUCCESS)
     data = b"Lorem ipsum dolor sit amet"
 
     try:
@@ -33,9 +29,7 @@ def fs_stored_incoming_transferable():
 @pytest.mark.django_db()
 class TestIncomingTransferable:
     def test_list_incoming_transferables(self, api_client: test.APIClient) -> None:
-        obj = factory.IncomingTransferableFactory(
-            state=models.IncomingTransferableState.ONGOING
-        )
+        obj = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
 
         api_client.force_login(user=obj.user_profile.user)
         url = reverse("transferable-list")
@@ -60,9 +54,7 @@ class TestIncomingTransferable:
         else:
             assert dateutil.parser.parse(data["finished_at"]) == obj.finished_at
 
-    def test_list_incoming_transferables_error_not_authenticated(
-        self, api_client: test.APIClient
-    ):
+    def test_list_incoming_transferables_error_not_authenticated(self, api_client: test.APIClient):
         url = reverse("transferable-list")
         response = api_client.get(url)
 
@@ -70,9 +62,7 @@ class TestIncomingTransferable:
         assert response.data["detail"].code == "not_authenticated"
 
     def test_retrieve_incoming_transferable(self, api_client: test.APIClient) -> None:
-        obj = factory.IncomingTransferableFactory(
-            state=models.IncomingTransferableState.ONGOING
-        )
+        obj = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
 
         api_client.force_login(user=obj.user_profile.user)
         url = reverse("transferable-detail", kwargs={"pk": obj.id})
@@ -95,9 +85,7 @@ class TestIncomingTransferable:
         else:
             assert dateutil.parser.parse(data["finished_at"]) == obj.finished_at
 
-    def test_retrieve_incoming_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ):
+    def test_retrieve_incoming_transferable_error_not_authenticated(self, api_client: test.APIClient):
         obj = factory.IncomingTransferableFactory()
         url = reverse("transferable-detail", kwargs={"pk": obj.id})
         response = api_client.get(url)
@@ -105,9 +93,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_retrieve_outgoing_transferable_error_not_owner(
-        self, api_client: test.APIClient
-    ):
+    def test_retrieve_outgoing_transferable_error_not_owner(self, api_client: test.APIClient):
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserProfileFactory().user
 
@@ -118,9 +104,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data["detail"].code == "not_found"
 
-    def test_retrieve_incoming_transferable_error_not_associated(
-        self, api_client: test.APIClient
-    ):
+    def test_retrieve_incoming_transferable_error_not_associated(self, api_client: test.APIClient):
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserFactory()
 
@@ -145,9 +129,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data["detail"].code == "not_found"
 
-    def test_destroy_incoming_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_destroy_incoming_transferable_error_not_authenticated(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         url = reverse("transferable-detail", kwargs={"pk": obj.id})
         response = api_client.delete(url)
@@ -155,9 +137,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_destroy_incoming_transferable_error_not_owner(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_destroy_incoming_transferable_error_not_owner(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserProfileFactory().user
 
@@ -168,9 +148,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data["detail"].code == "not_found"
 
-    def test_destroy_incoming_transferable_error_not_associated(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_destroy_incoming_transferable_error_not_associated(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserFactory()
 
@@ -202,9 +180,7 @@ class TestIncomingTransferable:
         with fs_stored_incoming_transferable() as obj:
             if is_multipart:
                 for i in range(1, 3):
-                    factory.FileUploadPartFactory(
-                        part_number=i, incoming_transferable=obj
-                    )
+                    factory.FileUploadPartFactory(part_number=i, incoming_transferable=obj)
 
             api_client.force_login(user=obj.user_profile.user)
             url = reverse("transferable-detail", kwargs={"pk": obj.id})
@@ -240,9 +216,7 @@ class TestIncomingTransferable:
         assert response.status_code == status.HTTP_409_CONFLICT
         assert response.data["detail"].code == "UnsuccessfulTransferableError"
 
-    def test_download_incoming_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_download_incoming_transferable_error_not_authenticated(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         url = reverse("transferable-download", kwargs={"pk": obj.id})
         response = api_client.get(url)
@@ -251,9 +225,7 @@ class TestIncomingTransferable:
         assert response.headers["Content-Type"] == "application/json"
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_download_incoming_transferable_error_not_owner(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_download_incoming_transferable_error_not_owner(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserProfileFactory().user
 
@@ -265,9 +237,7 @@ class TestIncomingTransferable:
         assert response.headers["Content-Type"] == "application/json"
         assert response.data["detail"].code == "not_found"
 
-    def test_download_incoming_transferable_error_not_associated(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_download_incoming_transferable_error_not_associated(self, api_client: test.APIClient) -> None:
         obj = factory.IncomingTransferableFactory()
         another_user = factory.UserFactory()
 
@@ -388,7 +358,7 @@ class TestIncomingTransferable:
         self,
         data: bytes,
         filename: str,
-        http_headers: Dict[str, str],
+        http_headers: dict[str, str],
         api_client: test.APIClient,
         faker: Faker,
     ) -> None:

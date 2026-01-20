@@ -61,18 +61,14 @@ def test_partitioned_stream_digest_update(faker: Faker):
 
     stream_digest = hashlib.sha1()
 
-    for partition in PartitionedStream(
-        stream, stream_partition_size, stream_digest.update
-    ):
+    for partition in PartitionedStream(stream, stream_partition_size, stream_digest.update):
         partition.read()
 
     assert stream_digest.hexdigest() == hashlib.sha1(random_bytes).hexdigest()
 
 
 @pytest.mark.parametrize(("random_bytes", "stream_partition_size"), TEST_PARAMS)
-def test_partitioned_stream_default_chunk_size(
-    random_bytes: bytes, stream_partition_size: int
-):
+def test_partitioned_stream_default_chunk_size(random_bytes: bytes, stream_partition_size: int):
     """
     Assert .read()  method's chunk_size argument defaults to
     the correct value (ie: stream_partition_size)

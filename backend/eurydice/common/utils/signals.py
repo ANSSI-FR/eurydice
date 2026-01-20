@@ -21,10 +21,7 @@ class BooleanCondition:
     """
 
     def __init__(
-        self,
-        *,
-        initial_value: bool = True,
-        listen_to: Iterable[signal.Signals] = (signal.SIGINT, signal.SIGTERM)
+        self, *, initial_value: bool = True, listen_to: Iterable[signal.Signals] = (signal.SIGINT, signal.SIGTERM)
     ) -> None:
         self._initial_value = initial_value
         self._value = initial_value

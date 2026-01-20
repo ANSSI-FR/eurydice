@@ -9,8 +9,7 @@ from django.utils import timezone
 from faker import Faker
 
 from eurydice.common import enums as common_enums
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from tests.origin.integration import factory
 
 
@@ -41,10 +40,7 @@ def test_range_auto_fields_standard_usage():
 
                 if current_transferable == transferable:
                     last_range_finished_at = transferable_range.finished_at
-                    if (
-                        transferable_range.transfer_state
-                        == enums.TransferableRangeTransferState.TRANSFERRED
-                    ):
+                    if transferable_range.transfer_state == enums.TransferableRangeTransferState.TRANSFERRED:
                         bytes_transferred += transferable_range.size
 
     transferable.refresh_from_db()
@@ -85,9 +81,7 @@ def test_revocation_auto_fields_standard_usage():
                 common_enums.TransferableRevocationReason.USER_CANCELED,
             )
         ),
-        outgoing_transferable=factory_boy.Iterator(
-            (transferable, user_transferable, noise_transferable)
-        ),
+        outgoing_transferable=factory_boy.Iterator((transferable, user_transferable, noise_transferable)),
     )
 
     transferable.refresh_from_db()
@@ -151,9 +145,7 @@ def test_ranges_forbidden_inserts(faker: Faker):
 
 @pytest.mark.django_db()
 def test_ranges_forbidden_updates():
-    transferable_range = factory.TransferableRangeFactory(
-        transfer_state=enums.TransferableRangeTransferState.PENDING
-    )
+    transferable_range = factory.TransferableRangeFactory(transfer_state=enums.TransferableRangeTransferState.PENDING)
 
     transferable = factory.OutgoingTransferableFactory()
 
@@ -184,14 +176,10 @@ def test_revocations_forbidden_updates():
     # the atomic transaction is necessary, otherwise `django_db` thinks the
     # test failed (because the test transaction is broken)
     with pytest.raises(InternalError), transaction.atomic():
-        transferable_revocation.reason = (
-            common_enums.TransferableRevocationReason.USER_CANCELED
-        )
+        transferable_revocation.reason = common_enums.TransferableRevocationReason.USER_CANCELED
         transferable_revocation.save()
 
-    transferable_revocation.transfer_state = (
-        enums.TransferableRevocationTransferState.TRANSFERRED
-    )
+    transferable_revocation.transfer_state = enums.TransferableRevocationTransferState.TRANSFERRED
     transferable_revocation.save(update_fields=["transfer_state"])
 
 
@@ -208,11 +196,7 @@ def test_state_update_through_ranges():
             factory.TransferableRangeFactory(
                 transfer_state=state,
                 outgoing_transferable=transferable,
-                finished_at=(
-                    None
-                    if state == enums.TransferableRangeTransferState.PENDING
-                    else current_time
-                ),
+                finished_at=(None if state == enums.TransferableRangeTransferState.PENDING else current_time),
             )
 
         transferable.refresh_from_db()

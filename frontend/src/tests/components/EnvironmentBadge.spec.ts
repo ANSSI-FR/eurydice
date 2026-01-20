@@ -9,6 +9,8 @@ describe('EnvironmentBadge.vue', () => {
       badgeColor: '#FF0000',
       badgeContent: 'badgeContentTest',
       contact: 'watever',
+      encryptionEnabled: true,
+      encodedPublicKey: 'gtC32LH1n6qCbkqQog/QwAr7TjxuED2+85o1CRlSl2Y=',
     };
     const serverMetadataStore = useServerMetadataStore();
     serverMetadataStore.setServerMetadata(serverMetadata);

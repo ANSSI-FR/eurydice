@@ -1,9 +1,11 @@
 import pathlib
+import re
+from functools import lru_cache
 from os import path
 
-import django.core.exceptions
 import environ
 import humanfriendly
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 env = environ.Env(
@@ -38,9 +40,7 @@ env = environ.Env(
 
 DEBUG = env("DEBUG")
 
-BASE_DIR = path.dirname(
-    path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
-)
+BASE_DIR = path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 COMMON_DOCS_PATH = pathlib.Path(BASE_DIR) / "common" / "api" / "docs" / "static"
 
@@ -201,24 +201,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/3.2/howto/auth-remote-user/
 # https://www.django-rest-framework.org/api-guide/authentication/#remoteuserauthentication
 
-REMOTE_USER_HEADER_AUTHENTICATION_ENABLED = env(
-    "REMOTE_USER_HEADER_AUTHENTICATION_ENABLED"
-)
+REMOTE_USER_HEADER_AUTHENTICATION_ENABLED = env("REMOTE_USER_HEADER_AUTHENTICATION_ENABLED")
 
 REMOTE_USER_HEADER = env("REMOTE_USER_HEADER")
 
 if REMOTE_USER_HEADER_AUTHENTICATION_ENABLED:
     AUTHENTICATION_BACKENDS.append("django.contrib.auth.backends.RemoteUserBackend")
-    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].append(
-        "rest_framework.authentication.SessionAuthentication"
-    )
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].append("rest_framework.authentication.SessionAuthentication")
 else:
     # BasicAuthentication needs to be on top so that django replies with
     # `WWW-Authenticate: Basic` instead of `WWW-Authenticate: Token`
     # along with a 401
-    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(
-        0, "rest_framework.authentication.BasicAuthentication"
-    )
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(0, "rest_framework.authentication.BasicAuthentication")
 
 
 # Internationalization
@@ -319,18 +313,37 @@ TRANSFERABLE_STORAGE_DIR = env.str("TRANSFERABLE_STORAGE_DIR")
 
 
 if not TRANSFERABLE_STORAGE_DIR:
-    raise django.core.exceptions.ImproperlyConfigured(
-        "The TRANSFERABLE_STORAGE_DIR environment variable must not be empty"
-    )
+    raise ImproperlyConfigured("The TRANSFERABLE_STORAGE_DIR environment variable must not be empty")
+
 
 # drf-spectacular
 # https://drf-spectacular.readthedocs.io/
+@lru_cache()
+def get_project_version() -> str:
+    """
+    Get eurydice version from pyproject.toml
+    """
+    pyproject_path = path.abspath(path.join(BASE_DIR, "../pyproject.toml"))
+
+    with open(pyproject_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    project_block = re.search(r"\[project\](.*?)\n\[", content, re.DOTALL)
+
+    if not project_block:
+        raise RuntimeError("No [project] block found in pyproject.toml")
+
+    match = re.search(r'version\s*=\s*"([^"]+)"', project_block.group(1))
+
+    if not match:
+        raise RuntimeError("eurydice version was not found in pyproject.toml")
+
+    return match.group(1)
+
 
 SPECTACULAR_SETTINGS = {
-    "POSTPROCESSING_HOOKS": [
-        "eurydice.common.api.docs.custom_spectacular.postprocessing_hook"
-    ],
-    "VERSION": "v1",
+    "POSTPROCESSING_HOOKS": ["eurydice.common.api.docs.custom_spectacular.postprocessing_hook"],
+    "VERSION": get_project_version(),
     "APPEND_COMPONENTS": {
         "securitySchemes": {},
     },
@@ -365,16 +378,12 @@ SPECTACULAR_SETTINGS["DESCRIPTION"] = (
 # Eurydice
 
 # The maximum size in bytes of a Transferable i.e. a file submitted to be transferred.
-TRANSFERABLE_MAX_SIZE = humanfriendly.parse_size(
-    env("TRANSFERABLE_MAX_SIZE"), binary=False
-)
+TRANSFERABLE_MAX_SIZE = humanfriendly.parse_size(env("TRANSFERABLE_MAX_SIZE"), binary=False)
 
 METADATA_HEADER_PREFIX = "Metadata-"
 
 USER_ASSOCIATION_TOKEN_SECRET_KEY = env.str("USER_ASSOCIATION_TOKEN_SECRET_KEY")
-USER_ASSOCIATION_TOKEN_EXPIRES_AFTER = humanfriendly.parse_timespan(
-    env("USER_ASSOCIATION_TOKEN_EXPIRES_AFTER")
-)
+USER_ASSOCIATION_TOKEN_EXPIRES_AFTER = humanfriendly.parse_timespan(env("USER_ASSOCIATION_TOKEN_EXPIRES_AFTER"))
 
 METRICS_SLIDING_WINDOW = humanfriendly.parse_timespan(env("METRICS_SLIDING_WINDOW"))
 
@@ -382,3 +391,5 @@ EURYDICE_CONTACT_FR = env("EURYDICE_CONTACT_FR")
 
 UI_BADGE_CONTENT = env("UI_BADGE_CONTENT")
 UI_BADGE_COLOR = env("UI_BADGE_COLOR")
+
+TRANSFERABLE_STORAGE_DIR = env("TRANSFERABLE_STORAGE_DIR")

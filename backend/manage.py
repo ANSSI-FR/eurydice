@@ -10,9 +10,7 @@ if __name__ == "__main__":
     else:
         settings_module = DJANGO_ENV.lower()
 
-    DJANGO_SETTINGS_MODULE = (
-        f"eurydice.{EURYDICE_API}.config.settings.{settings_module}"
-    )
+    DJANGO_SETTINGS_MODULE = f"eurydice.{EURYDICE_API}.config.settings.{settings_module}"
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", DJANGO_SETTINGS_MODULE)
 

@@ -1,0 +1,57 @@
+issuer: {{ getenv "DEX_ISSUER" }}
+
+storage:
+  type: sqlite3
+  config:
+    file: /var/dex/dex.db
+
+web:
+  http: 0.0.0.0:5556
+
+telemetry:
+  http: 0.0.0.0:5558
+
+staticClients:
+  - id: {{ getenv "DEX_CLIENT_ID" }}
+    secret: {{ getenv "DEX_CLIENT_SECRET" }}
+    name: "eury"
+    redirectURIs:
+      - {{ getenv "DEX_REDIRECT_URI" }}
+
+enablePasswordDB: false
+
+oauth2:
+  skipApprovalScreen: true
+
+connectors:
+- type: ldap
+  name: OpenLDAP
+  id: ldap
+  config:
+    host: {{ getenv "DEX_CONNECTOR_LDAP_HOST" | default "openldap:389" }}
+    insecureNoSSL: true
+    bindDN: cn=admin,dc=eury,dc=test
+    bindPW: admin
+    usernamePrompt: Username
+    userSearch:
+      baseDN: ou=People,dc=eury,dc=test
+      filter: "(objectClass=person)"
+      username: uid
+      # "DN" (case sensitive) is a special attribute name. It indicates that
+      # this value should be taken from the entity's DN not an attribute on
+      # the entity.
+      idAttr: DN
+      emailAttr: mail
+      nameAttr: cn
+      # set preferred_username
+      # https://dexidp.io/docs/connectors/ldap/
+      preferredUsernameAttr: givenName
+    groupSearch:
+      baseDN: ou=Groups,dc=eury,dc=test
+      filter: "(objectClass=groupOfNames)"
+      userMatchers:
+        # A user is a member of a group when their DN matches
+        # the value of a "member" attribute on the group entity.
+      - userAttr: DN
+        groupAttr: member
+      nameAttr: cn

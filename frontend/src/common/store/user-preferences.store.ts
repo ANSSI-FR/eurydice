@@ -19,7 +19,7 @@ export const useUserPreferencesStore = defineStore('userPreferencesStore', () =>
     if (localStoragePreferences) {
       preferences = JSON.parse(localStoragePreferences);
     } else {
-      const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)')?.matches ?? false;
       preferences = { darkMode: systemDarkMode };
     }
     updateDarkModeInHTML(preferences.darkMode);

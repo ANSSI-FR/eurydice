@@ -5,8 +5,7 @@ import pytest
 from django.utils import timezone
 from faker import Faker
 
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from tests.origin.integration import factory
 
 

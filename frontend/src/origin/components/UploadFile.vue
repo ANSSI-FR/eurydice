@@ -65,14 +65,17 @@
 <script setup lang="ts">
 import MainButton from '@common/components/MainButton.vue';
 import { toastMessage } from '@common/services/toast-message.service';
+import { useServerMetadataStore } from '@common/store/server-metadata.store';
 import { bytesToString } from '@common/utils/bytes-functions';
 import UploadFileItem from '@origin/components/UploadFileItem.vue';
 import type { UploadingFile } from '@origin/models/UploadingFile';
-import { createTransferable } from '@origin/services/transferables.service';
+import { createTransferable } from '@origin/services/transferables';
 import { uniqueId } from 'lodash';
 import { FileUpload, type FileUploadUploaderEvent } from 'primevue';
 import { onMounted, reactive, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
+
+const metadataStore = useServerMetadataStore();
 
 const files = ref<UploadingFile[]>([]);
 const { t } = useI18n();
@@ -97,12 +100,18 @@ const uploadFiles = (event: FileUploadUploaderEvent): void => {
       abortController: new AbortController(),
     });
     files.value.push(file);
-    createTransferable(fileData, file.onUploadProgress, file.abortController.signal)
+    // This is a tweak because of a "fix" in primevue : https://github.com/primefaces/primevue/commit/85a7ad3f53d3c53df0b3108b66cdbb7fbcd229c5
+    // Files were uploaded in double after Primevue update
+    //@ts-expect-error Clear is not recognized as a method
+    uploader.value.clear();
+    createTransferable(
+      fileData,
+      metadataStore.getServerMetadata?.encryptionEnabled ?? false,
+      file.onUploadProgress,
+      file.abortController.signal,
+    )
       .then(() => {
         onUploadSuccess(file);
-        // This is a tweak because of a "fix" in primevue : https://github.com/primefaces/primevue/commit/85a7ad3f53d3c53df0b3108b66cdbb7fbcd229c5
-        //@ts-expect-error Clear is not recognized as a method
-        uploader.value.clear();
       })
       .catch(() => {
         if (file.status !== 'aborted') {

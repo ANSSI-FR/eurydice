@@ -14,10 +14,3 @@ export const camelCaseToSnakeCaseInterceptor = (config: InternalAxiosRequestConf
   config.data = objectKeysToSnakeCase(config.data);
   return config;
 };
-
-export const remoteUserHeaderForLoginRoute = (config: InternalAxiosRequestConfig) => {
-  if (config.url === '/user/login/') {
-    config.headers['X-Remote-User'] = 'billmurray';
-  }
-  return config;
-};

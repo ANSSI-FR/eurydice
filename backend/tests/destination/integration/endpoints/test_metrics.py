@@ -1,6 +1,4 @@
-from datetime import datetime
-from datetime import timedelta
-from typing import List
+from datetime import datetime, timedelta
 
 import dateutil
 import freezegun
@@ -13,9 +11,8 @@ from faker import Faker
 from rest_framework import test
 
 from eurydice.destination.api.views import metrics
-from eurydice.destination.core.models import IncomingTransferable
+from eurydice.destination.core.models import IncomingTransferable, LastPacketReceivedAt
 from eurydice.destination.core.models import IncomingTransferableState as States
-from eurydice.destination.core.models import LastPacketReceivedAt
 from tests.destination.integration import factory
 
 
@@ -45,8 +42,8 @@ def test__generate_metrics(
     faker: Faker,
     settings: conf.Settings,
     api_client: test.APIClient,
-    old_states_repetitions: List[int],
-    recent_states_repetitions: List[int],
+    old_states_repetitions: list[int],
+    recent_states_repetitions: list[int],
 ):
     # Test preparation
 
@@ -93,9 +90,7 @@ def test__generate_metrics(
             create_transferable(state=state, date=recent_date)
 
     expected = {
-        "ongoing_transferables": (
-            old_transferable_nb[States.ONGOING] + recent_transferable_nb[States.ONGOING]
-        ),
+        "ongoing_transferables": (old_transferable_nb[States.ONGOING] + recent_transferable_nb[States.ONGOING]),
         "recent_successes": (
             recent_transferable_nb[States.SUCCESS]
             + recent_transferable_nb[States.EXPIRED]

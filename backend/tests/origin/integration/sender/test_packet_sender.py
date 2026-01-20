@@ -1,6 +1,5 @@
 import socketserver
-from typing import Iterator
-from typing import Type
+from typing import Iterator, Type
 from unittest import mock
 
 import django.conf
@@ -29,16 +28,12 @@ def server(RequestHandler: Type) -> Iterator[socketserver.TCPServer]:  # noqa: N
 
 
 @pytest.fixture()
-def sender(
-    server: socketserver.TCPServer, settings: django.conf.Settings
-) -> packet_sender.PacketSender:
+def sender(server: socketserver.TCPServer, settings: django.conf.Settings) -> packet_sender.PacketSender:
     settings.LIDIS_HOST, settings.LIDIS_PORT = server.socket.getsockname()
     return packet_sender.PacketSender()
 
 
-def test_packet_sender_success(
-    sender: packet_sender.PacketSender, server: socketserver.TCPServer
-):
+def test_packet_sender_success(sender: packet_sender.PacketSender, server: socketserver.TCPServer):
     packet = protocol.OnTheWirePacket()
 
     sender.start()
@@ -53,9 +48,7 @@ def test_packet_sender_success(
     assert sender._queue.empty()
 
 
-def test_packet_sender_context_manager_success(
-    sender: packet_sender.PacketSender, server: socketserver.TCPServer
-):
+def test_packet_sender_context_manager_success(sender: packet_sender.PacketSender, server: socketserver.TCPServer):
     packet = protocol.OnTheWirePacket()
 
     with sender as s:

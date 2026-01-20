@@ -24,7 +24,7 @@ def test_start_and_graceful_shutdown():
             "USER_ASSOCIATION_TOKEN_SECRET_KEY": settings.USER_ASSOCIATION_TOKEN_SECRET_KEY,  # noqa: E501
         },
     ) as proc:
-        while b"Ready" not in proc.stderr.readline():
+        while b"ready" not in proc.stderr.readline():
             pass
 
         proc.terminate()

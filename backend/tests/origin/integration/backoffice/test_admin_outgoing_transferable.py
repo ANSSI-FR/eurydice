@@ -26,11 +26,9 @@ def test_date_finished_at_should_be_right(
     # generate fake OutgoingTransferable with
     # expected Success state and annotated field finished_at
     with freezegun.freeze_time(expected_finished_at):
-        outgoing_transferable: OutgoingTransferable = (
-            factory.OutgoingTransferableFactory(
-                size=0,
-                submission_succeeded_at=expected_finished_at,
-            )
+        outgoing_transferable: OutgoingTransferable = factory.OutgoingTransferableFactory(
+            size=0,
+            submission_succeeded_at=expected_finished_at,
         )
 
         factory.TransferableRangeFactory(
@@ -41,13 +39,9 @@ def test_date_finished_at_should_be_right(
             finished_at=expected_finished_at,
         )
 
-    queried_outgoing_transferable = OutgoingTransferable.objects.get(
-        id=outgoing_transferable.id
-    )
+    queried_outgoing_transferable = OutgoingTransferable.objects.get(id=outgoing_transferable.id)
 
     assert queried_outgoing_transferable.finished_at == expected_finished_at
 
-    result = OutgoingTransferableAdmin(OutgoingTransferable, admin_site="").finished_at(
-        queried_outgoing_transferable
-    )
+    result = OutgoingTransferableAdmin(OutgoingTransferable, admin_site="").finished_at(queried_outgoing_transferable)
     assert result == expected_output

@@ -1,6 +1,6 @@
 import * as toastMessageService from '@common/services/toast-message.service';
 import UploadFile from '@origin/components/UploadFile.vue';
-import * as transferableService from '@origin/services/transferables.service';
+import * as transferableService from '@origin/services/transferables/main';
 import { flushPromises, mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 

@@ -2,7 +2,6 @@ import contextlib
 import datetime
 import hashlib
 from typing import ContextManager
-from typing import Optional
 
 import django.contrib.auth
 import django.utils.timezone
@@ -41,18 +40,14 @@ class IncomingTransferableFactory(factory.django.DjangoModelFactory):
     size = factory.Faker("pyint", min_value=0, max_value=settings.TRANSFERABLE_MAX_SIZE)
 
     _random_bytes = factory.Faker("binary", length=20)
-    _finished_at = factory.Faker(
-        "future_datetime", tzinfo=django.utils.timezone.get_current_timezone()
-    )
+    _finished_at = factory.Faker("future_datetime", tzinfo=django.utils.timezone.get_current_timezone())
 
     @factory.lazy_attribute
     def bytes_received(self) -> int:
         if self.state == destination_models.IncomingTransferableState.SUCCESS:
             return self.size
 
-        return factory.Faker("pyint", min_value=0, max_value=self.size - 1).evaluate(
-            None, None, {"locale": None}
-        )
+        return factory.Faker("pyint", min_value=0, max_value=self.size - 1).evaluate(None, None, {"locale": None})
 
     @factory.lazy_attribute
     def rehash_intermediary(self) -> bytes:
@@ -62,12 +57,10 @@ class IncomingTransferableFactory(factory.django.DjangoModelFactory):
 
     user_provided_meta = {"Metadata-Foo": "Bar"}
 
-    state = factory.Faker(
-        "random_element", elements=destination_models.IncomingTransferableState
-    )
+    state = factory.Faker("random_element", elements=destination_models.IncomingTransferableState)
 
     @factory.lazy_attribute
-    def finished_at(self) -> Optional[datetime.datetime]:
+    def finished_at(self) -> datetime.datetime | None:
         if self.state == destination_models.IncomingTransferableState.ONGOING:
             return None
 
@@ -90,9 +83,7 @@ class FileUploadPartFactory(factory.django.DjangoModelFactory):
 
 
 @contextlib.contextmanager
-def fs_stored_incoming_transferable(
-    data: bytes, **kwargs
-) -> ContextManager[destination_models.IncomingTransferable]:
+def fs_stored_incoming_transferable(data: bytes, **kwargs) -> ContextManager[destination_models.IncomingTransferable]:
     obj = IncomingTransferableFactory(**kwargs)
 
     try:

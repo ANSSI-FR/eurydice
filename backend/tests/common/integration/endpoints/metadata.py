@@ -1,10 +1,7 @@
 from django.urls import reverse
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 
-from eurydice.common.config.settings.test import EURYDICE_CONTACT_FR
-from eurydice.common.config.settings.test import UI_BADGE_COLOR
-from eurydice.common.config.settings.test import UI_BADGE_CONTENT
+from eurydice.common.config.settings.test import EURYDICE_CONTACT_FR, UI_BADGE_COLOR, UI_BADGE_CONTENT
 
 
 def metadata(api_client: test.APIClient):
@@ -16,3 +13,6 @@ def metadata(api_client: test.APIClient):
     assert response.data["contact"] == EURYDICE_CONTACT_FR
     assert response.data["badge_content"] == UI_BADGE_CONTENT
     assert response.data["badge_color"] == UI_BADGE_COLOR
+    assert not response.data["encryption_enabled"]
+
+    return response

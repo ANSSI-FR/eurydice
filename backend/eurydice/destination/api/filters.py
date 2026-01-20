@@ -13,9 +13,7 @@ class IncomingTransferableFilter(filters.FilterSet):
 
     finished = filters.IsoDateTimeFromToRangeFilter(field_name="finished_at")
 
-    state = filters.MultipleChoiceFilter(
-        field_name="state", choices=models.IncomingTransferableState.choices
-    )
+    state = filters.MultipleChoiceFilter(field_name="state", choices=models.IncomingTransferableState.choices)
 
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
 

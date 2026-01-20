@@ -2,22 +2,18 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular import utils as spectacular_utils
 from drf_spectacular import views
-from rest_framework import permissions
-from rest_framework import status
+from rest_framework import permissions, status
 
 OpenApiViewSet = spectacular_utils.extend_schema_view(
     get=spectacular_utils.extend_schema(
         summary=_("Retrieve the API contract"),
         description=_((settings.COMMON_DOCS_PATH / "openapi-retrieve.md").read_text()),
         tags=[
-            _("OpenApi3 documentation"),
+            _("OpenApi3 documentation"),  # type: ignore[list-item]
         ],
         responses={
             status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
-                description=_(
-                    "The OpenApi3 document was successfully generated in the "
-                    "requested format."
-                ),
+                description=_("The OpenApi3 document was successfully generated in the requested format."),
             ),
         },
     ),

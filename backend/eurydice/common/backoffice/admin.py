@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any
-from typing import Dict
 
 from django import http
 from django.contrib import admin
@@ -38,7 +37,7 @@ class BaseModelAdmin(  # type: ignore
     _DisableAddPermissionMixin, _OrderingMixin, admin.ModelAdmin
 ):
     actions = None
-    help_texts: Dict[str, str] = {}
+    help_texts: dict[str, str] = {}
 
     def get_form(self, *args, **kwargs) -> Any:
         kwargs.update({"help_texts": self.help_texts})

@@ -1,0 +1,6 @@
+services:
+  apache:
+    build:
+      context: ../apache2
+      target: devcontainer
+    image: eurydice/apache:devcontainer

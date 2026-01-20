@@ -1,22 +1,25 @@
 [project]
 name = "eurydice"
-version = "1.2.0"
-requires-python = "~=3.10"
+version = "1.6.1"
+requires-python = "~=3.12.0"
 dependencies = [
-  "gunicorn==23.*",
-  "djangorestframework>=3.15.2",
-  "django-environ>=0.11.2",
-  "drf-spectacular>=0.27.1",
-  "psycopg2-binary==2.9.9",
-  "django==4.2.20",
-  "python-dateutil==2.9.0.post0",
-  "humanfriendly==10.0",
-  "whitenoise==6.7.0",
-  "msgpack==1.1.0",
-  "pydantic==1.*",
-  "django-filter==24.*",
-  "jinja2==3.1.6",
-  "setuptools==80.*",
+  "gunicorn>=23.0",
+  "djangorestframework>=3.16.1",
+  "django-environ>=0.12.0",
+  "drf-spectacular>=0.29.0",
+  "psycopg2-binary>=2.9.11",
+  "django>=5.2.9",
+  "python-dateutil>=2.9.0.post0",
+  "humanfriendly>=10.0",
+  "whitenoise>=6.11.0",
+  "msgpack>=1.1.2",
+  "pydantic>=2.12.5",
+  "django-filter>=25.2",
+  "jinja2>=3.1.6",
+  "setuptools>=80.9",
+  "django-stubs[compatible-mypy]>=5.2.8",
+  "djangorestframework-stubs>=3.16.6",
+  "pynacl>=1.6.1",
 ]
 
 [tool.uv]
@@ -30,55 +33,22 @@ default = true
 
 [dependency-groups]
 dev = [
-  "pytest==8.*",
-  "pytest-django==4.*",
-  "factory-boy==3.2.1",
-  "hypothesis==6.39.4",
-  "coverage==6.*",
-  "pytest-cov==4.*",
-  "pytype==2024.01.05",
-  "ipython==8.10.0",
-  "ipdb==0.13.9",
-  "isort==5.10.1",
-  "black==24.3.0",
-  "flake8==4.0.1",
-  "flake8-bugbear==22.3.20",
-  "flake8-comprehensions==3.8.0",
-  "flake8-eradicate==1.2.0",
-  "flake8-simplify==0.18.1",
-  "flake8-variables-names==0.0.5",
-  "pep8-naming==0.12.1",
-  "flake8-use-fstring==1.3",
-  "flake8-annotations==2.7.0",
-  "flake8-pytest==1.3",
-  "flake8-pytest-style==1.6.0",
-  "dlint==0.12.0",
-  "flake8-docstrings==1.6.0",
-  "flakeheaven==0.11.1",
-  "mypy-extensions>=0.4.4",
-  "bandit==1.7.7",
-  "Faker==13.3.2",
-  "django-stubs==1.9.0",
-  "djangorestframework-stubs==1.4.0",
-  "radon==5.1.0",
-  "freezegun==1.2.1",
-  "safety==2.*",
-  "mypy==1.11.2",
+  "pytest>=9.0.2",
+  "pytest-django>=4.11.1",
+  "factory-boy>=3.3.3",
+  "hypothesis>=6.148.7",
+  "coverage>=7.13.0",
+  "pytest-cov>=7.0.0",
+  "ipython>=9.8.0",
+  "ipdb>=0.13.13",
+  "mypy-extensions>=1.1.0",
+  "bandit>=1.9.2",
+  "Faker>=38.2.0",
+  "radon>=6.0.1",
+  "freezegun>=1.5.5",
+  "mypy>=1.19.0",
+  "ruff>=0.14.8",
 ]
-
-[tool.isort]
-# Python black compatibility
-# https://black.readthedocs.io/en/stable/compatible_configs.html#isort
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-line_length = 88
-# Custom configuration
-force_single_line = true
-default_section = "THIRDPARTY"
-known_first_party = "eurydice"
 
 [tool.coverage.run]
 branch = true
@@ -105,139 +75,19 @@ exclude_lines = [
 [tool.coverage.xml]
 output = ".report/cobertura-coverage.xml"
 
-[tool.flakeheaven]
-max_line_length = 88
-exclude = ["*/*/migrations/*", "*/*/settings/*"]
-
-[tool.flakeheaven.plugins]
-"flake8-*" = ["+*"]
-flake8-annotations = [
-  "+*",
-  # Missing type annotation for self in method
-  "-ANN101",
-  # Missing type annotation for *args
-  "-ANN002",
-  # Missing type annotation for **kwargs
-  "-ANN003",
-  # Missing type annotation for cls in classmethod
-  "-ANN102",
-  # Missing return type annotation for special method
-  "-ANN204",
-]
-flake8-docstrings = [
-  "-*",
-  # Missing Docstrings
-  "+D1??",
-  # Quotes Issues
-  "+D3??",
-  # Missing docstring in public module
-  "-D100",
-  # Missing docstring in public package
-  "-D104",
-  # Missing docstring in magic method
-  "-D105",
-  # Missing docstring in __init__
-  "-D107",
-]
-flake8-pytest-style = ["+*", "-PT012"]
-pycodestyle = [
-  "+*",
-  # Whitespace before ':' (for black compatibility)
-  "-E203",
-  # missing whitespace after ',', ';', or ':' (for black compatibility)
-  "-E231",
-  # line break before binary operator (for black compatibility)
-  "-W503",
-]
-pyflakes = ["+*"]
-radon = ["+*"]
-mccabe = ["+*"]
-dlint = [
-  "+*",
-  # insecure use of "hashlib" module (duplicate with bandit)
-  "-DUO130",
-]
-pep8-naming = ["+*"]
-
-[tool.flakeheaven.exceptions."tests/**"]
-flake8-docstrings = ["-*"]
-flake8-annotations = [
-  "+*",
-  # Missing return type annotation for public function
-  "-ANN201",
-]
-
-[tool.flakeheaven.exceptions."**/__init__.py"]
-pyflakes = [
-  "+*",
-  # imported but unused
-  "-F401",
-]
-
-[tool.flakeheaven.exceptions."**/apps.py"]
-flake8-docstrings = ["-*"]
-
-[tool.flakeheaven.exceptions."**/urls.py"]
-flake8-docstrings = ["-*"]
-
-[tool.flakeheaven.exceptions."**/filters.py"]
-flake8-docstrings = ["-D106"]
-
-[tool.flakeheaven.exceptions."**/serializers.py"]
-flake8-docstrings = ["-*"]
-
-[tool.flakeheaven.exceptions."**/manage.py"]
-flake8-docstrings = ["-*"]
-
-[tool.flakeheaven.exceptions."**/models.py"]
-flake8-docstrings = ["-D106"]
-
-[tool.flakeheaven.exceptions."**/models/*.py"]
-flake8-docstrings = ["-D106"]
-
-[tool.flakeheaven.exceptions."**/admin.py"]
-flake8-docstrings = [
-  "+*",
-  # Missing docstring in public class
-  "-D101",
-  # Missing docstring in public class
-  "-D102",
-  # Missing docstring in public function
-  "-D103",
-]
-
-[tool.flakeheaven.exceptions."**/renderers.py"]
-flake8-docstrings = [
-  "+*",
-  # Missing docstring in public class
-  "-D101",
-  # Missing docstring in public method
-  "-D102",
-]
-
-[tool.flakeheaven.exceptions."**/exceptions.py"]
-flake8-docstrings = [
-  # Missing docstring in public class
-  "-D101",
-]
-
-[tool.pytype]
-keep_going = true
-exclude = ["tests/", "**/settings/"]
-python_version = "3.10"
 
 [tool.pytest.ini_options]
 filterwarnings = [
   # Transform all warnings into errors.
   "error",
   "ignore::DeprecationWarning",
-  "ignore::django.utils.deprecation.RemovedInDjango50Warning",
+  "ignore::UserWarning",
 ]
 
 [tool.mypy]
 # pyproject.toml support progress:
 # https://github.com/python/mypy/issues/5205
-python_version = "3.10"
+python_version = "3.12"
 check_untyped_defs = true
 disallow_any_generics = false
 disallow_untyped_calls = true
@@ -266,3 +116,12 @@ ignore_errors = true
 [tool.bandit]
 targets = ["eurydice"]
 exclude_dirs = ["tests", ".venv", "venv"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [".venv", "eurydice/destination/core/migrations", "eurydice/origin/core/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["F403", "F405"]

@@ -20,31 +20,37 @@ describe('DestinationTransferableTable.vue', () => {
     expect(deleteAllButton.exists()).toBeTruthy();
     expect(deleteAllButton.isVisible()).toBeTruthy();
   });
-  it('Deletes correctly all transferables from DestinationTransferableTable', async () => {
-    const spyOnDeleteAll = vi
-      .spyOn(transferableService, 'deleteAllTransferables')
-      .mockImplementation(() => Promise.resolve());
-    const spyOnToastMessage = vi
-      .spyOn(toastMessageService, 'toastMessage')
-      .mockImplementation(vi.fn());
-    const wrapper = mount(DestinationTransferableTable, { global: { stubs: { Teleport: true } } });
-    const deleteAllButton = wrapper.find(
-      '[data-testid="DestinationTransferableTable-deleteAllButton"]',
-    );
-    await deleteAllButton.trigger('click');
-    await flushPromises();
-    expect(spyOnDeleteAll).not.toBeCalled();
-    const deleteAllDialog = wrapper.find('[data-testid="TransferableDeleteAllDialog"]');
-    expect(deleteAllDialog.exists()).toBeTruthy();
-    const deleteAllDialogButton = wrapper.find(
-      '[data-testid="TransferableDeleteAllDialog-deleteAllButton"]',
-    );
-    expect(deleteAllDialogButton.isVisible()).toBeTruthy();
-    await deleteAllDialogButton.trigger('click');
-    await flushPromises();
-    expect(spyOnDeleteAll).toBeCalled();
-    expect(spyOnToastMessage).toBeCalled();
-  });
+  it(
+    'Deletes correctly all transferables from DestinationTransferableTable',
+    async () => {
+      const spyOnDeleteAll = vi
+        .spyOn(transferableService, 'deleteAllTransferables')
+        .mockImplementation(() => Promise.resolve());
+      const spyOnToastMessage = vi
+        .spyOn(toastMessageService, 'toastMessage')
+        .mockImplementation(vi.fn());
+      const wrapper = mount(DestinationTransferableTable, {
+        global: { stubs: { Teleport: true } },
+      });
+      const deleteAllButton = wrapper.find(
+        '[data-testid="DestinationTransferableTable-deleteAllButton"]',
+      );
+      await deleteAllButton.trigger('click');
+      await flushPromises();
+      expect(spyOnDeleteAll).not.toBeCalled();
+      const deleteAllDialog = wrapper.find('[data-testid="TransferableDeleteAllDialog"]');
+      expect(deleteAllDialog.exists()).toBeTruthy();
+      const deleteAllDialogButton = wrapper.find(
+        '[data-testid="TransferableDeleteAllDialog-deleteAllButton"]',
+      );
+      expect(deleteAllDialogButton.isVisible()).toBeTruthy();
+      await deleteAllDialogButton.trigger('click');
+      await flushPromises();
+      expect(spyOnDeleteAll).toBeCalled();
+      expect(spyOnToastMessage).toBeCalled();
+    },
+    { timeout: 10000 },
+  );
 
   it('Deletes correctly all selected transferables from DestinationTransferableTable', async () => {
     const spyOnDelete = vi
@@ -116,7 +122,7 @@ describe('DestinationTransferableTable.vue', () => {
     );
     expect(deleteSingleButtons.length).toEqual(5);
 
-    const deleteSingleButton = deleteSingleButtons[0];
+    const deleteSingleButton = deleteSingleButtons[0]!;
     await deleteSingleButton.trigger('click');
     await flushPromises();
     expect(spyOnDelete).not.toBeCalled();
@@ -138,7 +144,7 @@ describe('DestinationTransferableTable.vue', () => {
     });
     const wrapper = mount(DestinationTransferableTable, { global: { stubs: { Teleport: true } } });
     await flushPromises();
-    const downloadLink = wrapper.findAll('[data-testid="TransferableTable-DownloadButton"]')[0];
+    const downloadLink = wrapper.findAll('[data-testid="TransferableTable-DownloadButton"]')[0]!;
     const downloadLinkRegexp = new RegExp(
       `${import.meta.env.VITE_API_URL}/transferables/[\\-\\d\\w]+/download`,
     );

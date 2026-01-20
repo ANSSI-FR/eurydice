@@ -1,7 +1,4 @@
-import {
-  camelCaseToSnakeCaseInterceptor,
-  remoteUserHeaderForLoginRoute,
-} from '@common/api/request-interceptors';
+import { camelCaseToSnakeCaseInterceptor } from '@common/api/request-interceptors';
 import {
   errorInterceptor,
   setUserFromResponseInterceptor,
@@ -22,13 +19,8 @@ export const initApiClient = () => {
     headers: {
       Accept: 'application/json',
     },
+    timeout: Number(import.meta.env.VITE_API_TIMEOUT ?? '10000'),
   });
-
-  // This interceptor simulates reverse proxy header set for authentication
-  // TODO: Find a way to do that in another place like traefik
-  if (import.meta.env.VITE_USE_USER_REMOTE_INTERCEPTOR === 'true') {
-    apiClient.interceptors.request.use((config) => remoteUserHeaderForLoginRoute(config));
-  }
 
   // Request interceptor : converts camelCase request to snake_case
   apiClient.interceptors.request.use((config) => camelCaseToSnakeCaseInterceptor(config));

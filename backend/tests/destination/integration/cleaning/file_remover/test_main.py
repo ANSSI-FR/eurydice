@@ -12,6 +12,7 @@ from eurydice.destination.cleaning.file_remover.file_remover import (
 from eurydice.destination.core import models
 from eurydice.destination.storage import fs
 from tests.destination.integration import factory
+from tests.utils import process_logs
 
 
 @pytest.mark.django_db()
@@ -27,11 +28,7 @@ def test_select_transferables_to_remove_success_single_transferable(
 ):
     settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
-    finished_at = (
-        timezone.now()
-        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        - datetime.timedelta(seconds=1)
-    )
+    finished_at = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
     transferable = factory.IncomingTransferableFactory(
         state=models.IncomingTransferableState.SUCCESS,
         created_at=finished_at,
@@ -54,11 +51,7 @@ def test_select_transferables_to_remove_success_multiple_transferables(
     success_transferable_id = set()
 
     for _ in range(nb_success_transferables):
-        finished_at = (
-            timezone.now()
-            - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-            - datetime.timedelta(seconds=1)
-        )
+        finished_at = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
         transferable = factory.IncomingTransferableFactory(
             state=models.IncomingTransferableState.SUCCESS,
             created_at=finished_at,
@@ -67,17 +60,9 @@ def test_select_transferables_to_remove_success_multiple_transferables(
         success_transferable_id.add(transferable.id)
 
     # ongoing transferable should not be removed
-    ongoing_transferable = factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.ONGOING
-    )
-    created_at = (
-        timezone.now()
-        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        + datetime.timedelta(seconds=1)
-    )
-    factory.FileUploadPartFactory(
-        part_number=1, incoming_transferable=ongoing_transferable, created_at=created_at
-    )
+    ongoing_transferable = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
+    created_at = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER + datetime.timedelta(seconds=1)
+    factory.FileUploadPartFactory(part_number=1, incoming_transferable=ongoing_transferable, created_at=created_at)
 
     file_remover = DestinationFileRemover()
     retrieved = {t.id for t in file_remover._select_transferables_to_remove()}
@@ -96,16 +81,8 @@ def test_select_transferables_to_remove_success_and_ongoing_transferables(
     nb_success_transferables_to_remove = 5
     expected_selected_transferable_id = set()
 
-    unexpired_date = (
-        timezone.now()
-        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        + datetime.timedelta(seconds=1)
-    )
-    expired_date = (
-        timezone.now()
-        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        - datetime.timedelta(seconds=1)
-    )
+    unexpired_date = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER + datetime.timedelta(seconds=1)
+    expired_date = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
     for _ in range(nb_ongoing_transferables_to_keep):
         transferable = factory.IncomingTransferableFactory(
@@ -162,17 +139,20 @@ def test_remove_transferable_success(
     file_remover._remove_transferable(success_incoming_transferable)
 
     success_incoming_transferable.refresh_from_db()
-    assert (
-        success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
-    )
+    assert success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
 
     with pytest.raises(FileNotFoundError):
         fs.read_bytes(success_incoming_transferable)
 
-    assert caplog.messages == [
-        f"The IncomingTransferable {success_incoming_transferable.id} has been marked "
-        f"as {models.IncomingTransferableState.EXPIRED.value}, "
-        f"and its data removed from the storage."
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {
+            "log_key": "file_remover_destination",
+            "status": models.IncomingTransferableState.EXPIRED.value,
+            "transferable_id": str(success_incoming_transferable.id),
+            "message": "Transferable status updated and data removed from fs",
+        }
     ]
 
 
@@ -182,9 +162,7 @@ def test_remove_transferable_success(
     side_effect=RuntimeError("Oh no!"),
 )
 def test_remove_transferable_error_ensure_atomicity(mocked_remove_object: mock.Mock):
-    transferable = factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.SUCCESS
-    )
+    transferable = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.SUCCESS)
 
     file_remover = DestinationFileRemover()
     with pytest.raises(RuntimeError, match="Oh no!"):
@@ -219,28 +197,20 @@ def test_loop_success_remove_transferable(
 ):
     settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(seconds=1)
 
-    finished_at = (
-        timezone.now()
-        - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        - datetime.timedelta(seconds=1)
-    )
+    finished_at = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
     success_incoming_transferable.created_at = finished_at
     success_incoming_transferable.finished_at = finished_at
     success_incoming_transferable.save(update_fields=["created_at", "finished_at"])
 
-    assert (
-        success_incoming_transferable.state == models.IncomingTransferableState.SUCCESS
-    )
+    assert success_incoming_transferable.state == models.IncomingTransferableState.SUCCESS
 
     boolean_cond.side_effect = [True, True, False]
     file_remover = DestinationFileRemover()
     file_remover._loop()
 
     success_incoming_transferable.refresh_from_db()
-    assert (
-        success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
-    )
+    assert success_incoming_transferable.state == models.IncomingTransferableState.EXPIRED
 
     with pytest.raises(FileNotFoundError):
         fs.read_bytes(success_incoming_transferable)

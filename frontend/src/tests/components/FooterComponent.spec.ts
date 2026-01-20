@@ -45,6 +45,8 @@ describe.concurrent('Footer Component', () => {
       contact: 'test',
       badgeColor: 'blue',
       badgeContent: 'TEST',
+      encryptionEnabled: true,
+      encodedPublicKey: 'gtC32LH1n6qCbkqQog/QwAr7TjxuED2+85o1CRlSl2Y=',
     });
     const metadataStore = useServerMetadataStore();
     await metadataStore.fetchServerMetadata();

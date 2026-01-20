@@ -14,8 +14,6 @@ export const transferableListMock: Transferable[] = [
     progress: 0,
     bytesTransferred: 0,
     finishedAt: null,
-    speed: 0,
-    estimatedFinishDate: null,
   },
   {
     id: '5cb77173-b590-4a06-a0d9-69eec825ecce',
@@ -30,8 +28,6 @@ export const transferableListMock: Transferable[] = [
     progress: 0,
     bytesTransferred: 0,
     finishedAt: null,
-    speed: 0,
-    estimatedFinishDate: null,
   },
   {
     id: '6114035b-16cb-46ed-b796-b576ebef2205',
@@ -46,8 +42,6 @@ export const transferableListMock: Transferable[] = [
     progress: 100,
     bytesTransferred: 111,
     finishedAt: '2025-03-06T15:29:43.801507+01:00',
-    speed: null,
-    estimatedFinishDate: null,
   },
   {
     id: '3b701855-52d5-4a52-ae59-261761035e59',
@@ -62,8 +56,6 @@ export const transferableListMock: Transferable[] = [
     progress: 100,
     bytesTransferred: 111,
     finishedAt: '2025-03-06T15:29:42.714200+01:00',
-    speed: null,
-    estimatedFinishDate: null,
   },
   {
     id: 'e62bd297-44ba-47ec-a634-21a119a3b6cd',
@@ -78,8 +70,6 @@ export const transferableListMock: Transferable[] = [
     progress: 100,
     bytesTransferred: 5,
     finishedAt: '2025-03-06T15:29:39.287989+01:00',
-    speed: null,
-    estimatedFinishDate: null,
   },
   {
     id: 'cf907202-8597-4875-8ceb-77975d826c5a',
@@ -94,8 +84,6 @@ export const transferableListMock: Transferable[] = [
     progress: 100,
     bytesTransferred: 5,
     finishedAt: '2025-03-06T15:29:36.896156+01:00',
-    speed: null,
-    estimatedFinishDate: null,
   },
   {
     id: '617eeb7f-6069-4954-9c7c-9c3d545a9f5b',
@@ -110,8 +98,6 @@ export const transferableListMock: Transferable[] = [
     progress: 1,
     bytesTransferred: 10,
     finishedAt: null,
-    speed: 20,
-    estimatedFinishDate: null,
   },
   {
     id: 'e95d2171-c940-4a92-b28b-a7f2cde75c7d',
@@ -126,7 +112,5 @@ export const transferableListMock: Transferable[] = [
     progress: 100,
     bytesTransferred: 1073741824,
     finishedAt: '2025-03-06T15:30:18.341814+01:00',
-    speed: 22845570,
-    estimatedFinishDate: null,
   },
 ];

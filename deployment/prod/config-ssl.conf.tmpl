@@ -1,0 +1,82 @@
+<VirtualHost *:443>
+  ServerName ${ServerName}
+
+  ServerAdmin root@example.com
+
+  SSLEngine on
+  SSLCipherSuite AES256+EECDH:AES256+EDH
+  SSLProtocol All -SSLv2 -SSLv3
+  SSLHonorCipherOrder On
+  SSLCompression off
+  SSLCertificateFile /etc/ssl/netops/acme/${ServerName}/${ServerName}.crt
+  SSLCertificateKeyFile /etc/ssl/netops/acme/${ServerName}/${ServerName}.key
+
+  # variable "options (str)"
+  ProxyPreserveHost On
+  ErrorLog ${APACHE_LOG_DIR}/error-${ServerName}-ssl.log
+  CustomLog ${APACHE_LOG_DIR}/access-${ServerName}-ssl.log combined
+  LimitRequestFieldSize 32768
+  RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
+
+  OIDCSSLValidateServer On
+  OIDCClientSecret ${OIDCClientSecret}
+  OIDCCryptoPassphrase ${OIDCCryptoPassphrase}
+  OIDCClientID ${OIDCClientID}
+  OIDCProviderMetadataURL ${OIDCProviderUrl}/.well-known/openid-configuration
+  # OIDCProviderMetadataURL is called by apache container, so url must be the container name
+  OIDCRedirectURI https://${ServerName}/api/v1/user/login/sso/authorize
+  OIDCXForwardedHeaders X-Forwarded-Host
+  OIDCXForwardedHeaders X-Forwarded-Proto
+  OIDCScope "openid profile"
+  # unset header used for Remote Header authentication
+  # in order to be sure that it cannot be forged
+  RequestHeader unset ${RemoteUserHeader}
+
+  <Location />
+    ProxyPass http://127.0.0.1:8888/
+    ProxyPassReverse http://127.0.0.1:8888/
+  </Location>
+
+  <Location /api/>
+    ProxyPass http://127.0.0.1:8080/api/
+    ProxyPassReverse http://127.0.0.1:8080/api/
+  </Location>
+
+  <Location /static/>
+    ProxyPass http://127.0.0.1:8080/static/
+    ProxyPassReverse http://127.0.0.1:8080/static/
+  </Location>
+
+  <Location /admin>
+    <RequireAll>
+      <RequireAny>
+        # Add restricted IP addresses here
+        # Require ip <ip>
+      </RequireAny>
+    </RequireAll>
+    ProxyPass http://127.0.0.1:8080/admin
+    ProxyPassReverse http://127.0.0.1:8080/admin
+  </Location>
+
+  <Location /api/v1/user/login/sso>
+    AuthType openid-connect
+    Require valid-user
+    RequestHeader set ${RemoteUserHeader} %{OIDC_CLAIM_preferred_username}e
+    ProxyPass http://127.0.0.1:8080/api/v1/user/login
+    ProxyPassReverse http:///127.0.0.1:8080/api/v1/user/login
+  </Location>
+
+  <Location /api/v1/user/login/kerberos>
+    AuthType Kerberos
+    KrbMethodK5Passwd Off
+    KrbLocalUserMapping On
+    KrbServiceName Any
+    Krb5Keytab /etc/krb5.keytab
+    Require valid-user
+    RequestHeader set ${RemoteUserHeader} %{REMOTE_USER}s
+    ProxyPass http://127.0.0.1:8080/api/v1/user/login
+    ProxyPassReverse http://127.0.0.1:8080/api/v1/user/login
+  </Location>
+
+
+</VirtualHost>

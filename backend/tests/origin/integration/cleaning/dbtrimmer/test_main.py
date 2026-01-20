@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 from unittest import mock
 
 import freezegun
@@ -14,6 +13,7 @@ from eurydice.common.utils import signals
 from eurydice.origin.cleaning.dbtrimmer.dbtrimmer import OriginDBTrimmer
 from eurydice.origin.core import models
 from tests.origin.integration import factory
+from tests.utils import process_logs
 
 
 @pytest.mark.django_db()
@@ -56,7 +56,7 @@ from tests.origin.integration import factory
 )
 def test_dbtrimmer_by_transferable_states(
     faker: Faker,
-    transferable_states: List[OutgoingTransferableState],
+    transferable_states: list[OutgoingTransferableState],
     expected_deleted_transferables: int,
     expected_deleted_ranges: int,
     expected_deleted_revocations: int,
@@ -68,11 +68,7 @@ def test_dbtrimmer_by_transferable_states(
     now = faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
 
     for state in transferable_states:
-        updated_at = (
-            now
-            - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-            - datetime.timedelta(seconds=1)
-        )
+        updated_at = now - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
         with freezegun.freeze_time(updated_at):
             factory.OutgoingTransferableFactory(
@@ -84,25 +80,29 @@ def test_dbtrimmer_by_transferable_states(
     with freezegun.freeze_time(now):
         OriginDBTrimmer()._run()
 
-    if (
-        expected_deleted_ranges == 0
-        and expected_deleted_revocations == 0
-        and expected_deleted_transferables == 0
-    ):
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            "DBTrimmer finished running",
+    log_messages = process_logs(caplog.messages)
+
+    if expected_deleted_ranges == 0 and expected_deleted_revocations == 0 and expected_deleted_transferables == 0:
+        assert log_messages == [
+            {"log_key": "db_trimmer_origin", "status": "running"},
+            {"log_key": "db_trimmer_origin", "status": "done"},
         ]
     else:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            f"DBTrimmer will remove {expected_deleted_transferables} "
-            "OutgoingTransferables "
-            f"and all associated objects.",
-            f"DBTrimmer successfully removed {expected_deleted_transferables} "
-            f"transferables, {expected_deleted_ranges} ranges, and "
-            f"{expected_deleted_revocations} revocations.",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "db_trimmer_origin", "status": "running"},
+            {
+                "log_key": "db_trimmer_origin",
+                "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+                "outgoing_transferables_count": expected_deleted_transferables,
+            },
+            {
+                "log_key": "db_trimmer_origin",
+                "message": "DBTrimmer finished successfully",
+                "deleted_transferables": expected_deleted_transferables,
+                "deleted_ranges": expected_deleted_ranges,
+                "deleted_revocations": expected_deleted_revocations,
+            },
+            {"log_key": "db_trimmer_origin", "status": "done"},
         ]
 
     assert not models.OutgoingTransferable.objects.filter(
@@ -116,18 +116,19 @@ def test_dbtrimmer_by_transferable_states(
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    ("time_delta", "expected_deletions"),
+    ("time_delta", "expected_deletions", "expected_deleted_ranges"),
     [
-        ([], 0),
-        ([datetime.timedelta(seconds=1)], 0),
-        ([datetime.timedelta(seconds=59)], 0),
-        ([datetime.timedelta(seconds=61)], 1),
+        ([], 0, 0),
+        ([datetime.timedelta(seconds=1)], 0, 0),
+        ([datetime.timedelta(seconds=59)], 0, 0),
+        ([datetime.timedelta(seconds=61)], 1, 0),
         (
             [
                 datetime.timedelta(seconds=59),
                 datetime.timedelta(seconds=61),
             ],
             1,
+            0,
         ),
         (
             [
@@ -135,13 +136,15 @@ def test_dbtrimmer_by_transferable_states(
                 datetime.timedelta(seconds=71),
             ],
             2,
+            0,
         ),
     ],
 )
 def test_dbtrimmer_by_transferable_finish_date(
     faker: Faker,
-    time_delta: List[datetime.timedelta],
+    time_delta: list[datetime.timedelta],
     expected_deletions: int,
+    expected_deleted_ranges: int,
     caplog: pytest.LogCaptureFixture,
     settings: conf.Settings,
 ):
@@ -161,19 +164,29 @@ def test_dbtrimmer_by_transferable_finish_date(
     with freezegun.freeze_time(now):
         OriginDBTrimmer()._run()
 
+    log_messages = process_logs(caplog.messages)
+
     if expected_deletions == 0:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "db_trimmer_origin", "status": "running"},
+            {"log_key": "db_trimmer_origin", "status": "done"},
         ]
     else:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            f"DBTrimmer will remove {expected_deletions} OutgoingTransferables "
-            f"and all associated objects.",
-            f"DBTrimmer successfully removed {expected_deletions} transferables, "
-            f"0 ranges, and {expected_deletions} revocations.",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "db_trimmer_origin", "status": "running"},
+            {
+                "log_key": "db_trimmer_origin",
+                "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+                "outgoing_transferables_count": expected_deletions,
+            },
+            {
+                "log_key": "db_trimmer_origin",
+                "message": "DBTrimmer finished successfully",
+                "deleted_transferables": expected_deletions,
+                "deleted_ranges": expected_deleted_ranges,
+                "deleted_revocations": expected_deletions,
+            },
+            {"log_key": "db_trimmer_origin", "status": "done"},
         ]
 
 
@@ -205,12 +218,29 @@ def test_deletion_count_mismatch_is_logged(
 
     OriginDBTrimmer()._run()
 
-    assert caplog.messages == [
-        "DBTrimmer is running",
-        "DBTrimmer will remove 1 OutgoingTransferables and all associated objects.",
-        "DBTrimmer successfully removed 0 transferables, 0 ranges, and 0 revocations.",
-        "DBTrimmer deleted 0 OutgoingTransferables, instead of the expected 1.",
-        "DBTrimmer finished running",
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {"log_key": "db_trimmer_origin", "status": "running"},
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+            "outgoing_transferables_count": 1,
+        },
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer finished successfully",
+            "deleted_transferables": 0,
+            "deleted_ranges": 0,
+            "deleted_revocations": 0,
+        },
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer deletion mismatch",
+            "deleted_transferables": 0,
+            "expected_deleted_transferables": 1,
+        },
+        {"log_key": "db_trimmer_origin", "status": "done"},
     ]
 
 
@@ -230,11 +260,7 @@ def test_dbtrimmer_bulk_delete(
         OutgoingTransferableState.SUCCESS,
         OutgoingTransferableState.SUCCESS,
     ]:
-        updated_at = (
-            now
-            - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-            - datetime.timedelta(seconds=1)
-        )
+        updated_at = now - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
         with freezegun.freeze_time(updated_at):
             factory.OutgoingTransferableFactory(
@@ -246,13 +272,35 @@ def test_dbtrimmer_bulk_delete(
     with freezegun.freeze_time(now):
         OriginDBTrimmer()._run()
 
-    assert caplog.messages == [
-        "DBTrimmer is running",
-        "DBTrimmer will remove 1 OutgoingTransferables " "and all associated objects.",
-        "DBTrimmer successfully removed 1 transferables, 1 ranges, and 0 revocations.",
-        "DBTrimmer will remove 1 OutgoingTransferables " "and all associated objects.",
-        "DBTrimmer successfully removed 1 transferables, 1 ranges, and 0 revocations.",
-        "DBTrimmer finished running",
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {"log_key": "db_trimmer_origin", "status": "running"},
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+            "outgoing_transferables_count": 1,
+        },
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer finished successfully",
+            "deleted_transferables": 1,
+            "deleted_ranges": 1,
+            "deleted_revocations": 0,
+        },
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer will remove OutgoingTransferables and all associated objects.",
+            "outgoing_transferables_count": 1,
+        },
+        {
+            "log_key": "db_trimmer_origin",
+            "message": "DBTrimmer finished successfully",
+            "deleted_transferables": 1,
+            "deleted_ranges": 1,
+            "deleted_revocations": 0,
+        },
+        {"log_key": "db_trimmer_origin", "status": "done"},
     ]
 
     assert not models.OutgoingTransferable.objects.filter(

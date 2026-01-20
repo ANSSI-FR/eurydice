@@ -9,7 +9,10 @@ class OctetStreamParser(parsers.BaseParser):
     media_type = "application/octet-stream"
 
     def parse(
-        self, stream, media_type=None, parser_context=None  # noqa: ANN001
+        self,
+        stream,
+        media_type=None,
+        parser_context=None,  # noqa: ANN001
     ):  # noqa: ANN201
         """
         NOTE: This is not actually used by the OutgoingTransferable creation view

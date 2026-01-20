@@ -29,9 +29,7 @@ def test_sha1_to_bytes_from_bytes_success(data: bytes):
     strategies.binary(max_size=hf.parse_size("1 MB")),
     strategies.integers(max_value=50),
 )
-def test_sha1_to_bytes_from_bytes_success_multiple_steps_success(
-    data: bytes, steps: int
-):
+def test_sha1_to_bytes_from_bytes_success_multiple_steps_success(data: bytes, steps: int):
     sha1 = hashlib.sha1()
     dump = rehash.sha1_to_bytes(sha1)
 

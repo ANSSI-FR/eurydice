@@ -11,5 +11,6 @@ export const deleteAllTransferables = (): Promise<void> => {
 export const getTransferableData = (transferableId: string): Promise<string> => {
   return apiClient.get(`/transferables/${transferableId}/download/`, {
     responseType: 'text',
+    timeout: 0,
   });
 };

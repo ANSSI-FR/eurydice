@@ -1,14 +1,10 @@
-from typing import Any
-from typing import Callable
-from typing import List
-from typing import Optional
+from typing import Any, Callable
 from uuid import UUID
 
 import pytest
 from django.db import transaction
 from django.urls import reverse
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
@@ -47,17 +43,15 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
             parameters["from"] = parameters.pop("from_")
         return self.client.get(url, parameters)
 
-    def expected_ids(self) -> List[str]:
+    def expected_ids(self) -> list[str]:
         """Read the IDs we're going to paginate through, right from the database."""
 
         return [
             str(elm)
-            for elm in type(self)
-            .transferable_class.objects.order_by("-created_at")
-            .values_list("id", flat=True)
+            for elm in type(self).transferable_class.objects.order_by("-created_at").values_list("id", flat=True)
         ]
 
-    def success_ids(self) -> List[str]:
+    def success_ids(self) -> list[str]:
         """Read the IDs of Transferables in SUCCESS state."""
 
         return [
@@ -72,9 +66,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         """Delete the requested amount of transferables to emulate a DBTrimmer."""
 
         type(self).transferable_class.objects.filter(
-            id__in=type(self)
-            .transferable_class.objects.order_by("created_at")
-            .values_list("id")[:count]
+            id__in=type(self).transferable_class.objects.order_by("created_at").values_list("id")[:count]
         ).delete()
 
     def insert_decoy_transferables(self, count: int = 2) -> None:
@@ -88,11 +80,11 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
     def assert_slice(
         self,
         response: Response,
-        expected_ids: List[str],
+        expected_ids: list[str],
         start: int,
         end: int,
-        page: Optional[int] = None,
-        count: Optional[int] = None,
+        page: int | None = None,
+        count: int | None = None,
     ):
         """Make sure the API response matches the expected data slice."""
 
@@ -126,9 +118,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
 
         response = self.list_transferables(page_size=TEST_PAGE_SIZE)
         first = response.data["pages"]["current"]
-        response = self.list_transferables(
-            page_size=TEST_PAGE_SIZE, delta=TEST_FULL_PAGES, from_=first
-        )
+        response = self.list_transferables(page_size=TEST_PAGE_SIZE, delta=TEST_FULL_PAGES, from_=first)
         last_page = response.data["pages"]["current"]
         assert response.data["pages"]["next"] is None
         self.assert_slice(
@@ -149,9 +139,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
             TOTAL,
         )
 
-        response = self.list_transferables(
-            page_size=TEST_PAGE_SIZE, delta=1, from_=last_page
-        )
+        response = self.list_transferables(page_size=TEST_PAGE_SIZE, delta=1, from_=last_page)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_reverse_ending(
@@ -174,13 +162,9 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
 
         response = self.list_transferables(page_size=PAGE_SIZE)
         first_page = response.data["pages"]["current"]
-        response = self.list_transferables(
-            page_size=PAGE_SIZE, delta=PAGES - 1, from_=first_page
-        )
+        response = self.list_transferables(page_size=PAGE_SIZE, delta=PAGES - 1, from_=first_page)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES
-        )
+        self.assert_slice(response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES)
 
         self.trim_transferables(PAGE_SIZE // 2)
 
@@ -221,14 +205,10 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
 
         response = self.list_transferables(page_size=PAGE_SIZE)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2
-        )
+        self.assert_slice(response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2)
 
         response = self.list_transferables(page_size=PAGE_SIZE, page=current)
-        self.assert_slice(
-            response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2
-        )
+        self.assert_slice(response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2)
 
         self.insert_decoy_transferables(2)
         self.trim_transferables(PAGE_SIZE // 2)  # Only 2 decoy transferables remaining
@@ -256,9 +236,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         response = self.list_transferables(page_size=PAGE_SIZE)
         assert response.data["pages"]["previous"] is None
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2
-        )
+        self.assert_slice(response, expected_ids, 0, PAGE_SIZE // 2, count=PAGE_SIZE // 2)
 
         self.trim_transferables(PAGE_SIZE // 2)  # Nothing left in the DB
 
@@ -292,9 +270,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
             count=PAGE_SIZE + 1,
         )
 
-        self.trim_transferables(
-            PAGE_SIZE
-        )  # 1 transferable left in the DB after this line
+        self.trim_transferables(PAGE_SIZE)  # 1 transferable left in the DB after this line
 
         response = self.list_transferables(page_size=PAGE_SIZE, page=current)
         assert response.status_code == status.HTTP_410_GONE
@@ -326,9 +302,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         self.assert_slice(response, expected_ids, 0, PAGE_SIZE // 3)
         current = response.data["pages"]["current"]
 
-        response = self.list_transferables(
-            state="SUCCESS", page_size=PAGE_SIZE // 3, delta=1, from_=current
-        )
+        response = self.list_transferables(state="SUCCESS", page_size=PAGE_SIZE // 3, delta=1, from_=current)
         self.assert_slice(response, expected_ids, PAGE_SIZE // 3, 2 * PAGE_SIZE // 3)
         current = response.data["pages"]["current"]
 
@@ -337,9 +311,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
         # Changing page size on the fly is not allowed
-        response = self.list_transferables(
-            state="SUCCESS", page_size=PAGE_SIZE // 2, page=current
-        )
+        response = self.list_transferables(state="SUCCESS", page_size=PAGE_SIZE // 2, page=current)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_invalid_page(self):
@@ -356,9 +328,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         response = self.list_transferables(page_size=PAGE_SIZE, delta=0, page=current)
         self.assert_slice(response, self.expected_ids(), 0, PAGE_SIZE)
 
-        response = self.list_transferables(
-            page_size=PAGE_SIZE, delta="hey", page=current
-        )
+        response = self.list_transferables(page_size=PAGE_SIZE, delta="hey", page=current)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_both_page_and_from(
@@ -369,9 +339,7 @@ class PaginationTestsInTransactionSuperclass(test.APITransactionTestCase):
         current = response.data["pages"]["current"]
         self.assert_slice(response, self.expected_ids(), 0, PAGE_SIZE)
 
-        response = self.list_transferables(
-            page_size=PAGE_SIZE, delta=1, page=next_page, from_=current
-        )
+        response = self.list_transferables(page_size=PAGE_SIZE, delta=1, page=next_page, from_=current)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_page_delta_without_from(
@@ -418,18 +386,16 @@ class PaginationTestsSuperclass:
             transaction.set_rollback(True)
 
     @pytest.fixture(scope="class")
-    def expected_ids(self, list_transferables: Callable) -> List[str]:
+    def expected_ids(self, list_transferables: Callable) -> list[str]:
         """Read the IDs we're going to paginate through, right from the database."""
 
         return [
             str(elm)
-            for elm in type(self)
-            .transferable_class.objects.order_by("-created_at")
-            .values_list("id", flat=True)
+            for elm in type(self).transferable_class.objects.order_by("-created_at").values_list("id", flat=True)
         ]
 
     @pytest.fixture(scope="class")
-    def success_ids(self, list_transferables: Callable) -> List[str]:
+    def success_ids(self, list_transferables: Callable) -> list[str]:
         """Read the IDs of Transferables in SUCCESS state."""
 
         return [
@@ -444,9 +410,7 @@ class PaginationTestsSuperclass:
         """Delete the requested amount of transferables to emulate a DBTrimmer."""
 
         type(self).transferable_class.objects.filter(
-            id__in=type(self)
-            .transferable_class.objects.order_by("created_at")
-            .values_list("id")[:count]
+            id__in=type(self).transferable_class.objects.order_by("created_at").values_list("id")[:count]
         ).delete()
 
     def insert_decoy_transferables(self, count: int = 2) -> None:
@@ -460,11 +424,11 @@ class PaginationTestsSuperclass:
     def assert_slice(
         self,
         response: Response,
-        expected_ids: List[str],
+        expected_ids: list[str],
         start: int,
         end: int,
-        page: Optional[int] = None,
-        count: Optional[int] = None,
+        page: int | None = None,
+        count: int | None = None,
     ):
         """Make sure the API response matches the expected data slice."""
 
@@ -477,7 +441,7 @@ class PaginationTestsSuperclass:
             assert data[i - start]["id"] == expected_ids[i]
 
     @pytest.mark.django_db()
-    def test_page_size(self, list_transferables: Callable, expected_ids: List[UUID]):
+    def test_page_size(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE // 2)
         self.assert_slice(response, expected_ids, 0, PAGE_SIZE // 2)
 
@@ -487,9 +451,7 @@ class PaginationTestsSuperclass:
         self.assert_slice(response, expected_ids, PAGE_SIZE // 3, 2 * PAGE_SIZE // 3)
 
     @pytest.mark.django_db()
-    def test_full_listing_without_delta(
-        self, list_transferables: Callable, expected_ids: List[UUID]
-    ):
+    def test_full_listing_without_delta(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE)
         next_page = response.data["pages"]["next"]
         paginated_at = response.data["paginated_at"]
@@ -500,14 +462,10 @@ class PaginationTestsSuperclass:
             response = list_transferables(page_size=PAGE_SIZE, page=next_page)
             next_page = response.data["pages"]["next"]
             assert paginated_at == response.data["paginated_at"]
-            self.assert_slice(
-                response, expected_ids, page * PAGE_SIZE, (page + 1) * PAGE_SIZE
-            )
+            self.assert_slice(response, expected_ids, page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
     @pytest.mark.django_db()
-    def test_full_listing_with_delta(
-        self, list_transferables: Callable, expected_ids: List[UUID]
-    ):
+    def test_full_listing_with_delta(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE)
         current_page = response.data["pages"]["current"]
         self.assert_slice(response, expected_ids, 0, PAGE_SIZE)
@@ -515,16 +473,12 @@ class PaginationTestsSuperclass:
         self.insert_decoy_transferables()
 
         for page in range(1, PAGES):
-            response = list_transferables(
-                page_size=PAGE_SIZE, from_=current_page, delta=1
-            )
+            response = list_transferables(page_size=PAGE_SIZE, from_=current_page, delta=1)
             current_page = response.data["pages"]["current"]
-            self.assert_slice(
-                response, expected_ids, page * PAGE_SIZE, (page + 1) * PAGE_SIZE
-            )
+            self.assert_slice(response, expected_ids, page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
     @pytest.mark.django_db()
-    def test_page_delta(self, list_transferables: Callable, expected_ids: List[UUID]):
+    def test_page_delta(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE)
         current = response.data["pages"]["current"]
         self.assert_slice(response, expected_ids, 0, PAGE_SIZE)
@@ -550,7 +504,7 @@ class PaginationTestsSuperclass:
 
     @pytest.mark.django_db()
     def test_full_listing_with_cursor_and_page_delta_backwards(
-        self, list_transferables: Callable, expected_ids: List[UUID]
+        self, list_transferables: Callable, expected_ids: list[UUID]
     ):
         response = list_transferables(page_size=PAGE_SIZE)
         first = response.data["pages"]["current"]
@@ -559,22 +513,18 @@ class PaginationTestsSuperclass:
 
         response = list_transferables(page_size=PAGE_SIZE, page=last_page)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES
-        )
+        self.assert_slice(response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES)
 
         self.insert_decoy_transferables()
 
         for page in range(PAGES - 1, 0, -1):
             response = list_transferables(page_size=PAGE_SIZE, delta=-1, from_=current)
             current = response.data["pages"]["current"]
-            self.assert_slice(
-                response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE
-            )
+            self.assert_slice(response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     @pytest.mark.django_db()
     def test_full_listing_with_cursor_and_absolute_page_backwards(
-        self, list_transferables: Callable, expected_ids: List[UUID]
+        self, list_transferables: Callable, expected_ids: list[UUID]
     ):
         response = list_transferables(page_size=PAGE_SIZE)
         first = response.data["pages"]["current"]
@@ -583,50 +533,36 @@ class PaginationTestsSuperclass:
 
         response = list_transferables(page_size=PAGE_SIZE, page=last_page)
         previous = response.data["pages"]["previous"]
-        self.assert_slice(
-            response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES
-        )
+        self.assert_slice(response, expected_ids, PAGE_SIZE * (PAGES - 1), PAGE_SIZE * PAGES)
 
         self.insert_decoy_transferables()
 
         for page in range(PAGES - 1, 0, -1):
             response = list_transferables(page_size=PAGE_SIZE, page=previous)
             previous = response.data["pages"]["previous"]
-            self.assert_slice(
-                response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE
-            )
+            self.assert_slice(response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     @pytest.mark.django_db()
     @pytest.mark.parametrize("page", [1, int(PAGES / 2), PAGES])
-    def test_refresh_with_current(
-        self, list_transferables: Callable, expected_ids: List[UUID], page: int
-    ):
+    def test_refresh_with_current(self, list_transferables: Callable, expected_ids: list[UUID], page: int):
         response = list_transferables(page_size=PAGE_SIZE)
         if page != 1:
             first = response.data["pages"]["current"]
-            response = list_transferables(
-                page_size=PAGE_SIZE, delta=page - 1, from_=first
-            )
+            response = list_transferables(page_size=PAGE_SIZE, delta=page - 1, from_=first)
         selected_page = response.data["pages"]["current"]
 
         response = list_transferables(page_size=PAGE_SIZE, page=selected_page)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE
-        )
+        self.assert_slice(response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
         self.insert_decoy_transferables()
 
         response = list_transferables(page_size=PAGE_SIZE, page=current)
-        self.assert_slice(
-            response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE
-        )
+        self.assert_slice(response, expected_ids, (page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     @pytest.mark.django_db()
     @pytest.mark.parametrize("page", [2, int(PAGES / 2) + 1, PAGES])
-    def test_refresh_with_reverse_cursor(
-        self, list_transferables: Callable, expected_ids: List[UUID], page: int
-    ):
+    def test_refresh_with_reverse_cursor(self, list_transferables: Callable, expected_ids: list[UUID], page: int):
         response = list_transferables(page_size=PAGE_SIZE)
         first = response.data["pages"]["current"]
         response = list_transferables(page_size=PAGE_SIZE, delta=page - 1, from_=first)
@@ -634,30 +570,20 @@ class PaginationTestsSuperclass:
 
         response = list_transferables(page_size=PAGE_SIZE, page=selected_page)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, (page - 2) * PAGE_SIZE, (page - 1) * PAGE_SIZE
-        )
+        self.assert_slice(response, expected_ids, (page - 2) * PAGE_SIZE, (page - 1) * PAGE_SIZE)
 
         self.insert_decoy_transferables()
 
         response = list_transferables(page_size=PAGE_SIZE, page=current)
-        self.assert_slice(
-            response, expected_ids, (page - 2) * PAGE_SIZE, (page - 1) * PAGE_SIZE
-        )
+        self.assert_slice(response, expected_ids, (page - 2) * PAGE_SIZE, (page - 1) * PAGE_SIZE)
 
     @pytest.mark.django_db()
-    def test_dbtrimmer_with_cursor_unchanged_pages(
-        self, list_transferables: Callable, expected_ids: List[UUID]
-    ):
+    def test_dbtrimmer_with_cursor_unchanged_pages(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE)
         first_page = response.data["pages"]["current"]
-        response = list_transferables(
-            page_size=PAGE_SIZE, delta=PAGES - 3, from_=first_page
-        )
+        response = list_transferables(page_size=PAGE_SIZE, delta=PAGES - 3, from_=first_page)
         current = response.data["pages"]["current"]
-        self.assert_slice(
-            response, expected_ids, PAGE_SIZE * (PAGES - 3), PAGE_SIZE * (PAGES - 2)
-        )
+        self.assert_slice(response, expected_ids, PAGE_SIZE * (PAGES - 3), PAGE_SIZE * (PAGES - 2))
 
         self.trim_transferables(5 * PAGE_SIZE // 2)
 
@@ -673,9 +599,7 @@ class PaginationTestsSuperclass:
         )
 
     @pytest.mark.django_db()
-    def test_max_page_size(
-        self, list_transferables: Callable, expected_ids: List[UUID]
-    ):
+    def test_max_page_size(self, list_transferables: Callable, expected_ids: list[UUID]):
         backup = EurydiceSessionPagination.max_page_size
         EurydiceSessionPagination.max_page_size = 2 * PAGE_SIZE
 
@@ -688,16 +612,14 @@ class PaginationTestsSuperclass:
         EurydiceSessionPagination.max_page_size = backup
 
     @pytest.mark.django_db()
-    def test_default_page_size(
-        self, list_transferables: Callable, expected_ids: List[UUID]
-    ):
+    def test_default_page_size(self, list_transferables: Callable, expected_ids: list[UUID]):
         size = api_settings.PAGE_SIZE
 
         response = list_transferables()
         self.assert_slice(response, expected_ids, 0, size)
 
     @pytest.mark.django_db()
-    def test_new_items(self, list_transferables: Callable, expected_ids: List[UUID]):
+    def test_new_items(self, list_transferables: Callable, expected_ids: list[UUID]):
         response = list_transferables(page_size=PAGE_SIZE)
         next_page = response.data["pages"]["next"]
         response = list_transferables(page_size=PAGE_SIZE, page=next_page)

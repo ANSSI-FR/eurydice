@@ -11,6 +11,4 @@ export type Transferable = {
   progress: number;
   bytesTransferred: number;
   finishedAt: string | null;
-  speed: number | null;
-  estimatedFinishDate: string | null;
 };

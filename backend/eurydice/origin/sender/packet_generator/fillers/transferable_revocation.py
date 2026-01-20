@@ -1,12 +1,9 @@
-from typing import List
-
 from eurydice.common import protocol
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from eurydice.origin.sender.packet_generator.fillers import base
 
 
-def _create_packet_revocations() -> List[protocol.TransferableRevocation]:
+def _create_packet_revocations() -> list[protocol.TransferableRevocation]:
     """Query the database and return PENDING TransferableRevocations as
     pydantic models, finally update the transfer_state for the queried
     TransferableRevocation.
@@ -27,17 +24,13 @@ def _create_packet_revocations() -> List[protocol.TransferableRevocation]:
                 user_profile_id=revocation.outgoing_transferable.user_profile.id,
                 transferable_name=revocation.outgoing_transferable.name,
                 transferable_sha1=(
-                    None
-                    if not revocation.outgoing_transferable.sha1
-                    else bytes(revocation.outgoing_transferable.sha1)
+                    None if not revocation.outgoing_transferable.sha1 else bytes(revocation.outgoing_transferable.sha1)
                 ),
                 reason=revocation.reason,
             )
         )
 
-    queried_revocations.update(
-        transfer_state=enums.TransferableRangeTransferState.TRANSFERRED
-    )
+    queried_revocations.update(transfer_state=enums.TransferableRangeTransferState.TRANSFERRED)
     return revocations
 
 

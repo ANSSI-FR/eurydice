@@ -1,19 +1,16 @@
 import collections
-import logging
 import uuid
-from typing import Dict
 from typing import Set
 
 from django.utils import timezone
 
 from eurydice.common import protocol
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.core import models
 from eurydice.destination.receiver.packet_handler.extractors import base
 from eurydice.destination.storage import fs
 
 UUIDSet = Set[uuid.UUID]
-
-logger = logging.getLogger(__name__)
 
 
 class _HistoryEntryMap(collections.UserDict):
@@ -27,17 +24,13 @@ class _HistoryEntryMap(collections.UserDict):
 
     def __init__(self, history: protocol.History) -> None:
         super().__init__()
-        self.data: Dict[uuid.UUID, protocol.HistoryEntry] = {
-            e.transferable_id: e for e in history.entries
-        }
+        self.data: dict[uuid.UUID, protocol.HistoryEntry] = {e.transferable_id: e for e in history.entries}
 
 
 def _filter(transferable_ids: UUIDSet, **kwargs) -> UUIDSet:
     """Select the `transferable_ids` corresponding to IncomingTransferables in
     the database using, in addition, filter parameters provided as kwargs."""
-    results = models.IncomingTransferable.objects.filter(
-        id__in=transferable_ids, **kwargs
-    ).values_list("id", flat=True)
+    results = models.IncomingTransferable.objects.filter(id__in=transferable_ids, **kwargs).values_list("id", flat=True)
 
     return set(results)  # type: ignore
 
@@ -53,14 +46,10 @@ def _list_finished_transferable_ids(transferable_ids: UUIDSet) -> UUIDSet:
     """Select the IncomingTransferable that have their id in `transferable_ids` and
     that have been completely processed (i.e. with a final state).
     """
-    return _filter(
-        transferable_ids, state__in=models.IncomingTransferableState.get_final_states()
-    )
+    return _filter(transferable_ids, state__in=models.IncomingTransferableState.get_final_states())
 
 
-def _list_missed_transferable_ids(
-    all_transferable_ids: UUIDSet, ongoing_transferable_ids: UUIDSet
-) -> UUIDSet:
+def _list_missed_transferable_ids(all_transferable_ids: UUIDSet, ongoing_transferable_ids: UUIDSet) -> UUIDSet:
     """Select the IncomingTransferable that have their id in `all_transferable_ids`
     and that do not appear in the database.
     """
@@ -79,15 +68,17 @@ def _process_ongoing_transferables(ongoing_transferable_ids: UUIDSet) -> None:
         transferable.mark_as_error()
 
         logger.error(
-            f"According to history, transferable '{transferable.id}' is in a "
-            f"final state, but it was not the case receiver-side: marked this transfer "
-            f"as failure and removed its parts from storage (if it had any)."
+            {
+                LOG_KEY: "transferable_marked_as_failed",
+                "transferable_id": str(transferable_id),
+                "message": "According to history, the transferable is in final state, "
+                "but it was not the case receiver-side: marked this transfer "
+                "as failure and removed its parts from storage (if it had any).",
+            }
         )
 
 
-def _process_missed_transferables(
-    missed_transferable_ids: UUIDSet, history_entry_map: _HistoryEntryMap
-) -> None:
+def _process_missed_transferables(missed_transferable_ids: UUIDSet, history_entry_map: _HistoryEntryMap) -> None:
     """Create IncomingTransferable ERROR entries in the database to record transferables
     that did not reach the destination side.
     """
@@ -110,10 +101,7 @@ def _process_missed_transferables(
             state=models.IncomingTransferableState.ERROR,
         )
 
-        logger.info(
-            f"The IncomingTransferable {missed_id} has been created in database "
-            f"with the state ERROR."
-        )
+        logger.info({LOG_KEY: "created_errored_transferable_db", "transferable_id": str(missed_id)})
 
 
 def _process_history(history: protocol.History) -> None:
@@ -124,9 +112,7 @@ def _process_history(history: protocol.History) -> None:
     transferable_ids = set(history_entry_map.keys())
 
     ongoing_transferable_ids = _list_ongoing_transferable_ids(transferable_ids)
-    missed_transferable_ids = _list_missed_transferable_ids(
-        transferable_ids, ongoing_transferable_ids
-    )
+    missed_transferable_ids = _list_missed_transferable_ids(transferable_ids, ongoing_transferable_ids)
 
     _process_ongoing_transferables(ongoing_transferable_ids)
     _process_missed_transferables(missed_transferable_ids, history_entry_map)
@@ -144,9 +130,9 @@ class OngoingHistoryExtractor(base.OnTheWirePacketExtractor):
 
         """
         if packet.history:
-            logger.debug("Start processing history.")
+            logger.info({LOG_KEY: "history_extractor", "status": "started"})
             _process_history(packet.history)
-            logger.info("History processed.")
+            logger.info({LOG_KEY: "history_extractor", "status": "done"})
 
 
 __all__ = ("OngoingHistoryExtractor",)

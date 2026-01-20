@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import TransferableTable from '@common/components/TransferableTable.vue';
-import { cancelTransferable } from '@origin/services/transferables.service';
+import { cancelTransferable } from '@origin/services/transferables/main';
 import { Button } from 'primevue';
 import { ref } from 'vue';
 

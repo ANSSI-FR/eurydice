@@ -1,0 +1,40 @@
+dn: ou=People,dc=eury,dc=test
+objectClass: organizationalUnit
+ou: People
+
+# admin : admin
+dn: uid=admin,ou=People,dc=eury,dc=test
+objectClass: person
+objectClass: inetOrgPerson
+mail: admin@eury.test
+cn: Admin User
+givenName: Admin
+sn: Admin
+userpassword: admin
+
+# user : user
+dn: uid=user,ou=People,dc=eury,dc=test
+objectClass: person
+objectClass: inetOrgPerson
+mail: user@eury.test
+cn: user User
+givenName: user
+sn: User
+userpassword: user
+
+# Group definitions.
+dn: ou=Groups,dc=eury,dc=test
+objectClass: organizationalUnit
+ou: Groups
+
+# admin group
+dn: cn=admin,ou=Groups,dc=eury,dc=test
+objectClass: groupOfNames
+cn: admin
+member: uid=admin,ou=People,dc=eury,dc=test
+
+# user group
+dn: cn=user,ou=Groups,dc=eury,dc=test
+objectClass: groupOfNames
+cn: user
+member: uid=user,ou=People,dc=eury,dc=test

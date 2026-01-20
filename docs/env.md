@@ -20,7 +20,7 @@
 ## Backend configuration
 
 | Variable                               | Default value    | Description                                                                                                                                                                                                                                 |
-| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|----------------------------------------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `GUNICORN_CONFIGURATION`               | `""`             | Gunicorn commandline arguments                                                                                                                                                                                                              |
 | `CSRF_TRUSTED_ORIGINS`                 | `""`             | Additionnal origin(s) for CSRF validation, separated by a comma: `,`. SEE [Django documentation](https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins) Must include scheme ("http://", "https://") . May be left empty. |
 | `EURYDICE_TRANSFERABLE_MAX_SIZE`       | `54975581388800` | File upload size limit on the origin side. Should be less than your storage capacity. Default is 50TiB.                                                                                                                                     |
@@ -86,11 +86,11 @@
 
 ## File remover configuration
 
-| Variable                                  | Default value | Description                                                                                                                 |
-| ----------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `FILE_REMOVER_RUN_EVERY`                  | `1min`        | Run frequency for the File Remover (service which removes files and sets Transferable to `EXPIRED` on the destination side) |
-| `FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER` | `7days`       | Duration before which files received on the destination side are marked as `EXPIRED`.                                       |
-| `FILE_REMOVER_POLL_EVERY`                 | `200ms`       | Maximum acceptable duration between the File Remover receiving a `SIGINT` signal and the process' termination               |
+| Variable                                  | Default value | Description                                                                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `FILE_REMOVER_RUN_EVERY`                  | `1min`        | Run frequency for the File Remover (service which removes files and sets Transferable to `EXPIRED` on the origin and destination side)                                                                                                                                           |
+| `FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER` | `7days`       | Duration before which files received on the origin and destination sides are marked as `EXPIRED`. Warning: this value must be bigger than the longest potential upload time. Otherwise, part of the temporary file parts on the origin side could be deleted as it is uploading. |
+| `FILE_REMOVER_POLL_EVERY`                 | `200ms`       | Maximum acceptable duration between the File Remover receiving a `SIGINT` signal and the process' termination                                                                                                                                                                    |
 
 ## DB trimmer configuration
 
@@ -103,11 +103,13 @@
 ## Filebeat configuration
 
 | Variable                  | Default value                                       | Description                                                                                                                                                            |
-| ------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------| --------------------------------------------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `FILEBEAT_CONFIG_PATH`    |                                                     | Host path to the filebeat config. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                  |
 | `ELASTICSEARCH_API_KEY`   | `""`                                                | API key used by filebeat to publish logs to elasticsearch. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                         |
 | `ELASTICSEARCH_HOSTS`     |                                                     | Elasticsearch URL. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). Should start with https.                                        |
-| `ELASTICSEARCH_CERT_PATH` | `/etc/ssl/certs/ca-certificates.crt` | Absolute path to SSL certificate that should be used to connect to elastic search. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). |
+| `ELASTICSEARCH_CERT_PATH` | `/usr/local/share/ca-certificates/ac-racine-np.crt` | Absolute path to SSL certificate that should be used to connect to elastic search. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). |
+| `ELASTICSEARCH_INDEX_NAME`|                                                     | A name to be included in the elk index name directly after `eurydice` cf the output.elasticsearch section of the filebeat configuration file                           |
+
 
 ## Sender configuration
 

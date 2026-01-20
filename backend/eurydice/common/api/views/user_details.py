@@ -1,14 +1,10 @@
-import logging
 from typing import cast
 
-from rest_framework import generics
-from rest_framework import permissions
+from rest_framework import generics, permissions
 
 from eurydice.common import models
 from eurydice.common.api import serializers
 from eurydice.common.api.docs import decorators as documentation
-
-logger = logging.getLogger(__name__)
 
 
 @documentation.user_details

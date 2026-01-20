@@ -26,8 +26,8 @@
             icon="pi pi-refresh"
             tkey="TransferableTable.refreshNewItems"
             @click="refreshNewItems"
+            :isLoading="isRefreshLoading"
             data-testid="TransferableTable-refreshNewItemsButton"
-            v-if="newItems"
           />
         </div>
       </div>
@@ -43,8 +43,13 @@
     <Column field="name" :header="$t('TransferableTable.name')">
       <template #body="{ data }">
         <div class="max-w-10 sm:max-w-20 md:max-w-full">
-          <span class="truncate block" v-tooltip.bottom="decodeURI(data.name)">
+          <span class="truncate block">
             {{ decodeURI(data.name) }}
+            <i
+              class="pi pi-lock ml-2"
+              v-if="data.userProvidedMeta.metadataEncrypted"
+              v-tooltip="$t('TransferableTable.lockTooltip')"
+            ></i>
           </span>
         </div>
       </template>
@@ -89,22 +94,23 @@
 import MainButton from '@common/components/MainButton.vue';
 import TransferableStateTag from '@common/components/TransferableStateTag.vue';
 import type { TransferableListResponse } from '@common/models/TransferableListResponse';
+import { refreshServerStatus } from '@common/services/status.service.ts';
 import { listTransferables } from '@common/services/transferables.service';
 import { bytesToString } from '@common/utils/bytes-functions';
 import { Column, DataTable, type DataTablePageEvent } from 'primevue';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const selectedTransferables = defineModel<Transferable[] | undefined>('selectedTransferables');
 
 const transferableList = ref<Transferable[]>([]);
-const setIntervalId = ref<NodeJS.Timeout | null>(null);
 const totalRecords = ref<number>(0);
 const delta = ref<number>(0);
 const currentPage = ref<number>(0);
 const currentPageId = ref<string>();
-const pageSize = parseInt(import.meta.env.VITE_TRANSFERABLES_PER_PAGE) ?? 100;
+const pageSize = Number(import.meta.env.VITE_TRANSFERABLES_PER_PAGE ?? '100');
 const first = ref<number>();
 const newItems = ref<boolean>();
+const isRefreshLoading = ref<boolean>(false);
 
 const refreshTransferables = async (): Promise<TransferableListResponse> => {
   return listTransferables({
@@ -123,43 +129,36 @@ const refreshTransferables = async (): Promise<TransferableListResponse> => {
   });
 };
 
-const refreshNewItems = () => {
+const syncWithBackend = async () => {
+  isRefreshLoading.value = true;
+  try {
+    await refreshServerStatus();
+    await refreshTransferables();
+  } catch {
+    isRefreshLoading.value = false;
+  }
+  isRefreshLoading.value = false;
+};
+
+const refreshNewItems = async () => {
   currentPage.value = 0;
   currentPageId.value = undefined;
   first.value = 0;
   newItems.value = false;
-  refreshTransferables();
+  syncWithBackend();
 };
 
-// Auto refreshes values in data table every X ms
-const autoRefreshActivate = () => {
-  setIntervalId.value = setInterval(
-    refreshTransferables,
-    import.meta.env.VITE_APP_REFRESH_INTERVAL_IN_MS ?? 5000,
-  );
-};
-
-// Deactivate auto refresh
-const autoRefreshDeactivate = () => {
-  if (setIntervalId.value) {
-    clearInterval(setIntervalId.value);
-  }
-};
-
-const onPageChange = (pageChangeEvent: DataTablePageEvent) => {
+const onPageChange = async (pageChangeEvent: DataTablePageEvent) => {
   delta.value = pageChangeEvent.page - currentPage.value;
   currentPage.value = pageChangeEvent.page;
   first.value = pageChangeEvent.first;
-  refreshTransferables();
+  syncWithBackend();
 };
 
 onMounted(async () => {
-  refreshTransferables();
-  autoRefreshActivate();
-});
-
-onUnmounted(async () => {
-  autoRefreshDeactivate();
+  isRefreshLoading.value = true;
+  await refreshTransferables();
+  isRefreshLoading.value = false;
 });
 </script>
 

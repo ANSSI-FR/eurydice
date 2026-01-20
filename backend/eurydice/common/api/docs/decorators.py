@@ -16,9 +16,7 @@ login = spectacular_utils.extend_schema_view(
             spectacular_utils.OpenApiParameter(
                 name="set-cookie",
                 location="header",
-                description=_(
-                    "Cookie containing the CSRF token for preventing CSRF attacks."
-                ),
+                description=_("Cookie containing the CSRF token for preventing CSRF attacks."),
                 response=[status.HTTP_204_NO_CONTENT],
                 examples=[
                     spectacular_utils.OpenApiExample(
@@ -36,10 +34,7 @@ login = spectacular_utils.extend_schema_view(
             spectacular_utils.OpenApiParameter(
                 name="Set-Cookie",
                 location="header",
-                description=_(
-                    "Cookie containing the session token "
-                    "for authenticating requests from the frontend."
-                ),
+                description=_("Cookie containing the session token for authenticating requests from the frontend."),
                 response=[status.HTTP_204_NO_CONTENT],
                 examples=[
                     spectacular_utils.OpenApiExample(
@@ -89,7 +84,7 @@ user_details = spectacular_utils.extend_schema_view(
                 response=serializers.UserSerializer,
                 examples=[
                     spectacular_utils.OpenApiExample(
-                        _("Get user details"),
+                        _("Get user details"),  # type: ignore[arg-type]
                         value={
                             "username": "johndoe1",
                         },
@@ -111,6 +106,35 @@ user_details = spectacular_utils.extend_schema_view(
     )
 )
 
+
+user_token = spectacular_utils.extend_schema_view(
+    get=custom_spectacular.extend_schema(
+        operation_id="user-token-get",
+        summary=_("Get user's API token"),
+        description=_((settings.COMMON_DOCS_PATH / "user-token.md").read_text()),
+        responses={
+            status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
+                description=_("Return user's API token."),
+            ),
+            status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
+        },
+        tags=[_("Account management")],
+    ),
+    delete=custom_spectacular.extend_schema(
+        operation_id="user-token-delete",
+        summary=_("Renew (delete and create another) user's API token"),
+        description=_((settings.COMMON_DOCS_PATH / "user-token.md").read_text()),
+        responses={
+            status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
+                description=_("Return user's API token."),
+            ),
+            status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
+        },
+        tags=[_("Account management")],
+    ),
+)
+
+
 server_metadata = spectacular_utils.extend_schema_view(
     get=custom_spectacular.extend_schema(
         operation_id="metadata",
@@ -123,5 +147,6 @@ server_metadata = spectacular_utils.extend_schema_view(
 __all__ = (
     "login",
     "user_details",
+    "user_token",
     "server_metadata",
 )

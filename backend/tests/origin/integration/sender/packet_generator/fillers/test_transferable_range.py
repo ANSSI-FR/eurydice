@@ -1,7 +1,6 @@
 import datetime
 import hashlib
 from pathlib import Path
-from typing import List
 from unittest import mock
 
 import factory
@@ -11,9 +10,7 @@ from django.conf import Settings
 from django.utils import timezone
 from faker import Faker
 
-from eurydice.common import enums
-from eurydice.common import exceptions
-from eurydice.common import protocol
+from eurydice.common import enums, exceptions, protocol
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.core import models
 from eurydice.origin.sender.packet_generator.fillers import (
@@ -41,13 +38,11 @@ def test__build_protocol_transferable_expect_size_and_sha1():
         )
 
     # query in order to have state annotated
-    queried_transferable = models.OutgoingTransferable.objects.prefetch_related(
-        "transferable_ranges"
-    ).get(id=transferable.id)
+    queried_transferable = models.OutgoingTransferable.objects.prefetch_related("transferable_ranges").get(
+        id=transferable.id
+    )
     protocol_transferable = transferable_range_filler._build_protocol_transferable(
-        queried_transferable.transferable_ranges.select_related(
-            "outgoing_transferable"
-        ).last()
+        queried_transferable.transferable_ranges.select_related("outgoing_transferable").last()
     )
 
     assert protocol_transferable.sha1 == bytes(transferable.sha1)
@@ -56,9 +51,7 @@ def test__build_protocol_transferable_expect_size_and_sha1():
 @pytest.mark.django_db()
 def test__build_protocol_transferable(faker: Faker):
     transferable = origin_factory.OutgoingTransferableFactory(
-        submission_succeeded_at=faker.date_time_this_decade(
-            tzinfo=timezone.get_current_timezone()
-        )
+        submission_succeeded_at=faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
     )
     model = origin_factory.TransferableRangeFactory(outgoing_transferable=transferable)
 
@@ -67,10 +60,7 @@ def test__build_protocol_transferable(faker: Faker):
     assert model.outgoing_transferable.id == protocol_model.id
     assert model.outgoing_transferable.name == protocol_model.name
     assert model.outgoing_transferable.user_profile.id == protocol_model.user_profile_id
-    assert (
-        model.outgoing_transferable.user_provided_meta
-        == protocol_model.user_provided_meta
-    )
+    assert model.outgoing_transferable.user_provided_meta == protocol_model.user_provided_meta
     assert bytes(model.outgoing_transferable.sha1) == protocol_model.sha1
     assert model.outgoing_transferable.size == protocol_model.size
 
@@ -78,9 +68,7 @@ def test__build_protocol_transferable(faker: Faker):
 @pytest.mark.django_db()
 def test__build_protocol_transferable_no_sha1():
     model = origin_factory.TransferableRangeFactory(
-        outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-            submission_succeeded_at=None, sha1=None
-        )
+        outgoing_transferable=origin_factory.OutgoingTransferableFactory(submission_succeeded_at=None, sha1=None)
     )
 
     protocol_model = transferable_range_filler._build_protocol_transferable(model)
@@ -117,9 +105,7 @@ def test__delete_objects_from_fs(faker: Faker, settings: Settings) -> None:
 def test__get_transferable_range_data_success(faker: Faker):
     data = faker.binary(length=10)
     with origin_factory.stored_transferable_range(data) as transferable_range:
-        fs_data = transferable_range_filler._get_transferable_range_data(
-            transferable_range
-        )
+        fs_data = transferable_range_filler._get_transferable_range_data(transferable_range)
     assert hashlib.sha1(fs_data).digest() == hashlib.sha1(data).digest()
 
 
@@ -151,14 +137,12 @@ def test__get_transferable_range_data_missing(faker: Faker):
     ],
 )
 def test__fetch_next_transferable_ranges(
-    transfer_states: List[origin_enums.TransferableRangeTransferState],
+    transfer_states: list[origin_enums.TransferableRangeTransferState],
 ):
     # add some noise
     origin_factory.TransferableRangeFactory.create_batch(
         len(origin_enums.TransferableRangeTransferState) * 3,
-        transfer_state=factory.Iterator(
-            origin_enums.TransferableRangeTransferState.values
-        ),
+        transfer_state=factory.Iterator(origin_enums.TransferableRangeTransferState.values),
     )
 
     # actual test
@@ -180,18 +164,14 @@ def test__fetch_next_transferable_ranges(
                 transfer_state=origin_enums.TransferableRangeTransferState.ERROR,
             )
 
-    fetched = transferable_range_filler._fetch_next_transferable_ranges_for_user(
-        current_user_profile.user
-    )
+    fetched = transferable_range_filler._fetch_next_transferable_ranges_for_user(current_user_profile.user)
 
     if next_transferable_ranges:
         assert len(fetched) == len(next_transferable_ranges)
         for elm in fetched:
             assert elm in next_transferable_ranges
             assert elm.erroneous_outgoing_transferable_id is not None
-            assert (
-                elm.erroneous_outgoing_transferable_id == elm.outgoing_transferable.id
-            )
+            assert elm.erroneous_outgoing_transferable_id == elm.outgoing_transferable.id
     else:
         assert len(fetched) == 0
 
@@ -222,10 +202,7 @@ class TestTransferableRangeFiller:
         assert len(packet.transferable_ranges) == 1
         assert packet.transferable_ranges[0].data == data
 
-        assert (
-            transferable_range.transfer_state
-            == origin_enums.TransferableRangeTransferState.TRANSFERRED
-        )
+        assert transferable_range.transfer_state == origin_enums.TransferableRangeTransferState.TRANSFERRED
         assert transferable_range.finished_at == a_date
 
     def test_fill_no_pending_transferable_range(self):
@@ -238,13 +215,9 @@ class TestTransferableRangeFiller:
 
         packet = protocol.OnTheWirePacket()
 
-        origin_factory.TransferableRangeFactory(
-            transfer_state=origin_enums.TransferableRangeTransferState.TRANSFERRED
-        )
+        origin_factory.TransferableRangeFactory(transfer_state=origin_enums.TransferableRangeTransferState.TRANSFERRED)
 
-        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(
-            filler, packet
-        )
+        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(filler, packet)
 
         assert packet.transferable_ranges == []
 
@@ -256,18 +229,14 @@ class TestTransferableRangeFiller:
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
 
-        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(
-            filler, packet
-        )
+        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(filler, packet)
 
         assert packet.transferable_ranges == []
 
     @mock.patch(
         "eurydice.origin.sender.packet_generator.fillers.transferable_range._delete_objects_from_fs"  # noqa: E501
     )
-    def test_fill_cancel_revoked_transferable_ranges(
-        self, mocked_delete_objects_from_fs: mock.Mock
-    ):
+    def test_fill_cancel_revoked_transferable_ranges(self, mocked_delete_objects_from_fs: mock.Mock):
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         packet = protocol.OnTheWirePacket()
 
@@ -283,18 +252,13 @@ class TestTransferableRangeFiller:
             outgoing_transferable=outgoing_transferable,
         )
 
-        outgoing_transferable = models.OutgoingTransferable.objects.get(
-            id=outgoing_transferable.id
-        )
+        outgoing_transferable = models.OutgoingTransferable.objects.get(id=outgoing_transferable.id)
         assert outgoing_transferable.state == enums.OutgoingTransferableState.ERROR
 
         filler.fill(packet)
 
         transferable_range.refresh_from_db()
-        assert (
-            transferable_range.transfer_state
-            == origin_enums.TransferableRangeTransferState.CANCELED
-        )
+        assert transferable_range.transfer_state == origin_enums.TransferableRangeTransferState.CANCELED
         mocked_delete_objects_from_fs.assert_called_once()
 
         assert packet.transferable_ranges == []
@@ -327,9 +291,7 @@ class TestTransferableRangeFiller:
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING
         )
 
-        patched_next_tr_data.return_value = (
-            b"It was a bright cold day in April, and the clocks were striking thirteen"
-        )
+        patched_next_tr_data.return_value = b"It was a bright cold day in April, and the clocks were striking thirteen"
 
         patched_delete_objects_from_fs.return_value = None
 
@@ -348,15 +310,10 @@ class TestTransferableRangeFiller:
         filler = transferable_range_filler.UserRotatingTransferableRangeFiller()
         filler._user_selector = mocked_user_selector
         packet = protocol.OnTheWirePacket()
-        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(
-            filler, packet
-        )
+        transferable_range_filler.UserRotatingTransferableRangeFiller.fill(filler, packet)
 
         assert len(packet.transferable_ranges) == 1
-        assert (
-            packet.transferable_ranges[0].transferable.id
-            == first_user_ranges[0].outgoing_transferable.id
-        )
+        assert packet.transferable_ranges[0].transferable.id == first_user_ranges[0].outgoing_transferable.id
         patched_delete_objects_from_fs.assert_called_once()
         mocked_user_selector.get_next_user.assert_called_once()
 
@@ -377,10 +334,7 @@ class TestTransferableRangeFiller:
 
         assert len(packet.transferable_ranges) == 0
 
-        assert (
-            transferable_range.transfer_state
-            == origin_enums.TransferableRangeTransferState.ERROR
-        )
+        assert transferable_range.transfer_state == origin_enums.TransferableRangeTransferState.ERROR
 
         assert transferable_range.finished_at == a_date
 
@@ -411,10 +365,7 @@ class TestFIFOTransferableRangeFiller:
         assert len(packet.transferable_ranges) == 1
         assert packet.transferable_ranges[0].data == data
 
-        assert (
-            transferable_range.transfer_state
-            == origin_enums.TransferableRangeTransferState.TRANSFERRED
-        )
+        assert transferable_range.transfer_state == origin_enums.TransferableRangeTransferState.TRANSFERRED
         assert transferable_range.finished_at == a_date
 
 
@@ -434,26 +385,20 @@ def test_fetch_next_transferable_ranges_for_user_only_returns_user_transferable_
 
     with freezegun.freeze_time(a_date):
         expected_transferable_range = origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     with freezegun.freeze_time(a_date - datetime.timedelta(seconds=1)):
         origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=another_user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=another_user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     assert (
-        transferable_range_filler._fetch_next_transferable_ranges_for_user(
-            user_profile.user
-        ).first()
+        transferable_range_filler._fetch_next_transferable_ranges_for_user(user_profile.user).first()
         == expected_transferable_range
     )
 
@@ -467,12 +412,7 @@ def test_fetch_next_transferable_ranges_for_user_returns_nothing():
 
     user_profile = origin_factory.UserProfileFactory()
 
-    assert (
-        transferable_range_filler._fetch_next_transferable_ranges_for_user(
-            user_profile.user
-        ).count()
-        == 0
-    )
+    assert transferable_range_filler._fetch_next_transferable_ranges_for_user(user_profile.user).count() == 0
 
 
 @pytest.mark.django_db()
@@ -490,26 +430,20 @@ def test_fetch_next_transferable_ranges_for_user_returns_oldest_transferable_ran
 
     with freezegun.freeze_time(a_date):
         origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     with freezegun.freeze_time(a_date - datetime.timedelta(seconds=1)):
         expected_transferable_range = origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     assert (
-        transferable_range_filler._fetch_next_transferable_ranges_for_user(
-            user_profile.user
-        ).first()
+        transferable_range_filler._fetch_next_transferable_ranges_for_user(user_profile.user).first()
         == expected_transferable_range
     )
 
@@ -553,18 +487,14 @@ def test_fetch_pending_transferable_ranges_returns_transferable_ranges_for_any_u
 
     with freezegun.freeze_time(a_date):
         expected_transferable_range_user_1 = origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     with freezegun.freeze_time(a_date - datetime.timedelta(seconds=1)):
         expected_transferable_range_user_2 = origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=another_user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=another_user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
@@ -599,26 +529,19 @@ def test_fetch_pending_transferable_ranges_returns_oldest_transferable_range(
 
     with freezegun.freeze_time(a_date):
         origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
     with freezegun.freeze_time(a_date - datetime.timedelta(seconds=1)):
         expected_transferable_range = origin_factory.TransferableRangeFactory(
-            outgoing_transferable=origin_factory.OutgoingTransferableFactory(
-                user_profile=user_profile
-            ),
+            outgoing_transferable=origin_factory.OutgoingTransferableFactory(user_profile=user_profile),
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
             finished_at=None,
         )
 
-    assert (
-        transferable_range_filler._fetch_pending_transferable_ranges().first()
-        == expected_transferable_range
-    )
+    assert transferable_range_filler._fetch_pending_transferable_ranges().first() == expected_transferable_range
 
 
 @pytest.mark.django_db()

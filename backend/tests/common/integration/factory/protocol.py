@@ -1,12 +1,11 @@
 import factory
 from django.conf import settings
 
-from eurydice.common import enums
-from eurydice.common import protocol
+from eurydice.common import enums, protocol
 
 
 class TransferableFactory(factory.Factory):
-    id = factory.Faker("uuid4", cast_to=None)  # noqa: VNE003
+    id = factory.Faker("uuid4", cast_to=None)
     name = factory.Faker("file_name")
     user_profile_id = factory.Faker("uuid4", cast_to=None)
     user_provided_meta = {"Meta-Foo": "bar", "Meta-Baz": "xyz"}
@@ -21,7 +20,7 @@ class TransferableRangeFactory(factory.Factory):
     is_last = factory.Faker("pybool")
     data = factory.Faker("binary", length=1024)
     transferable = factory.SubFactory(TransferableFactory)
-    id = factory.LazyAttribute(lambda self: self.transferable.id)  # noqa: VNE003
+    id = factory.LazyAttribute(lambda self: self.transferable.id)
 
     _byte_offset = factory.Faker("pyint", max_value=settings.TRANSFERABLE_MAX_SIZE)
 
@@ -37,9 +36,7 @@ class TransferableRangeFactory(factory.Factory):
 class TransferableRevocationFactory(factory.Factory):
     transferable_id = factory.Faker("uuid4", cast_to=None)
     user_profile_id = factory.Faker("uuid4", cast_to=None)
-    reason = factory.Faker(
-        "random_element", elements=enums.TransferableRevocationReason
-    )
+    reason = factory.Faker("random_element", elements=enums.TransferableRevocationReason)
     transferable_name = factory.Faker("file_name")
     transferable_sha1 = factory.Faker("sha1", raw_output=True)
 
@@ -69,12 +66,8 @@ class HistoryFactory(factory.Factory):
 
 
 class OnTheWirePacketFactory(factory.Factory):
-    transferable_ranges = factory.List(
-        [factory.SubFactory(TransferableRangeFactory) for _ in range(3)]
-    )
-    transferable_revocations = factory.List(
-        [factory.SubFactory(TransferableRevocationFactory) for _ in range(3)]
-    )
+    transferable_ranges = factory.List([factory.SubFactory(TransferableRangeFactory) for _ in range(3)])
+    transferable_revocations = factory.List([factory.SubFactory(TransferableRevocationFactory) for _ in range(3)])
     history = factory.Maybe("_has_history", factory.SubFactory(HistoryFactory), None)
 
     class Meta:

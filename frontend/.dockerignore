@@ -12,6 +12,7 @@
 !.gitignore
 !.npmrc
 !.prettierrc.json
+!.trivyignore
 !env.d.ts
 !eslint.config.ts
 !index.html

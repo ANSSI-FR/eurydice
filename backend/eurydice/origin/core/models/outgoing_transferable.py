@@ -1,13 +1,8 @@
 import datetime
-from typing import Any
-from typing import Iterable
-from typing import Optional
+from typing import Any, Iterable
 
 from django.db import models
-from django.db.models import Q
-from django.db.models import expressions
-from django.db.models import functions
-from django.db.models import query
+from django.db.models import Q, expressions, functions, query
 from django.db.models.expressions import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -39,7 +34,7 @@ class PythonNow(models.Value):
     to the current database timestamp as provided by `django.db.functions.Now`
     """
 
-    def __init__(self, value: Optional[datetime.datetime] = None, **kwargs: Any):
+    def __init__(self, value: datetime.datetime | None = None, **kwargs: Any):
         super().__init__(value, **kwargs)
 
     def as_sql(self, *args, **kwargs):  # noqa: ANN201
@@ -88,9 +83,7 @@ def _build_state_annotation() -> expressions.Case:
             then=expressions.Value(enums.OutgoingTransferableState.PENDING),
         ),
         default=expressions.Value(enums.OutgoingTransferableState.ONGOING),
-        output_field=models.CharField(
-            max_length=8, choices=enums.OutgoingTransferableState
-        ),
+        output_field=models.CharField(max_length=8, choices=enums.OutgoingTransferableState),
     )
 
 
@@ -146,9 +139,7 @@ def _build_progress_annotation() -> expressions.Case:
         # we use nullif to prevent division by zero caused by early evaluations of SQL
         # statements in specific conditions, see:
         # https://www.postgresql.org/docs/9.0/sql-expressions.html#SYNTAX-EXPRESS-EVAL
-        default=expressions.F("auto_bytes_transferred")
-        * 100
-        / functions.NullIf(expressions.F("size"), 0),
+        default=expressions.F("auto_bytes_transferred") * 100 / functions.NullIf(expressions.F("size"), 0),
         output_field=models.PositiveSmallIntegerField(null=True),
     )
 
@@ -161,49 +152,10 @@ def _build_transfer_duration_annotation() -> Epoch:
         Query for the number of seconds elapsed for this transfer.
 
     """
-    return Epoch(
-        functions.Coalesce("finished_at", PythonNow()) - expressions.F("created_at")
-    )
+    return Epoch(functions.Coalesce("finished_at", PythonNow()) - expressions.F("created_at"))
 
 
-def _build_speed_annotation() -> expressions.F:
-    """Build query for annotating the `speed` in Bytes/second to the
-    OutgoingTransferable.
-
-    Returns:
-        Query for the speed of this transfer.
-
-    """
-    # we use nullif to prevent division by zero caused by early evaluations of SQL
-    # statements in specific conditions, see:
-    # https://www.postgresql.org/docs/9.0/sql-expressions.html#SYNTAX-EXPRESS-EVAL
-    return expressions.F("auto_bytes_transferred") / functions.NullIf(
-        expressions.F("transfer_duration"), 0
-    )
-
-
-def _build_estimated_finish_date_annotation() -> expressions.Case:
-    """Build query for annotating the `transfer_finish_date` to
-    the OutgoingTransferable.
-
-    Returns:
-        Query for computing the transfer's finish date from its TransferableRanges
-
-    """
-    return expressions.Case(
-        expressions.When(submission_succeeded_at__isnull=False, then=None),
-        # we use nullif to prevent division by zero caused by early evaluations of SQL
-        # statements in specific conditions, see:
-        # https://www.postgresql.org/docs/9.0/sql-expressions.html#SYNTAX-EXPRESS-EVAL
-        default=PythonNow()
-        + ConvertSecondsToDuration(
-            expressions.F("size") / functions.NullIf(expressions.F("speed"), 0)
-        ),
-        output_field=models.DateTimeField(null=True),
-    )
-
-
-class TransferableManager(models.Manager):
+class TransferableManager(models.Manager["OutgoingTransferable"]):
     def get_queryset(self) -> query.QuerySet["OutgoingTransferable"]:
         """Compute OutgoingTransferables' extra fields and annotate them to the QuerySet.
 
@@ -222,14 +174,10 @@ class TransferableManager(models.Manager):
                 progress=_build_progress_annotation(),
                 transfer_duration=_build_transfer_duration_annotation(),
             )
-            .annotate(
-                speed=_build_speed_annotation(),
-            )
-            .annotate(estimated_finish_date=(_build_estimated_finish_date_annotation()))
         )
 
 
-class TransferableManagerStateOnly(models.Manager):
+class TransferableManagerStateOnly(models.Manager["OutgoingTransferable"]):
     def get_queryset(self) -> query.QuerySet["OutgoingTransferable"]:
         """Compute OutgoingTransferables' state and annotate it to the QuerySet.
 
@@ -285,10 +233,7 @@ class OutgoingTransferable(common_models.AbstractBaseModel):
     submission_succeeded_at = models.DateTimeField(
         null=True,
         verbose_name=_("OutgoingTransferable's submission's success date"),
-        help_text=_(
-            "A timestamp indicating the date at which the "
-            "OutgoingTransferable's submission was successful"
-        ),
+        help_text=_("A timestamp indicating the date at which the OutgoingTransferable's submission was successful"),
     )
     auto_revocations_count = models.PositiveIntegerField(
         editable=False,
@@ -376,10 +321,7 @@ class OutgoingTransferable(common_models.AbstractBaseModel):
         auto_now_add=True,
         editable=False,
         verbose_name=_("Last state update date (auto-field)"),
-        help_text=_(
-            "A timestamp indicating the last time the state of this Transferable "
-            "changed"
-        ),
+        help_text=_("A timestamp indicating the last time the state of this Transferable changed"),
     )
 
     @property
@@ -393,12 +335,12 @@ class OutgoingTransferable(common_models.AbstractBaseModel):
         """
         return self.submission_succeeded_at is not None
 
-    def save(
+    def save(  # type: ignore[override]
         self,
         force_insert: bool = False,
         force_update: bool = False,
-        using: Optional[str] = None,
-        update_fields: Optional[Iterable[str]] = None,
+        using: str | None = None,
+        update_fields: Iterable[str] | None = None,
     ) -> None:
         """Hook just before Django saves, to never update auto-fields."""
 
@@ -409,7 +351,7 @@ class OutgoingTransferable(common_models.AbstractBaseModel):
                 if not field.primary_key and not field.name.startswith("auto_")
             ]
 
-        return super().save(force_insert, force_update, using, update_fields)
+        return super().save(force_insert, force_update, using, update_fields)  # type: ignore[misc]
 
     class Meta:
         db_table = "eurydice_outgoing_transferables"
@@ -438,8 +380,7 @@ class OutgoingTransferable(common_models.AbstractBaseModel):
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_bytes_received",
-                check=Q(submission_succeeded_at__isnull=True)
-                | Q(bytes_received=F("size")),
+                check=Q(submission_succeeded_at__isnull=True) | Q(bytes_received=F("size")),
             ),
         ]
 

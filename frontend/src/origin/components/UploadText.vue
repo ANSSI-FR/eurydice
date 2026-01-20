@@ -33,13 +33,16 @@
 <script setup lang="ts">
 import MainButton from '@common/components/MainButton.vue';
 import { toastMessage } from '@common/services/toast-message.service';
+import { useServerMetadataStore } from '@common/store/server-metadata.store';
 import { getDateSuffix } from '@common/utils/date-functions';
 import type { UploadingFile } from '@origin/models/UploadingFile';
-import { createTransferable } from '@origin/services/transferables.service';
+import { createTransferable } from '@origin/services/transferables';
 import { uniqueId } from 'lodash';
 import { Message, Textarea } from 'primevue';
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+
+const metadataStore = useServerMetadataStore();
 
 const fileUpload = ref<UploadingFile>();
 const { t } = useI18n();
@@ -66,7 +69,12 @@ const uploadText = (): void => {
       abortController: new AbortController(),
     });
     fileUpload.value = file;
-    createTransferable(fileData, file.onUploadProgress, file.abortController.signal)
+    createTransferable(
+      fileData,
+      metadataStore.getServerMetadata?.encryptionEnabled ?? false,
+      file.onUploadProgress,
+      file.abortController.signal,
+    )
       .then(() => {
         onUploadSuccess(file);
       })

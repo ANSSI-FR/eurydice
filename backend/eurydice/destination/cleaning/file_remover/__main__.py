@@ -3,9 +3,7 @@ if __name__ == "__main__":
 
     import django
 
-    os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE", "eurydice.destination.config.settings.base"
-    )
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eurydice.destination.config.settings.base")
     django.setup()
 
     from eurydice.destination.cleaning.file_remover import file_remover

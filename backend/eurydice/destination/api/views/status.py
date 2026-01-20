@@ -1,6 +1,4 @@
 import datetime
-from typing import Dict
-from typing import Optional
 
 from rest_framework import generics
 
@@ -19,7 +17,7 @@ class StatusView(generics.RetrieveAPIView):
 
     serializer_class = serializers.StatusSerializer
 
-    def get_object(self) -> Dict[str, Optional[datetime.datetime]]:
+    def get_object(self) -> dict[str, datetime.datetime | None]:
         """Get receiver status data."""
         last_packet_received_at = models.LastPacketReceivedAt.get_timestamp()
         return {

@@ -1,7 +1,4 @@
 import datetime
-import logging
-from typing import List
-from typing import Optional
 
 from django.conf import settings
 from django.db.models.query import QuerySet
@@ -10,13 +7,12 @@ from django.utils import timezone
 import eurydice.common.enums as enums
 import eurydice.common.protocol as protocol
 import eurydice.origin.core.models as models
-
-logger = logging.getLogger(__name__)
+from eurydice.common.logging.logger import LOG_KEY, logger
 
 
 def _build_history_entries(
     outgoing_transferables: QuerySet[models.OutgoingTransferable],
-) -> List[protocol.HistoryEntry]:
+) -> list[protocol.HistoryEntry]:
     """
     Given an OutgoingTransferable queryset, create and return HistoryEntries
 
@@ -46,13 +42,9 @@ class TransferableHistoryCreator:
     """
 
     def __init__(self) -> None:
-        self._previous_history_generated_at: Optional[datetime.datetime] = None
-        self._send_every = datetime.timedelta(
-            seconds=settings.TRANSFERABLE_HISTORY_SEND_EVERY
-        )
-        self._history_duration = datetime.timedelta(
-            seconds=settings.TRANSFERABLE_HISTORY_DURATION
-        )
+        self._previous_history_generated_at: datetime.datetime | None = None
+        self._send_every = datetime.timedelta(seconds=settings.TRANSFERABLE_HISTORY_SEND_EVERY)
+        self._history_duration = datetime.timedelta(seconds=settings.TRANSFERABLE_HISTORY_DURATION)
 
     def too_soon(self, now: datetime.datetime) -> bool:
         """
@@ -70,7 +62,7 @@ class TransferableHistoryCreator:
             and now - self._previous_history_generated_at < self._send_every
         )
 
-    def get_next_history(self) -> Optional[protocol.History]:
+    def get_next_history(self) -> protocol.History | None:
         """
         Returns the next OutgoingTransferable history if enough time has
         passed since the last one.
@@ -86,18 +78,14 @@ class TransferableHistoryCreator:
 
         min_updated_at_date = now - self._history_duration
 
-        logger.debug("Start history generation.")
-        outgoing_transferables = (
-            models.OutgoingTransferable.objects_with_state_only.filter(
-                state__in=enums.OutgoingTransferableState.get_final_states(),
-                auto_state_updated_at__gte=min_updated_at_date,
-            ).only("id", "user_profile_id", "name", "sha1")
-        )
+        logger.info({LOG_KEY: "history_generation_start"})
+        outgoing_transferables = models.OutgoingTransferable.objects_with_state_only.filter(  # type: ignore
+            state__in=enums.OutgoingTransferableState.get_final_states(),
+            auto_state_updated_at__gte=min_updated_at_date,
+        ).only("id", "user_profile_id", "name", "sha1")
 
-        history = protocol.History(
-            entries=_build_history_entries(outgoing_transferables)
-        )
-        logger.debug("History successfully generated.")
+        history = protocol.History(entries=_build_history_entries(outgoing_transferables))
+        logger.info({LOG_KEY: "history_generation_end"})
 
         self._previous_history_generated_at = now
 

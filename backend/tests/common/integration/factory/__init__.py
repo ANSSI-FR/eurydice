@@ -1,10 +1,12 @@
 from .association import AssociationTokenFactory
-from .protocol import HistoryEntryFactory
-from .protocol import HistoryFactory
-from .protocol import OnTheWirePacketFactory
-from .protocol import TransferableFactory
-from .protocol import TransferableRangeFactory
-from .protocol import TransferableRevocationFactory
+from .protocol import (
+    HistoryEntryFactory,
+    HistoryFactory,
+    OnTheWirePacketFactory,
+    TransferableFactory,
+    TransferableRangeFactory,
+    TransferableRevocationFactory,
+)
 
 __all__ = (
     "AssociationTokenFactory",

@@ -32,7 +32,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: Number(process.env.VITE_PORT || 8080),
     strictPort: true,
-    allowedHosts: ['origin.localhost', 'destination.localhost'],
+    allowedHosts: ['origin.test', 'destination.test'],
     headers: {
       // NOTE: this is only for the development environment, production headers
       //       should be set in the production webserver's configuration

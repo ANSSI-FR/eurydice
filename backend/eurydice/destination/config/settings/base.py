@@ -5,51 +5,51 @@ import environ
 import humanfriendly as hf
 from django.utils.translation import gettext_lazy as _
 
-from eurydice.common.config.settings.base import ALLOWED_HOSTS
-from eurydice.common.config.settings.base import AUTH_PASSWORD_VALIDATORS
-from eurydice.common.config.settings.base import AUTHENTICATION_BACKENDS
-from eurydice.common.config.settings.base import BASE_DIR
-from eurydice.common.config.settings.base import COMMON_DOCS_PATH
-from eurydice.common.config.settings.base import CSRF_COOKIE_NAME
-from eurydice.common.config.settings.base import CSRF_COOKIE_SAMESITE
-from eurydice.common.config.settings.base import CSRF_COOKIE_SECURE
-from eurydice.common.config.settings.base import CSRF_TRUSTED_ORIGINS
-from eurydice.common.config.settings.base import DATABASES
-from eurydice.common.config.settings.base import DEBUG
-from eurydice.common.config.settings.base import EURYDICE_CONTACT
-from eurydice.common.config.settings.base import EURYDICE_CONTACT_FR
-from eurydice.common.config.settings.base import EURYDICE_VERSION
-from eurydice.common.config.settings.base import INSTALLED_APPS
-from eurydice.common.config.settings.base import LANGUAGE_CODE
-from eurydice.common.config.settings.base import LOGGING
-from eurydice.common.config.settings.base import MAX_PAGE_SIZE
-from eurydice.common.config.settings.base import METADATA_HEADER_PREFIX
-from eurydice.common.config.settings.base import METRICS_SLIDING_WINDOW
-from eurydice.common.config.settings.base import MIDDLEWARE
-from eurydice.common.config.settings.base import PAGE_SIZE
-from eurydice.common.config.settings.base import REMOTE_USER_HEADER
 from eurydice.common.config.settings.base import (
+    ALLOWED_HOSTS,  # noqa
+    AUTH_PASSWORD_VALIDATORS,  # noqa
+    AUTHENTICATION_BACKENDS,  # noqa
+    BASE_DIR,  # noqa
+    COMMON_DOCS_PATH,  # noqa
+    CSRF_COOKIE_NAME,  # noqa
+    CSRF_COOKIE_SAMESITE,  # noqa
+    CSRF_COOKIE_SECURE,  # noqa
+    CSRF_TRUSTED_ORIGINS,  # noqa
+    DATABASES,  # noqa
+    DEBUG,  # noqa
+    EURYDICE_CONTACT,  # noqa
+    EURYDICE_CONTACT_FR,  # noqa
+    EURYDICE_VERSION,  # noqa
+    INSTALLED_APPS,  # noqa
+    LANGUAGE_CODE,  # noqa
+    LOGGING,  # noqa
+    MAX_PAGE_SIZE,  # noqa
+    METADATA_HEADER_PREFIX,  # noqa
+    METRICS_SLIDING_WINDOW,  # noqa
+    MIDDLEWARE,  # noqa
+    PAGE_SIZE,  # noqa
+    REMOTE_USER_HEADER,  # noqa
     REMOTE_USER_HEADER_AUTHENTICATION_ENABLED,
+    REST_FRAMEWORK,  # noqa
+    SECRET_KEY,  # noqa
+    SECURE_PROXY_SSL_HEADER,  # noqa
+    SESSION_COOKIE_AGE,  # noqa
+    SESSION_COOKIE_NAME,  # noqa
+    SESSION_COOKIE_SAMESITE,  # noqa
+    SESSION_COOKIE_SECURE,  # noqa
+    SPECTACULAR_SETTINGS,  # noqa
+    STATIC_ROOT,  # noqa
+    STATIC_URL,  # noqa
+    TEMPLATES,  # noqa
+    TIME_ZONE,  # noqa
+    TRANSFERABLE_MAX_SIZE,  # noqa
+    TRANSFERABLE_STORAGE_DIR,  # noqa
+    UI_BADGE_COLOR,  # noqa
+    UI_BADGE_CONTENT,  # noqa
+    USE_I18N,  # noqa
+    USE_TZ,  # noqa
+    USER_ASSOCIATION_TOKEN_SECRET_KEY,  # noqa
 )
-from eurydice.common.config.settings.base import REST_FRAMEWORK
-from eurydice.common.config.settings.base import SECRET_KEY
-from eurydice.common.config.settings.base import SECURE_PROXY_SSL_HEADER
-from eurydice.common.config.settings.base import SESSION_COOKIE_AGE
-from eurydice.common.config.settings.base import SESSION_COOKIE_NAME
-from eurydice.common.config.settings.base import SESSION_COOKIE_SAMESITE
-from eurydice.common.config.settings.base import SESSION_COOKIE_SECURE
-from eurydice.common.config.settings.base import SPECTACULAR_SETTINGS
-from eurydice.common.config.settings.base import STATIC_ROOT
-from eurydice.common.config.settings.base import STATIC_URL
-from eurydice.common.config.settings.base import TEMPLATES
-from eurydice.common.config.settings.base import TIME_ZONE
-from eurydice.common.config.settings.base import TRANSFERABLE_MAX_SIZE
-from eurydice.common.config.settings.base import TRANSFERABLE_STORAGE_DIR
-from eurydice.common.config.settings.base import UI_BADGE_COLOR
-from eurydice.common.config.settings.base import UI_BADGE_CONTENT
-from eurydice.common.config.settings.base import USE_I18N
-from eurydice.common.config.settings.base import USE_TZ
-from eurydice.common.config.settings.base import USER_ASSOCIATION_TOKEN_SECRET_KEY
 
 env = environ.Env(
     PACKET_RECEIVER_HOST=(str, "127.0.0.1"),
@@ -63,6 +63,7 @@ env = environ.Env(
     DBTRIMMER_RUN_EVERY=(str, "6h"),
     DBTRIMMER_POLL_EVERY=(str, "200ms"),
     RECEIVER_BUFFER_MAX_ITEMS=(int, 4),
+    PRIVKEY_PATH=(str, "/home/eurydice/keys/eurydice"),
 )
 
 DOCS_PATH = pathlib.Path(BASE_DIR) / "destination" / "api" / "docs" / "static"
@@ -126,9 +127,7 @@ PACKET_RECEIVER_TIMEOUT = env("PACKET_RECEIVER_TIMEOUT")
 RECEIVER_BUFFER_MAX_ITEMS = env("RECEIVER_BUFFER_MAX_ITEMS")
 
 # The receiver will log an error if it does not receive a packet in this time interval.
-EXPECT_PACKET_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("EXPECT_PACKET_EVERY"))
-)
+EXPECT_PACKET_EVERY = datetime.timedelta(seconds=hf.parse_timespan(env("EXPECT_PACKET_EVERY")))
 
 # The duration after which incoming transferable data is removed and the corresponding
 # object in database is marked as EXPIRED.
@@ -137,14 +136,10 @@ FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(
 )
 
 # How often the file_remover is run.
-FILE_REMOVER_RUN_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("FILE_REMOVER_RUN_EVERY"))
-)
+FILE_REMOVER_RUN_EVERY = datetime.timedelta(seconds=hf.parse_timespan(env("FILE_REMOVER_RUN_EVERY")))
 
 # How often the file_remover polls for SIGINT.
-FILE_REMOVER_POLL_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("FILE_REMOVER_POLL_EVERY"))
-)
+FILE_REMOVER_POLL_EVERY = datetime.timedelta(seconds=hf.parse_timespan(env("FILE_REMOVER_POLL_EVERY")))
 
 # The duration after which transferables are deleted from the database.
 DBTRIMMER_TRIM_TRANSFERABLES_AFTER = datetime.timedelta(
@@ -152,11 +147,10 @@ DBTRIMMER_TRIM_TRANSFERABLES_AFTER = datetime.timedelta(
 )
 
 # How often the dbtrimmer is run.
-DBTRIMMER_RUN_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("DBTRIMMER_RUN_EVERY"))
-)
+DBTRIMMER_RUN_EVERY = datetime.timedelta(seconds=hf.parse_timespan(env("DBTRIMMER_RUN_EVERY")))
 
 # How often the dbtrimmer polls for SIGINT.
-DBTRIMMER_POLL_EVERY = datetime.timedelta(
-    seconds=hf.parse_timespan(env("DBTRIMMER_POLL_EVERY"))
-)
+DBTRIMMER_POLL_EVERY = datetime.timedelta(seconds=hf.parse_timespan(env("DBTRIMMER_POLL_EVERY")))
+
+# Internal path to private key
+PRIVKEY_PATH = env("PRIVKEY_PATH")

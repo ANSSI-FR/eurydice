@@ -1,5 +1,4 @@
-from typing import Callable
-from typing import cast
+from typing import Callable, cast
 
 from django import http
 from django.conf import settings
@@ -11,9 +10,7 @@ from django.utils import timezone
 from eurydice.common.models.user import AbstractUser
 
 
-class PersistentRemoteUserMiddlewareWithCustomHeader(
-    middleware.PersistentRemoteUserMiddleware
-):
+class PersistentRemoteUserMiddlewareWithCustomHeader(middleware.PersistentRemoteUserMiddleware):
     """Allows DRF to authenticate with the Remote-User
     HTTP header set by the reverse proxy on all requests.
 

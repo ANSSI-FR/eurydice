@@ -1,14 +1,10 @@
 import hashlib
-from typing import Set
+from typing import List
 
 from django.conf import settings
 from django.core import validators
 from django.db import models
-from django.db.models import F
-from django.db.models import Q
-from django.db.models import expressions
-from django.db.models import functions
-from django.db.models import query
+from django.db.models import F, Q, expressions, functions, query
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -30,19 +26,19 @@ class IncomingTransferableState(models.TextChoices):
     REMOVED = "REMOVED", _("Removed")
 
     @classmethod
-    def get_final_states(cls) -> Set["IncomingTransferableState"]:
+    def get_final_states(cls) -> List["IncomingTransferableState"]:
         """List final states.
 
         Returns: a set containing the final states.
 
         """
-        return {  # pytype: disable=bad-return-type
+        return [
             cls.ERROR,
             cls.EXPIRED,
             cls.REVOKED,
             cls.SUCCESS,
             cls.REMOVED,
-        }
+        ]
 
     @property
     def is_final(self) -> bool:
@@ -87,17 +83,15 @@ def _build_expires_at_annotation() -> expressions.Case:
     """
     return expressions.Case(
         expressions.When(
-            models.Q(finished_at__isnull=True)
-            | ~models.Q(state=IncomingTransferableState.SUCCESS),
+            models.Q(finished_at__isnull=True) | ~models.Q(state=IncomingTransferableState.SUCCESS),
             then=None,
         ),
-        default=models.F("finished_at")
-        + settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER,
+        default=models.F("finished_at") + settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER,
         output_field=models.DateTimeField(null=True),
     )
 
 
-class TransferableManager(models.Manager):
+class TransferableManager(models.Manager["IncomingTransferable"]):
     def get_queryset(self) -> query.QuerySet["IncomingTransferable"]:
         """
         Compute the progress for the queried Transferable(s) and
@@ -180,10 +174,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
     finished_at = models.DateTimeField(
         null=True,
         verbose_name=_("Transfer finish date"),
-        help_text=_(
-            "A timestamp indicating the end of the reception of the "
-            "IncomingTransferable"
-        ),
+        help_text=_("A timestamp indicating the end of the reception of the IncomingTransferable"),
     )
     created_at = models.DateTimeField(
         default=timezone.now,
@@ -199,9 +190,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
         This method should not be called if the state of the IncomingTransferable
         is SUCCESS.
         """
-        destination_models.FileUploadPart.objects.filter(
-            incoming_transferable=self
-        ).delete()
+        destination_models.FileUploadPart.objects.filter(incoming_transferable=self).delete()
 
     def _mark_as_finished(
         self,
@@ -234,7 +223,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             save: boolean indicating whether changes should be saved to database
                 or simply edited in the ORM instance.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
+        self._mark_as_finished(
             IncomingTransferableState.ERROR,
             save,
             remove_file_uploaded_parts=True,
@@ -247,7 +236,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             save: boolean indicating whether changes should be saved to database
                 or simply edited in the ORM instance.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
+        self._mark_as_finished(
             IncomingTransferableState.REVOKED,
             save,
             remove_file_uploaded_parts=True,
@@ -260,7 +249,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             save: boolean indicating whether changes should be saved to database
                 or simply edited in the ORM instance.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
+        self._mark_as_finished(
             IncomingTransferableState.SUCCESS,
             save,
         )
@@ -329,8 +318,7 @@ class IncomingTransferable(common_models.AbstractBaseModel):
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_bytes_received",
-                check=~Q(state=IncomingTransferableState.SUCCESS)
-                | Q(bytes_received=F("size")),
+                check=~Q(state=IncomingTransferableState.SUCCESS) | Q(bytes_received=F("size")),
             ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_finished_at_created_at",

@@ -4,8 +4,7 @@ from django.db import connection
 from django.utils import timezone
 from faker import Faker
 
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from tests.origin.integration import factory
 
 
@@ -21,9 +20,7 @@ def test_transferable_range_is_last_transferable_fully_submitted(faker: Faker):
     transferable = factory.OutgoingTransferableFactory(
         size=transferable_size,
         _submission_succeeded=True,
-        _submission_succeeded_at=faker.date_time_this_decade(
-            tzinfo=timezone.get_current_timezone()
-        ),
+        _submission_succeeded_at=faker.date_time_this_decade(tzinfo=timezone.get_current_timezone()),
     )
 
     second_to_last_range = factory.TransferableRangeFactory(
@@ -53,9 +50,7 @@ def test_transferable_range_is_last_shortcutting(faker: Faker):
     transferable = factory.OutgoingTransferableFactory(
         size=transferable_size,
         _submission_succeeded=True,
-        _submission_succeeded_at=faker.date_time_this_decade(
-            tzinfo=timezone.get_current_timezone()
-        ),
+        _submission_succeeded_at=faker.date_time_this_decade(tzinfo=timezone.get_current_timezone()),
     )
 
     only_range = factory.TransferableRangeFactory(
@@ -98,9 +93,7 @@ def test_mark_as_transferred():
 
     queried_range = models.TransferableRange.objects.get(id=transferable_range.id)
 
-    assert (
-        queried_range.transfer_state == enums.TransferableRangeTransferState.TRANSFERRED
-    )
+    assert queried_range.transfer_state == enums.TransferableRangeTransferState.TRANSFERRED
     assert queried_range.finished_at == now
 
 
@@ -111,12 +104,7 @@ def test_mark_as_finished_no_save_success():
 
     now = timezone.now()
     with freezegun.freeze_time(now):
-        transferable_range._mark_as_finished(
-            enums.TransferableRangeTransferState.TRANSFERRED, save=False
-        )
+        transferable_range._mark_as_finished(enums.TransferableRangeTransferState.TRANSFERRED, save=False)
 
-    assert (
-        transferable_range.transfer_state
-        == enums.TransferableRangeTransferState.TRANSFERRED
-    )
+    assert transferable_range.transfer_state == enums.TransferableRangeTransferState.TRANSFERRED
     assert transferable_range.finished_at == now

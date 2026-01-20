@@ -1,30 +1,19 @@
 import json
-from copy import copy
 from datetime import datetime
 from hashlib import md5
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 from django.conf import settings
-from django.db.models import Model
-from django.db.models import QuerySet
+from django.db.models import Model, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django_stubs_ext.aliases import StrPromise
 from rest_framework import pagination
-from rest_framework.exceptions import APIException
-from rest_framework.exceptions import NotFound
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.pagination import CursorPagination
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from eurydice.common.api.pagination.dataclasses import Link
-from eurydice.common.api.pagination.dataclasses import PageIdentifier
-from eurydice.common.api.pagination.dataclasses import Query
-from eurydice.common.api.pagination.dataclasses import Session
+from eurydice.common.api.pagination.dataclasses import Link, PageIdentifier, Query, Session
 
 
 class PageGone(APIException):
@@ -49,30 +38,28 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
       requests.
     """
 
-    no_page_size_message: str = _("Missing page size query parameter")
-    params_message: str = _("Query parameters that started the pagination were altered")
-    invalid_page_identifier_message: str = _("Invalid page identifier")
-    invalid_page_message: str = _("Query parameters resulted in an invalid page number")
-    page_or_from_message: str = _("Either page or from must be present (and not both)")
-    invalid_delta_message: str = _("Invalid page delta")
+    no_page_size_message: StrPromise = _("Missing page size query parameter")
+    params_message: StrPromise = _("Query parameters that started the pagination were altered")
+    invalid_page_identifier_message: StrPromise = _("Invalid page identifier")
+    invalid_page_message: StrPromise = _("Query parameters resulted in an invalid page number")
+    page_or_from_message: StrPromise = _("Either page or from must be present (and not both)")
+    invalid_delta_message: StrPromise = _("Invalid page delta")
 
     from_query_param: str = "from"
-    from_query_description: str = _("Page identifier from which to apply a delta.")
+    from_query_description: StrPromise = _("Page identifier from which to apply a delta.")
 
     page_query_param: str = "page"
-    page_query_description: str = _("Page identifier within the paginated result set.")
+    page_query_description: StrPromise = _("Page identifier within the paginated result set.")
 
     delta_query_param: str = "delta"
-    delta_query_description: str = _("Delta relative to the given page.")
+    delta_query_description: StrPromise = _("Delta relative to the given page.")
 
     max_page_size: int = settings.MAX_PAGE_SIZE
     page_size_query_param: str = "page_size"
 
-    ordering: Union[str, List[str], Tuple[str, ...]] = ("-created_at", "id")
+    ordering: str | list[str] | tuple[str, ...] = ("-created_at", "id")
 
-    def paginate_queryset(
-        self, queryset: QuerySet, request: Request, view: Optional[APIView] = None
-    ) -> Optional[List]:
+    def paginate_queryset(self, queryset: QuerySet, request: Request, view: APIView | None = None) -> list | None:
         """Gather the information needed to build the API response."""
 
         self.query = self.parse_query_params(request)
@@ -95,12 +82,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
 
         # "Freeze" the queryset if applicable
         if self.query.session and self.new_items:
-            queryset = queryset.filter(
-                **{
-                    self.ordering[0].lstrip("-")
-                    + "__lte": self.query.session.first_item
-                }
-            )
+            queryset = queryset.filter(**{self.ordering[0].lstrip("-") + "__lte": self.query.session.first_item})
 
         # Check if a database trimming happened
         self.new_last_item = self.fetch_leading_item_position(queryset, reverse=True)
@@ -128,9 +110,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
         # Django REST Framework expects the page to be returned here
         return self.page
 
-    def parse_navigation_params(
-        self, request: Request
-    ) -> Optional[Tuple[Session, int]]:
+    def parse_navigation_params(self, request: Request) -> tuple[Session, int] | None:
         """Load the `page`, `from` and `delta` query parameters."""
 
         page_given = self.page_query_param in request.query_params
@@ -174,9 +154,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
         if queried_page < 1:
             raise ValidationError(self.invalid_page_message)
 
-        return Query(
-            queried_page=queried_page, session=session if session_and_delta else None
-        )
+        return Query(queried_page=queried_page, session=session if session_and_delta else None)
 
     def get_optimized_link(self) -> Link:
         """
@@ -199,8 +177,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
             self.link.position is None
             and self.page
             and self.has_next
-            and self.next_position
-            != self._get_position_from_instance(self.page[-1], self.ordering)
+            and self.next_position != self._get_position_from_instance(self.page[-1], self.ordering)
         ):
             return Link(offset=0, reverse=True, position=self.next_position)  # type: ignore # noqa: E501
 
@@ -234,18 +211,14 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
             if self.query.session.previous_link is None or self.deleted_items:
                 return offset_limit_link
 
-            return self.query.session.previous_link.with_offset(
-                (-delta - 1) * self.page_size
-            )
+            return self.query.session.previous_link.with_offset((-delta - 1) * self.page_size)
 
         # If requested, retrieve a next page using the session's next_link
         if delta > 0:
             if self.query.session.next_link is None:
                 return offset_limit_link
 
-            return self.query.session.next_link.with_offset(
-                (delta - 1) * self.page_size
-            )
+            return self.query.session.next_link.with_offset((delta - 1) * self.page_size)
 
         # If requested, retrieve the current page using the session's current_link
         if self.deleted_items:
@@ -281,9 +254,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
             paginated_at=self.paginated_at,
         )
 
-    def build_page_identifiers(
-        self, session: Optional[Session]
-    ) -> Dict[str, Optional[str]]:
+    def build_page_identifiers(self, session: Session | None) -> dict[str, str | None]:
         """Create from 0 to 3 navigation links, to be included in the API response."""
 
         if session is None or self.page_size is None:
@@ -295,7 +266,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
             "next": 1,
         }
 
-        result: Dict[str, Optional[str]] = {}
+        result: dict[str, str | None] = {}
         for page_name, offset in pages.items():
             effective_offset = (session.page_number + offset - 1) * self.page_size
             if effective_offset < 0 or effective_offset >= session.items_count:
@@ -323,7 +294,9 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
     def compute_query_params_hash(self, request: Request) -> bytes:
         """Hash query params to ensure they stay the same across session pages."""
 
-        query_params = copy(request.query_params)
+        # use .copy() to get a mutable version
+        # https://docs.djangoproject.com/en/4.2/ref/request-response/#django.http.QueryDict
+        query_params = request.query_params.copy()
 
         query_params.pop(self.page_query_param, None)
         query_params.pop(self.delta_query_param, None)
@@ -333,9 +306,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
 
         return md5(query_params_json.encode("utf-8")).digest()[:4]  # nosec
 
-    def fetch_leading_item_position(
-        self, queryset: QuerySet, reverse: bool
-    ) -> Optional[datetime]:
+    def fetch_leading_item_position(self, queryset: QuerySet, reverse: bool) -> datetime | None:
         """Perform a query to find the position of either the first or the last item."""
 
         ordering = self.ordering
@@ -352,7 +323,7 @@ class EurydiceSessionPaginationWithoutOpenapi(CursorPagination):
     def _get_position_from_instance(  # type: ignore
         self,
         instance: Model,
-        ordering: Union[str, List[str], Tuple[str, ...]],
+        ordering: str | list[str] | tuple[str, ...],
     ) -> datetime:
         """Override parent's position retrieval to get dates instead of strings."""
 

@@ -10,16 +10,12 @@ from eurydice.destination.receiver import packet_receiver
 
 class Test_Server:  # noqa: N801
     @mock.patch.object(packet_receiver._RequestHandler, "handle")
-    def test_handle_error_is_logged(
-        self, mocked_handle_func: mock.Mock, caplog: pytest.LogCaptureFixture
-    ):
+    def test_handle_error_is_logged(self, mocked_handle_func: mock.Mock, caplog: pytest.LogCaptureFixture):
         exc_msg = "Something terrible happened"
         mocked_handle_func.side_effect = Exception(exc_msg)
 
         with packet_receiver._Server(receiving_queue=mock.Mock()) as server:
-            with socket.create_connection(
-                ("127.0.0.1", settings.PACKET_RECEIVER_PORT)
-            ) as conn:
+            with socket.create_connection(("127.0.0.1", settings.PACKET_RECEIVER_PORT)) as conn:
                 conn.sendall(b"hello, world")
 
             server.handle_request()

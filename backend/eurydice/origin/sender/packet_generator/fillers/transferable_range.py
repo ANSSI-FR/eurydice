@@ -1,7 +1,4 @@
-import logging
 from typing import Iterator
-from typing import List
-from typing import Optional
 
 from django.conf import settings
 from django.db import models
@@ -11,13 +8,11 @@ import eurydice.common.protocol as protocol
 import eurydice.origin.core.models as origin_models
 import eurydice.origin.sender.user_selector as user_selector
 from eurydice.common import exceptions
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.common.utils import orm
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.sender.packet_generator.fillers import base
 from eurydice.origin.storage import fs
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
 
 
 def _build_protocol_transferable(
@@ -34,20 +29,20 @@ def _build_protocol_transferable(
         protocol's model for the associated Transferable
     """
 
-    sha1: Optional[bytes]
+    sha1: bytes | None = None
 
     if transferable_range.is_last:
-        sha1 = bytes(transferable_range.outgoing_transferable.sha1)
+        sha1 = bytes(transferable_range.outgoing_transferable.sha1)  # type: ignore[attr-defined]
     else:
         sha1 = None
 
     return protocol.Transferable(
-        id=transferable_range.outgoing_transferable.id,
-        name=transferable_range.outgoing_transferable.name,
-        user_provided_meta=transferable_range.outgoing_transferable.user_provided_meta,  # noqa: E501
+        id=transferable_range.outgoing_transferable.id,  # type: ignore[attr-defined]
+        name=transferable_range.outgoing_transferable.name,  # type: ignore[attr-defined]
+        user_provided_meta=transferable_range.outgoing_transferable.user_provided_meta,  # type: ignore[attr-defined]  # noqa: E501
         sha1=sha1,
-        size=transferable_range.outgoing_transferable.size,
-        user_profile_id=transferable_range.outgoing_transferable.user_profile.id,
+        size=transferable_range.outgoing_transferable.size,  # type: ignore[attr-defined]
+        user_profile_id=transferable_range.outgoing_transferable.user_profile.id,  # type: ignore[attr-defined]
     )
 
 
@@ -67,17 +62,13 @@ def _fetch_next_transferable_ranges_for_user(
     """
 
     return orm.make_queryset_with_subquery_join(
-        queryset=origin_models.TransferableRange.objects.select_related(
-            "outgoing_transferable__revocation"
-        )
+        queryset=origin_models.TransferableRange.objects.select_related("outgoing_transferable__revocation")
         .filter(
             outgoing_transferable__user_profile=user.user_profile,  # type: ignore
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
         )
         .order_by("created_at"),
-        subquery=origin_models.TransferableRange.objects.values(
-            "outgoing_transferable_id"
-        ).filter(
+        subquery=origin_models.TransferableRange.objects.values("outgoing_transferable_id").filter(
             transfer_state=origin_enums.TransferableRangeTransferState.ERROR,
         ),
         on=models.Q(outgoing_transferable_id=models.F("outgoing_transferable_id")),
@@ -97,16 +88,12 @@ def _fetch_pending_transferable_ranges() -> QuerySet[origin_models.TransferableR
     """
 
     return orm.make_queryset_with_subquery_join(
-        queryset=origin_models.TransferableRange.objects.select_related(
-            "outgoing_transferable__revocation"
-        )
+        queryset=origin_models.TransferableRange.objects.select_related("outgoing_transferable__revocation")
         .filter(
             transfer_state=origin_enums.TransferableRangeTransferState.PENDING,
         )
         .order_by("created_at"),
-        subquery=origin_models.TransferableRange.objects.values(
-            "outgoing_transferable_id"
-        ).filter(
+        subquery=origin_models.TransferableRange.objects.values("outgoing_transferable_id").filter(
             transfer_state=origin_enums.TransferableRangeTransferState.ERROR,
         ),
         on=models.Q(outgoing_transferable_id=models.F("outgoing_transferable_id")),
@@ -146,7 +133,7 @@ class OTWPacketAlreadyHasTransferableRanges(ValueError):
 
 
 def _delete_objects_from_fs(
-    transferable_ranges: List[origin_models.TransferableRange],
+    transferable_ranges: list[origin_models.TransferableRange],
 ) -> None:
     """
     Delete TransferableRanges data from filesystem.
@@ -183,15 +170,20 @@ def _add(
     except exceptions.FileNotFoundError:
         transferable_range.mark_as_error()
         logger.error(
-            "Couldn't retrieve data file "
-            f"for TransferableRange {transferable_range.id} "
-            f"for Transferable {transferable_range.outgoing_transferable.id}."
+            {
+                LOG_KEY: "data_file_not_found",
+                "transferable_range_id": str(transferable_range.id),
+                "transferable_id": str(transferable_range.outgoing_transferable.id),
+            }
         )
         raise
 
     logger.info(
-        f"Add TransferableRange {transferable_range.id} "
-        f"for Transferable {transferable_range.outgoing_transferable.id}."
+        {
+            LOG_KEY: "adding_transferable_range",
+            "transferable_id": str(transferable_range.outgoing_transferable.id),
+            "transferable_range_id": str(transferable_range.id),
+        }
     )
     packet.transferable_ranges.append(protocol_transferable_range)
 
@@ -204,7 +196,10 @@ def _cancel(
     """Mark the provided transferable_range as CANCELED and remove its data from the
     storage.
     """
-    logger.info(f"Cancel Transferable {transferable_range.outgoing_transferable.id}.")
+    logger.info(
+        {LOG_KEY: "cancelling_transferable", "transferable_id": str(transferable_range.outgoing_transferable.id)}
+    )
+
     transferable_range.mark_as_canceled()
 
 

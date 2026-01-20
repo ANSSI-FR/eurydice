@@ -12,15 +12,11 @@ class OutgoingTransferableFilter(filters.FilterSet):
 
     created = filters.IsoDateTimeFromToRangeFilter(field_name="created_at")
 
-    submission_succeeded = filters.IsoDateTimeFromToRangeFilter(
-        field_name="submission_succeeded_at"
-    )
+    submission_succeeded = filters.IsoDateTimeFromToRangeFilter(field_name="submission_succeeded_at")
 
     transfer_finished = filters.IsoDateTimeFromToRangeFilter(field_name="finished_at")
 
-    state = filters.MultipleChoiceFilter(
-        field_name="state", choices=enums.OutgoingTransferableState.choices
-    )
+    state = filters.MultipleChoiceFilter(field_name="state", choices=enums.OutgoingTransferableState.choices)
 
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
 

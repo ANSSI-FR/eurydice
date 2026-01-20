@@ -1,6 +1,11 @@
 from .openapi import OpenApiViewSet
-from .server_metadata import ServerMetadataView
+from .token import UserTokenView
 from .user_details import UserDetailsView
 from .user_login import UserLoginView
 
-__all__ = ("OpenApiViewSet", "UserDetailsView", "UserLoginView", "ServerMetadataView")
+__all__ = (
+    "OpenApiViewSet",
+    "UserDetailsView",
+    "UserLoginView",
+    "UserTokenView",
+)

@@ -2,9 +2,6 @@
 
 from datetime import timezone
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 import django.utils.timezone
 from django import http
@@ -67,21 +64,17 @@ class StateFilter(admin.SimpleListFilter):
     title = "state"
     parameter_name = "state"
 
-    def lookups(
-        self, request: http.HttpRequest, model_admin: Any
-    ) -> List[Tuple[str, str]]:
+    def lookups(self, request: http.HttpRequest, model_admin: Any) -> list[tuple[str, str]]:
         return enums.OutgoingTransferableState.choices
 
-    def queryset(
-        self, request: http.HttpRequest, queryset: query.QuerySet
-    ) -> query.QuerySet:
+    def queryset(self, request: http.HttpRequest, queryset: query.QuerySet) -> query.QuerySet:
         if state := self.value():
             return queryset.filter(state=state)
 
         return queryset
 
 
-def _get_help_texts(*field_names: str) -> Dict[str, str]:
+def _get_help_texts(*field_names: str) -> dict[str, str]:
     fields = serializers.OutgoingTransferableSerializer().fields
     return {name: fields[name].help_text for name in field_names}
 
@@ -111,15 +104,11 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
         "progress",
         "created_at",
         "finished_at",
-        "estimated_finish_date",
-        "speed",
         "transfer_duration",
     )
     help_texts = {
         "hex_sha1": models.OutgoingTransferable.sha1.field.help_text,
-        "auto_bytes_transferred": (
-            models.OutgoingTransferable.auto_bytes_transferred.field.help_text
-        ),
+        "auto_bytes_transferred": (models.OutgoingTransferable.auto_bytes_transferred.field.help_text),
         "user": _("The username of the user owning the transferable"),
         "transfer_duration": _("The duration of the transfer in seconds"),
         **_get_help_texts(
@@ -127,8 +116,6 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
             "state",
             "finished_at",
             "progress",
-            "speed",
-            "estimated_finish_date",
         ),
     }
 
@@ -165,9 +152,3 @@ class OutgoingTransferableAdmin(common_admin.BaseModelAdmin):
 
     def transfer_duration(self, obj: models.OutgoingTransferable) -> str:
         return obj.transfer_duration
-
-    def speed(self, obj: models.OutgoingTransferable) -> str:
-        return obj.speed
-
-    def estimated_finish_date(self, obj: models.OutgoingTransferable) -> str:
-        return obj.estimated_finish_date

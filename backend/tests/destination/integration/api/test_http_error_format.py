@@ -2,8 +2,7 @@ from unittest import mock
 
 import django.urls
 import pytest
-from rest_framework import exceptions
-from rest_framework import test
+from rest_framework import exceptions, test
 
 from eurydice.destination.api.views.user_association import UserAssociationView
 from tests.destination.integration import factory
@@ -11,9 +10,7 @@ from tests.destination.integration import factory
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize("exception", [exceptions.APIException, exceptions.ParseError])
-def test_association_token_error_is_json(
-    exception: exceptions.APIException, api_client: test.APIClient
-):
+def test_association_token_error_is_json(exception: exceptions.APIException, api_client: test.APIClient):
     """Tests that APIExceptions for HTTP errors 500 and 400 correctly return
     a JSON formatted error.
 

@@ -8,7 +8,7 @@ from tests.destination.integration import factory as destination_factory
 
 
 class Command(base.BaseCommand):  # noqa: D101
-    help = "Populate the database with data resembling production"  # noqa: VNE003
+    help = "Populate the database with data resembling production"
 
     def add_arguments(self, parser: base.CommandParser) -> None:  # noqa: D102
         parser.add_argument(
@@ -35,18 +35,14 @@ class Command(base.BaseCommand):  # noqa: D101
         Generate and populate database with data in a single query.
         """
         with transaction.atomic():
-            user_profiles = destination_factory.UserProfileFactory.create_batch(
-                options["users"]
-            )
+            user_profiles = destination_factory.UserProfileFactory.create_batch(options["users"])  # type: ignore[arg-type]
 
-            incoming_transferables = (
-                destination_factory.IncomingTransferableFactory.create_batch(
-                    options["incoming_transferables"],
-                    user_profile=factory.Iterator(user_profiles),
-                )
+            incoming_transferables = destination_factory.IncomingTransferableFactory.create_batch(
+                options["incoming_transferables"],  # type: ignore[arg-type]
+                user_profile=factory.Iterator(user_profiles),  # type: ignore[attr-defined, no-untyped-call]
             )
 
             destination_factory.FileUploadPartFactory.create_batch(
-                options["file_uploaded_parts"],
-                incoming_transferable=factory.Iterator(incoming_transferables),
+                options["file_uploaded_parts"],  # type: ignore[arg-type]
+                incoming_transferable=factory.Iterator(incoming_transferables),  # type: ignore[attr-defined, no-untyped-call]
             )

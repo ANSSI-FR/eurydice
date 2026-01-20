@@ -42,9 +42,7 @@ def test__list_finished_transferable_ids_success():
         for state in models.IncomingTransferableState.get_final_states()
     ]
 
-    destination_factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.ONGOING
-    )
+    destination_factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
 
     transferable_ids = {t.id for t in final_transferables}
     assert history._list_finished_transferable_ids(transferable_ids) == transferable_ids
@@ -58,10 +56,7 @@ def test__list_missed_transferable_ids_success():
     missed_transferable_ids = {uuid.uuid4() for _ in range(10)}
     transferable_ids = missed_transferable_ids | {existing_transferable.id}
 
-    assert (
-        history._list_missed_transferable_ids(transferable_ids, set())
-        == transferable_ids
-    )
+    assert history._list_missed_transferable_ids(transferable_ids, set()) == transferable_ids
 
 
 @pytest.mark.django_db()
@@ -70,10 +65,7 @@ def test__process_ongoing_transferables(
 ):
     ongoing_transferable_ids = {ongoing_incoming_transferable.id}
     history._process_ongoing_transferables(ongoing_transferable_ids)
-    assert (
-        models.IncomingTransferable.objects.get().state
-        == models.IncomingTransferableState.ERROR
-    )
+    assert models.IncomingTransferable.objects.get().state == models.IncomingTransferableState.ERROR
 
 
 @pytest.mark.django_db()
@@ -94,15 +86,13 @@ class TestOngoingHistoryExtractor:
         packet = protocol.OnTheWirePacket(history=protocol.History(entries=[]))
         history.OngoingHistoryExtractor().extract(packet)
         assert not models.IncomingTransferable.objects.exists()
-        assert "History processed." in caplog.text
+        assert "{'log_key': 'history_extractor', 'status': 'done'}" in caplog.text
 
     def test_extract_history_success_nothing_to_process(self):
         nb_transferables = 3
 
-        incoming_transferables = (
-            destination_factory.IncomingTransferableFactory.create_batch(
-                size=nb_transferables, state=models.IncomingTransferableState.SUCCESS
-            )
+        incoming_transferables = destination_factory.IncomingTransferableFactory.create_batch(
+            size=nb_transferables, state=models.IncomingTransferableState.SUCCESS
         )
         packet = protocol.OnTheWirePacket(
             history=protocol.History(
@@ -122,19 +112,12 @@ class TestOngoingHistoryExtractor:
 
         assert models.IncomingTransferable.objects.count() == nb_transferables
         assert (
-            models.IncomingTransferable.objects.filter(
-                state=models.IncomingTransferableState.SUCCESS
-            ).count()
+            models.IncomingTransferable.objects.filter(state=models.IncomingTransferableState.SUCCESS).count()
             == nb_transferables
         )
 
-    def test_extract_history_success_process_ongoing(
-        self, ongoing_incoming_transferable: models.IncomingTransferable
-    ):
-        assert (
-            ongoing_incoming_transferable.state
-            == models.IncomingTransferableState.ONGOING
-        )
+    def test_extract_history_success_process_ongoing(self, ongoing_incoming_transferable: models.IncomingTransferable):
+        assert ongoing_incoming_transferable.state == models.IncomingTransferableState.ONGOING
         packet = protocol.OnTheWirePacket(
             history=protocol.History(
                 entries=[
@@ -150,10 +133,7 @@ class TestOngoingHistoryExtractor:
         )
         history.OngoingHistoryExtractor().extract(packet)
         ongoing_incoming_transferable.refresh_from_db()
-        assert (
-            ongoing_incoming_transferable.state
-            == models.IncomingTransferableState.ERROR
-        )
+        assert ongoing_incoming_transferable.state == models.IncomingTransferableState.ERROR
 
     def test_extract_history_success_process_ongoing_with_filesystem_storage(
         self,
@@ -164,15 +144,10 @@ class TestOngoingHistoryExtractor:
         ongoing_incoming_transferable = destination_factory.IncomingTransferableFactory(
             state=models.IncomingTransferableState.ONGOING
         )
-        fs.file_path(ongoing_incoming_transferable).parent.mkdir(
-            parents=True, exist_ok=True
-        )
+        fs.file_path(ongoing_incoming_transferable).parent.mkdir(parents=True, exist_ok=True)
         fs.file_path(ongoing_incoming_transferable).touch()
 
-        assert (
-            ongoing_incoming_transferable.state
-            == models.IncomingTransferableState.ONGOING
-        )
+        assert ongoing_incoming_transferable.state == models.IncomingTransferableState.ONGOING
         assert fs.file_path(ongoing_incoming_transferable).exists()
 
         packet = protocol.OnTheWirePacket(
@@ -190,10 +165,7 @@ class TestOngoingHistoryExtractor:
         )
         history.OngoingHistoryExtractor().extract(packet)
         ongoing_incoming_transferable.refresh_from_db()
-        assert (
-            ongoing_incoming_transferable.state
-            == models.IncomingTransferableState.ERROR
-        )
+        assert ongoing_incoming_transferable.state == models.IncomingTransferableState.ERROR
         assert not fs.file_path(ongoing_incoming_transferable).exists()
 
     def test_extract_history_success_process_missed(self):
@@ -221,8 +193,7 @@ class TestOngoingHistoryExtractor:
         assert incoming_transferable.name == packet.history.entries[0].name
         assert bytes(incoming_transferable.sha1) == packet.history.entries[0].sha1
         assert (
-            incoming_transferable.user_profile.associated_user_profile_id
-            == packet.history.entries[0].user_profile_id
+            incoming_transferable.user_profile.associated_user_profile_id == packet.history.entries[0].user_profile_id
         )
         assert incoming_transferable.state == models.IncomingTransferableState.ERROR
         assert incoming_transferable.user_provided_meta == {"Metadata-Foo": "Bar"}
@@ -261,9 +232,4 @@ class TestOngoingHistoryExtractor:
 
         # history didn't make the transferable go bad
         assert models.IncomingTransferable.objects.count() == 1
-        assert (
-            models.IncomingTransferable.objects.filter(
-                state=models.IncomingTransferableState.EXPIRED
-            ).count()
-            == 1
-        )
+        assert models.IncomingTransferable.objects.filter(state=models.IncomingTransferableState.EXPIRED).count() == 1

@@ -1,7 +1,6 @@
 import django.urls
 import pytest
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 
 from tests.origin.integration import factory
 

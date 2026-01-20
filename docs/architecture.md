@@ -18,9 +18,10 @@ Comes with a django-admin backoffice, for superusers to manage users, authentica
 
 ### Python services
 
+- **file_remover_origin**: on the origin side, periodically removes residual files after an interruption of an encrypted file upload from frontend.
 - **sender**: takes Transferables, sends them to lidi.
 - **receiver**: reads TCP data to extract Transferables or handle heartbeats.
-- **file_remover**: on the destination side, removes files after a configurable time interval, to make space for the receiver to handle new Transferables.
+- **file_remover_destination**: on the destination side, removes files after a configurable time interval, to make space for the receiver to handle new Transferables.
 - **dbtrimmer**: removes database entries that pertain to older, expired Transferables.
 
 ### Frontend
@@ -38,10 +39,6 @@ Database. Contains applicative data such as user accounts, application metadata,
 ### Lidi
 
 Lidis for sending from the origin side, Lidir for receiving on the destination side. Handles the traffic between the Eurydice senders and receivers, and the actual physical diode.
-
-### Traefik
-
-Reverse proxy. Routes requests to the frontend or the api.
 
 ### Filebeat
 

@@ -1,6 +1,4 @@
 from typing import Any
-from typing import Dict
-from typing import Tuple
 
 from django.db import models
 
@@ -41,7 +39,7 @@ class SubqueryLeftOuterJoin:
         self.nullable = True
         self.filtered_relation = None
 
-    def as_sql(self, compiler: Any, connection: Any) -> Tuple[str, Tuple]:
+    def as_sql(self, compiler: Any, connection: Any) -> tuple[str, tuple]:
         """
         Generates the full SQL for this join.
 
@@ -70,7 +68,7 @@ def make_queryset_with_subquery_join(
     queryset: models.QuerySet,
     subquery: models.QuerySet,
     on: models.Q,
-    select: Dict[str, str],
+    select: dict[str, str],
     subquery_alias: str = "subqueryjoin",
 ) -> models.QuerySet:
     """
@@ -97,10 +95,7 @@ def make_queryset_with_subquery_join(
 
     # Include selected fields in the SELECT clause
     queryset = queryset.extra(  # nosec
-        select={
-            parent_field: f"{subquery_alias}.{subquery_field}"
-            for parent_field, subquery_field in select.items()
-        }
+        select={parent_field: f"{subquery_alias}.{subquery_field}" for parent_field, subquery_field in select.items()}
     )
 
     # Perform the join using the internal Django query builder

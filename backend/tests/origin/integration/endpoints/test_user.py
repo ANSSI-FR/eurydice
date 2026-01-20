@@ -4,8 +4,7 @@ import pytest
 from django.conf import settings
 from django.utils import timezone
 from faker import Faker
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 from rest_framework.authtoken.models import Token
 
 from eurydice.common.api import serializers
@@ -30,9 +29,7 @@ class TestUser:
         deserialized_token = serializer.validated_data
         assert deserialized_token.user_profile_id == user_profile.id
 
-    def test_get_association_token_error_not_authenticated(
-        self, api_client: test.APIClient
-    ) -> None:
+    def test_get_association_token_error_not_authenticated(self, api_client: test.APIClient) -> None:
         url = django.urls.reverse("user-association")
         response = api_client.get(url)
 
@@ -54,7 +51,7 @@ class TestUser:
         a_date = faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
         with freezegun.freeze_time(a_date):
             response = api_client.get(url)
-            assert response.status_code == 204
+            assert response.status_code == 302
 
         user.refresh_from_db()
         assert user.last_access == a_date

@@ -1,0 +1,72 @@
+<VirtualHost *:80>
+  ServerName dex.${AppSide}.test
+
+  ServerAdmin root@admin
+  ProxyPreserveHost On
+  ProxyRequests Off
+
+  ProxyPass / http://oidc-${AppSide}:5556/
+  ProxyPassReverse / http://oidc-${AppSide}:5556/
+</VirtualHost>
+
+
+<VirtualHost *:80>
+  ServerName http://${AppSide}.test
+
+  ServerAdmin root@admin
+  ProxyPreserveHost On
+  ProxyRequests Off
+  # ProxyRequests disabled for ProxyPass
+  RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
+
+  OIDCSSLValidateServer Off
+  OIDCClientSecret ${OIDCClientSecret}
+  OIDCCryptoPassphrase ${OIDCCryptoPassphrase}
+  OIDCClientID ${OIDCClientID}
+  OIDCProviderMetadataURL http://oidc-${AppSide}:5556/dex/.well-known/openid-configuration
+  # OIDCProviderMetadataURL is called by apache container, so url must be the container name
+  OIDCRedirectURI http://${AppSide}.test/api/v1/user/login/sso/authorize
+  OIDCXForwardedHeaders X-Forwarded-Host
+  OIDCXForwardedHeaders X-Forwarded-Proto
+  OIDCScope "openid profile"
+  # unset header used for Remote Header authentication
+  # in order to be sure that it cannot be forged
+  RequestHeader unset ${RemoteUserHeader}
+
+  <Location />
+    ProxyPass http://frontend-${AppSide}:8080/
+    ProxyPassReverse http://frontend-${AppSide}:8080/
+  </Location>
+
+  <Location /api/>
+    ProxyPass http://backend-${AppSide}:8080/api/
+    ProxyPassReverse http://backend-${AppSide}:8080/api/
+  </Location>
+
+  <Location /admin>
+    ProxyPass http://backend-${AppSide}:8080/admin
+    ProxyPassReverse http://backend-${AppSide}:8080/admin
+  </Location>
+
+  <Location /static>
+    ProxyPass http://backend-${AppSide}:8080/static
+    ProxyPassReverse http://backend-${AppSide}:8080/static
+  </Location>
+
+  <Location /api/v1/user/login/sso>
+    AuthType openid-connect
+    Require valid-user
+    RequestHeader set ${RemoteUserHeader} %{OIDC_CLAIM_preferred_username}e
+
+    ProxyPass http://backend-${AppSide}:8080/api/v1/user/login
+    ProxyPassReverse http:///backend-${AppSide}:8080/api/v1/user/login
+  </Location>
+
+  <Location /api/v1/user/login/kerberos>
+    RequestHeader set ${RemoteUserHeader} BillMuray
+
+    ProxyPass http://backend-${AppSide}:8080/api/v1/user/login
+    ProxyPassReverse http:///backend-${AppSide}:8080/api/v1/user/login
+  </Location>
+</VirtualHost>
+

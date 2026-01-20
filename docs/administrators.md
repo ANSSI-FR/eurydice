@@ -11,7 +11,7 @@ Instructions to deploy Eurydice manually are available below.
 - 2 servers :
   - one for the origin
   - the other for the destination
-- (Recommended) a reverse proxy (see Step 7 for configuration details)
+- A reverse proxy (see Step 9 for configuration details)
 - (Optional) elasticsearch cluster for logs
 
 ## 🚀 Deploy in production
@@ -27,12 +27,15 @@ On **both** servers, create a folder to host the application files (for example 
 On **both** servers, copy the following files:
 
 - `.env.prod.example`
-- `docker.compose.prod.yml`
+- `compose.prod.yml`
+- `Makefile`
 - (optional) If you use elasticsearch for logs:
   - for origin: `filebeat/filebeat.origin.yml`
   - for destination: `filebeat/filebeat.destination.yml`
 
 #### Step 3: Configure environment file (both servers)
+
+Rename .env.prod.example into .env.
 
 Rename .env.example into .env.
 EM_LIMIT_<C
@@ -95,21 +98,20 @@ ELASTICSEARCH_API_KEY=<your_new_api_key>
 
 #### Step 9: (Recommended) Reverse proxy configuration
 
-Eurydice needs to be setup behind a reverse proxy to work securely and optimally. Setting up a reverse proxy will also enable authentication at the reverse proxy level rather than relying on the application's authentication mechanism.
+Eurydice needs to be setup behind a reverse proxy to work securely. Setting up a reverse proxy will also enable authentication at the reverse proxy level rather than relying on the application's authentication mechanism.
 
 The application's services are exposed on localhost by the compose.prod.yml. It is advised to route them like so:
 
 - Web UI at <http://localhost:8888>
   - Should handle requests who don't match the rules for the services below
 - API at <http://localhost:8080>
-  - Should handle requests whose path is prefixed by /api /admin /static
-- pgadmin at <http://localhost:5050>
-  - Should handle requests whose path is prefixed by /pgadmin (the /pgadmin prefix should be removed by the reverse proxy)
-  - The reverse proxy should only allow authenticated users on this endpoint as all pgadmin authentication is disabled
+  - Should handle requests whose path is prefixed by /api, /admin and /static
 
 The reverse proxy should also serve all endpoints over TLS. It should also set the X-Forwarded-Proto, X-Forwarded-For and X-Forwarded-Host headers to forward information from the original request to the services.
 
-#### Step 10: (Recommended) Setup remote user header
+Examples of Apache configs (for development ONLY) are provided at `deployment/dev/configs/`. You MUST not use this config for production usage.
+
+#### Step 10: (Recommended) Setup remote user header authentication
 
 To do only if you have configured your reverse proxy to manage the authentication.
 
@@ -118,6 +120,12 @@ To do only if you have configured your reverse proxy to manage the authenticatio
 This risk can be mitigated by configuring which header is used for authenticating the header with the `REMOTE_USER_HEADER` variable.
 This environment variable could for example be set to a purely alphanumeric value (not affected by normalization) which could not easily be guessed by the user.
 In such a scenario, one would still need to make sure that the reverse proxy correctly prevents users from submitting their own authentication header.
+
+Reverse proxy must setup appropriate authentication mechanisms on specific endpoints (currently `/api/v1/user/login/sso` and `/api/v1/user/login/kerberos`) and then routes requests to `/api/v1/user/login`.
+
+Currently 2 authentication modes are enabled : SSO and Kerberos. If you want to add or remove modes in login page, update `frontend/src/common/views/LoginView.vue`.
+
+Examples of Apache configs (for development ONLY) are provided at `deployment/dev/configs/`. You MUST not use this config for production usage.
 
 #### Step 10: (Alternative without reverse proxy) Set up basic HTTP authentication
 
@@ -129,9 +137,9 @@ Basic HTTP Authentication is enabled when the `REMOTE_USER_HEADER_AUTHENTICATION
 
 If `REMOTE_USER_HEADER_AUTHENTICATION_ENABLED` is set to `false` the app won't use Remote user headers. Authentication via reverse proxy and basic auth **cannot** be used simultaneously.
 
-#### Step 10: Migrate database
+#### Step 11: Migrate database
 
-Following your case, we will use different type of profile. In the rest of the documentation you will have to replace `<profile>` by the folloowing values:
+In the rest of the documentation you will have to replace `<profile>` by the following values:
 
 - Logging in filesystem:
   - origin: `origin`
@@ -154,23 +162,17 @@ docker compose -f compose.prod.yml --profile <profile> run --rm db-migrations-or
 docker compose -f compose.prod.yml --profile <profile> run --rm db-migrations-destination
 ```
 
-#### Step 11: Launch the stack
+#### Step 12: Launch the stack
 
-- On origin:
+| side / logging type | filesystem logging             | elk logging                           |
+|---------------------|--------------------------------|---------------------------------------|
+| origin              | `make prod-up-origin`          | `make prod-up-origin-elk`             |
+| destination         | `make prod-up-destination`     | `make prod-up-destination-elk`        |
 
-```bash
-docker compose -f compose.prod.yml --profile <profile> up -d
-```
 
-- On destination:
+#### Step 13: (Optional) Create an administrator user
 
-```bash
-docker compose -f compose.prod.yml --profile <profile> up -d
-```
-
-#### Step 12: (Optional) Create an administrator user
-
-If you want to create an administrator user for accessing the admin interface at `/admin` (default credentials are admin/admin), run the following commands:
+If you want to create an administrator user for accessing the admin interface at `/admin`, run the following commands:
 
 - On origin:
 
@@ -184,6 +186,8 @@ docker compose -f compose.prod.yml exec backend-origin make superuser
 docker compose -f compose.prod.yml exec backend-destination make superuser
 ```
 
+Default credentials are `admin`/`admin`. Update makefile recipe if you want to change these values.
+
 ## History management
 
 In some cases, the origin-side database may end up holding millions of Transferable entries. Combined with a long history duration, this may lead to the sender generating enormous quantities of data, just to send the history.
@@ -193,3 +197,81 @@ If that happens, you may want to consider using a much smaller history duration,
 ```bash
 docker compose -f compose.prod.yml exec sender python manage.py send_history --duration 7days
 ```
+
+## Users and their API keys
+
+The admin panel is used to manage the users and their api tokens.
+
+### Prerequisites
+
+- An admin user
+
+_To create the first admin user, refer to **Step 11**_
+
+### Interface
+
+Go to `/admin/login/`. _Note that the trailing `/` is mandatory._
+
+
+### Create a service user
+
+- To create a service user, go to the `EURYDICE / Users` section and click on the `add` button.
+
+![add user](./img/add_user_menu.png)
+
+Fill in the information.
+
+![add user](./img/add_user.png)
+
+### Create an API token
+
+Go to the `AUTH TOKEN / Tokens` section. Click on the `add` button.
+
+![admin panel](./img/token_panel.png)
+
+Select the user you want to create a token for.
+
+![add token](./img/add_token.png)
+
+Next, click `save`. A new token is created.
+
+#### Notes
+
+- Users are automatically created during their first login.
+- Admin users are the only ones allowed to make another user admin.
+- Only one API key can be created per user.
+
+## Encryption & decryption
+
+Automatic file encryption in the browser of the origin side can be activated when sending files from an unprotected network.
+
+Encrypting files from the browser allows storing files on the origin backend without anyone being able to read them. Only the destination backend will have the key to decrypt the data, in a protected network.
+
+### Environment variables
+
+Environment variables are to be set in the .env file. The Django Settings have the same name of variables but not the same use, do not mismatch them. **When ENCRYPTION_ENABLED is at true, don't forget to set the PUBKEY and PRIVKEY PATH variables.**
+
+| Name | Usage | Example |
+|---|---|---|
+| `ENCRYPTION_ENABLED` | Enables encryption. Defined only on the origin side to know when to encrypt files or not. The destination side only decrypts when receiving encrypted files. | true |
+| `PUBKEY_PATH` | Path to the public key used for encryption on the origin side. Path to the key **on the HOST** to mount the volume. **Please copy the generated public key from destination to the origin side so that encryption can use the right key.**| /srv/eurydice/keys/eurydice.pub |
+| `PRIVKEY_PATH` | Path to the private key used for decryption on the destination side. Path to the key **on the HOST** to mount the volume. | /srv/eurydice/keys/eurydice |
+
+### Generate keypair
+
+>**Private** key used for decryption must to be placed on the **destination** side.
+>**Public** key used for encryption must be placed on the **origin** side.
+<br/>
+This key must be the one generated and copied from the destination.
+
+#### To generate private and public keys
+
+1. set the environment variables seen above
+2. use the following command on the destination side:
+
+  ```bash
+  make generate-keys
+  ```
+
+3. move the keys where intended by the environment variables in the destination side
+4. move the generated public key to the origin side (and set the PUBKEY_PATH from the origin side accordingly)

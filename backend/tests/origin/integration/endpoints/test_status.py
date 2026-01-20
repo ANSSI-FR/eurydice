@@ -4,8 +4,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 from faker import Faker
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 
 from eurydice.origin.core import models
 from tests.origin.integration import factory

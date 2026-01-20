@@ -16,9 +16,7 @@ from eurydice.destination.utils import rehash
 def test__abort_ingestion(
     settings: Settings,
 ):
-    transferable = factory.IncomingTransferableFactory(
-        state=IncomingTransferableState.ONGOING
-    )
+    transferable = factory.IncomingTransferableFactory(state=IncomingTransferableState.ONGOING)
 
     transferable_ingestion_fs.abort_ingestion(transferable)
 

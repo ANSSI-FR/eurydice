@@ -1,7 +1,5 @@
 import datetime
-import logging
 import time
-from typing import Optional
 
 from django.conf import settings
 from django.db import connections
@@ -9,13 +7,10 @@ from django.utils import timezone
 
 import eurydice.origin.sender.utils as sender_utils
 from eurydice.common import protocol
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.common.utils import signals
 from eurydice.origin.core.models import LastPacketSentAt
-from eurydice.origin.sender import packet_generator
-from eurydice.origin.sender import packet_sender
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
+from eurydice.origin.sender import packet_generator, packet_sender
 
 
 def _log_packet_stats(packet: protocol.OnTheWirePacket) -> None:
@@ -26,12 +21,12 @@ def _log_packet_stats(packet: protocol.OnTheWirePacket) -> None:
         packet: packet to log stats about
     """
     if packet.is_empty():
-        logger.info("Sending heartbeat")
+        logger.info({LOG_KEY: "packet_stats", "message": "sending heartbeat"})
     else:
-        logger.info(f"Sending {packet}")
+        logger.info({LOG_KEY: "packet_stats", "message": f"Sending {packet}"})
 
 
-def _heartbeat_should_be_sent(last_packet_sent_at: Optional[datetime.datetime]) -> bool:
+def _heartbeat_should_be_sent(last_packet_sent_at: datetime.datetime | None) -> bool:
     """
     Determine if a heartbeat should be send based on the previous packet's send date
 
@@ -44,9 +39,7 @@ def _heartbeat_should_be_sent(last_packet_sent_at: Optional[datetime.datetime]) 
     # Always send a heartbeat upon starting up
     if last_packet_sent_at is None:
         return True
-    return timezone.now() >= last_packet_sent_at + datetime.timedelta(
-        seconds=settings.HEARTBEAT_SEND_EVERY
-    )
+    return timezone.now() >= last_packet_sent_at + datetime.timedelta(seconds=settings.HEARTBEAT_SEND_EVERY)
 
 
 def _loop() -> None:
@@ -61,14 +54,12 @@ def _loop() -> None:
     keep_running = signals.BooleanCondition()
 
     with packet_sender.PacketSender() as sender:
-        logger.info("Ready to send OnTheWirePackets")
+        logger.info({LOG_KEY: "sender_ready", "message": "Ready to send OnTheWirePackets"})
 
         while keep_running:
             packet = generator.generate_next_packet()
 
-            if not packet.is_empty() or _heartbeat_should_be_sent(
-                sender.last_packet_sent_at
-            ):
+            if not packet.is_empty() or _heartbeat_should_be_sent(sender.last_packet_sent_at):
                 sender.send(packet)
                 LastPacketSentAt.update()
                 _log_packet_stats(packet)

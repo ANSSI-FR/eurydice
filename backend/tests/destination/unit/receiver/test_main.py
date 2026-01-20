@@ -9,25 +9,23 @@ from django.utils import timezone
 
 from eurydice.common import protocol
 from eurydice.common.utils import signals
-from eurydice.destination.receiver import main
-from eurydice.destination.receiver import packet_handler
-from eurydice.destination.receiver import packet_receiver
+from eurydice.destination.receiver import main, packet_handler, packet_receiver
+from tests.utils import process_logs
 
 
 @pytest.fixture()
-def packet() -> mock.Mock:
-    return mock.Mock(autospec=protocol.OnTheWirePacket)
+def packet() -> mock.MagicMock:
+    return mock.MagicMock(autospec=protocol.OnTheWirePacket)
 
 
 class TestPacketLogger:
     @pytest.mark.parametrize(
-        ("is_empty", "expected_msg"),
-        [(True, "Heartbeat received"), (False, "{} received")],
+        ("is_empty"),
+        [True, False],
     )
     def test_log_received(
         self,
         is_empty: bool,
-        expected_msg: str,
         packet: mock.Mock,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -36,13 +34,23 @@ class TestPacketLogger:
 
         packet_logger = main._PacketLogger()
         packet_logger.log_received(packet)
-        assert [expected_msg.format(packet)] == caplog.messages
+
+        if is_empty:
+            assert process_logs(caplog.messages) == [{"log_key": "heartbeat_received"}]
+        else:
+            assert process_logs(caplog.messages) == [
+                {
+                    "log_key": "heartbeat_received",
+                    "message": "OnTheWirePacket received.",
+                    "transferable_ranges": 0,
+                    "revocations": 0,
+                    "history_entries": 0,
+                }
+            ]
 
     @freezegun.freeze_time()
     @pytest.mark.parametrize("should_log", [True, False])
-    def test_log_not_received(
-        self, should_log: bool, settings: Settings, caplog: pytest.LogCaptureFixture
-    ):
+    def test_log_not_received(self, should_log: bool, settings: Settings, caplog: pytest.LogCaptureFixture):
         caplog.set_level(logging.ERROR)
         settings.EXPECT_PACKET_EVERY = datetime.timedelta(seconds=1)
 
@@ -53,11 +61,17 @@ class TestPacketLogger:
 
         packet_logger.log_not_received()
 
+        log_message = process_logs(caplog.messages)
+
         if should_log:
             assert [
-                "No data packet or heartbeat received in the last 1 second. "
-                "Check the health of the sender on the origin side."
-            ] == caplog.messages
+                {
+                    "log_key": "heartbeat_not_received",
+                    "message": "No data packet or heartbeat received in the last 1. "
+                    "Check the health of the sender on the origin side.",
+                    "EXPECT_PACKET_EVERY": "1 seconds",
+                }
+            ] == log_message
         else:
             assert not caplog.messages
 
@@ -176,7 +190,4 @@ def test_loop_unexpected_exception(
     log_not_received.assert_not_called()
 
     assert "this is terrible" in caplog.text
-    assert (
-        "An unexpected error occurred while processing an OnTheWirePacket"
-        in caplog.text
-    )
+    assert "An unexpected error occurred while processing an OnTheWirePacket" in caplog.text

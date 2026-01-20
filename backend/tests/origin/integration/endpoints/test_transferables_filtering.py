@@ -1,6 +1,5 @@
 import hashlib
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import freezegun
 import pytest
@@ -8,8 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from faker import Faker
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 
 from eurydice.origin.core import enums
 from tests.origin.integration import factory

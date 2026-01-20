@@ -1,7 +1,6 @@
 import functools
 import hashlib
 import logging
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -37,9 +36,7 @@ def test__get_or_create_transferable_new_user_profile_new_transferable():
 def test__get_or_create_transferable_existing_user_profile_new_transferable():
     user_profile = factory.UserProfileFactory()
     a_transferable_range = protocol_factory.TransferableRangeFactory(
-        transferable=protocol_factory.TransferableFactory(
-            user_profile_id=user_profile.associated_user_profile_id
-        )
+        transferable=protocol_factory.TransferableFactory(user_profile_id=user_profile.associated_user_profile_id)
     )
 
     assert models.UserProfile.objects.count() == 1
@@ -122,13 +119,9 @@ def test__assert_no_transferable_ranges_were_missed(
 def test__transferable_is_ready(state: IncomingTransferableState):
     if state.is_final:
         with pytest.raises(transferable_range.TransferableAlreadyInFinalState):
-            transferable_range._assert_transferable_is_ready(
-                factory.IncomingTransferableFactory(state=state)
-            )
+            transferable_range._assert_transferable_is_ready(factory.IncomingTransferableFactory(state=state))
     else:
-        transferable_range._assert_transferable_is_ready(
-            factory.IncomingTransferableFactory(state=state)
-        )
+        transferable_range._assert_transferable_is_ready(factory.IncomingTransferableFactory(state=state))
 
 
 @pytest.mark.parametrize(
@@ -165,7 +158,7 @@ def test__assert_transferable_size_is_consistent(
     transferable_size: int,
     transferable_range_size: int,
     transferable_range_transferable_size: int,
-    expected_exception: Optional[transferable_range.FinalSizeMismatchError],
+    expected_exception: transferable_range.FinalSizeMismatchError | None,
     expect_warning: bool,
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
@@ -196,7 +189,7 @@ def test__assert_transferable_size_is_consistent(
             function_to_call()
 
     if expect_warning:
-        assert f"was initially announced with size {transferable_size}" in caplog.text
+        assert "incoming_transferable_size_mismatch" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -223,7 +216,7 @@ def test__assert_transferable_size_is_consistent(
 def test__assert_transferable_sha1_is_consistent(
     expected_computed_sha1: "hashlib._Hash",
     transferable_sha1_string: str,
-    expected_exception: Optional[transferable_range.FinalDigestMismatchError],
+    expected_exception: transferable_range.FinalDigestMismatchError | None,
     faker: Faker,
 ):
     a_uuid = faker.uuid4()
@@ -258,9 +251,7 @@ def test__extract_data():
         rehash_intermediary=sha1_intermediary,
         state=models.IncomingTransferableState.ONGOING,
     )
-    data, new_sha1 = transferable_range._extract_data(
-        mocked_transferable_range, transferable
-    )
+    data, new_sha1 = transferable_range._extract_data(mocked_transferable_range, transferable)
 
     sha1.update(mocked_transferable_range.data)
     assert sha1.digest() == new_sha1.digest()

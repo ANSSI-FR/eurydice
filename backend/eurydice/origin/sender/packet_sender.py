@@ -1,18 +1,15 @@
 import datetime
-import logging
 import queue
 import socket
 import threading
 from types import TracebackType
-from typing import Optional
 from typing import Type
 
 from django.conf import settings
 from django.utils import timezone
 
 from eurydice.common import protocol
-
-logger = logging.getLogger(__name__)
+from eurydice.common.logging.logger import LOG_KEY, logger
 
 
 class SenderThreadNotRunningError(RuntimeError):
@@ -22,14 +19,14 @@ class SenderThreadNotRunningError(RuntimeError):
 def _send_through_socket(data: bytes) -> None:
     address = (settings.LIDIS_HOST, settings.LIDIS_PORT)
     with socket.create_connection(address) as conn:
-        logger.debug(
-            f"Start sending data to {settings.LIDIS_HOST}:{settings.LIDIS_PORT}."
+        logger.info(
+            {LOG_KEY: "sender_start_sending", "LIDIS_HOST": settings.LIDIS_HOST, "LIDIS_PORT": settings.LIDIS_PORT}
         )
         conn.sendall(data)
-        logger.debug("Data successfully sent.")
+        logger.info({LOG_KEY: "sender_data_sent"})
 
 
-def _is_poison_pill(data: Optional[bytes]) -> bool:
+def _is_poison_pill(data: bytes | None) -> bool:
     """Tell whether the data inputted is a 'poison pill' i.e. a packet signaling that
     the sender thread must stop.
 
@@ -51,8 +48,14 @@ class _SenderThread(threading.Thread):
 
             try:
                 _send_through_socket(data)
-            except socket.error:
-                logger.exception("Failed to send data through the socket.")
+            except socket.error as error:
+                logger.error(
+                    {
+                        LOG_KEY: "sender_thread_failure",
+                        "message": "Failed to send data through the socket.",
+                        "error": str(error),
+                    }
+                )
 
 
 class PacketSender:
@@ -64,17 +67,15 @@ class PacketSender:
                                 have been sent
 
     Example:
-        >>> with packet_sender.PacketSender() as s:
-        ...     s.send(on_the_wire_packet)
+        with packet_sender.PacketSender() as s:
+             s.send(on_the_wire_packet)
 
     """
 
     def __init__(self) -> None:
-        self._queue: queue.Queue = queue.Queue(
-            maxsize=settings.PACKET_SENDER_QUEUE_SIZE
-        )
+        self._queue: queue.Queue = queue.Queue(maxsize=settings.PACKET_SENDER_QUEUE_SIZE)
         self._sender_thread = _SenderThread(self._queue)
-        self.last_packet_sent_at: Optional[datetime.datetime] = None
+        self.last_packet_sent_at: datetime.datetime | None = None
 
     def start(self) -> None:
         """Start the PacketSender i.e. start the sender thread.
@@ -123,9 +124,9 @@ class PacketSender:
 
     def __exit__(
         self,
-        exctype: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        exc_traceback: Optional[TracebackType],
+        exctype: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_traceback: TracebackType | None,
     ) -> None:
         self.stop()
 

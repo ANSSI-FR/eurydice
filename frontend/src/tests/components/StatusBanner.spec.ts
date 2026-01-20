@@ -87,6 +87,8 @@ describe('StatusBanner.vue', () => {
       contact: 'TEST CONTACT',
       badgeColor: '',
       badgeContent: '',
+      encryptionEnabled: true,
+      encodedPublicKey: 'gtC32LH1n6qCbkqQog/QwAr7TjxuED2+85o1CRlSl2Y=',
     });
     const spyOnGetStatus = vi.spyOn(apiClient, 'get').mockImplementation(() => {
       return Promise.resolve(apiResponse);

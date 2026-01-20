@@ -12,8 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from faker import Faker
 from freezegun import freeze_time
-from rest_framework import status
-from rest_framework import test
+from rest_framework import status, test
 from rest_framework.authtoken.models import Token
 
 from eurydice.common import enums
@@ -104,9 +103,7 @@ class TestOutgoingTransferableInTransaction(test.APITransactionTestCase):
             "application/x-www-form-urlencoded",
             'multipart/form-data;boundary="boundary"',
         ]
-        for authentication_method, content_type in product(
-            authentication_methods, content_types
-        ):
+        for authentication_method, content_type in product(authentication_methods, content_types):
             with self.subTest():
                 user_profile = models_factory.UserProfileFactory()
 
@@ -114,9 +111,7 @@ class TestOutgoingTransferableInTransaction(test.APITransactionTestCase):
 
                 authentication_method(self.client, user_profile.user)
 
-                response = self.client.post(
-                    url, content_type=content_type, data={"file": "Hello, world"}
-                )
+                response = self.client.post(url, content_type=content_type, data={"file": "Hello, world"})
 
                 assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
                 assert response.data["detail"].code == "unsupported_media_type"
@@ -127,9 +122,7 @@ class TestOutgoingTransferableInTransaction(test.APITransactionTestCase):
 
         url = reverse("transferable-list")
 
-        response = self.client.get(
-            url, {"sha1": hashlib.sha1(b"invalid").hexdigest()[:5]}
-        )
+        response = self.client.get(url, {"sha1": hashlib.sha1(b"invalid").hexdigest()[:5]})
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json() == {"detail": "field sha1 malformed."}
@@ -162,15 +155,10 @@ class TestOutgoingTransferable:
         assert data["state"] == obj.state
 
         if obj.submission_succeeded_at is not None:
-            assert (
-                dateutil.parser.parse(data["submission_succeeded_at"])
-                == obj.submission_succeeded_at
-            )
+            assert dateutil.parser.parse(data["submission_succeeded_at"]) == obj.submission_succeeded_at
 
     def test_retrieve_outgoing_transferable(self, api_client: test.APIClient):
-        created_obj = models_factory.OutgoingTransferableFactory(
-            submission_succeeded_at=timezone.now()
-        )
+        created_obj = models_factory.OutgoingTransferableFactory(submission_succeeded_at=timezone.now())
 
         obj = models.OutgoingTransferable.objects.get(id=created_obj.id)
 
@@ -187,14 +175,9 @@ class TestOutgoingTransferable:
         assert data["user_provided_meta"] == obj.user_provided_meta
         assert data["state"] == obj.state
         if obj.submission_succeeded_at is not None:
-            assert (
-                dateutil.parser.parse(data["submission_succeeded_at"])
-                == obj.submission_succeeded_at
-            )
+            assert dateutil.parser.parse(data["submission_succeeded_at"]) == obj.submission_succeeded_at
 
-    def test_retrieve_outgoing_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ):
+    def test_retrieve_outgoing_transferable_error_not_authenticated(self, api_client: test.APIClient):
         obj = models_factory.OutgoingTransferableFactory()
         url = reverse("transferable-detail", kwargs={"pk": obj.id})
         response = api_client.get(url)
@@ -202,18 +185,14 @@ class TestOutgoingTransferable:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_list_outgoing_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ):
+    def test_list_outgoing_transferable_error_not_authenticated(self, api_client: test.APIClient):
         url = reverse("transferable-list")
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_list_outgoing_transferable_only_own_transferables_visible(
-        self, api_client: test.APIClient
-    ):
+    def test_list_outgoing_transferable_only_own_transferables_visible(self, api_client: test.APIClient):
         models_factory.OutgoingTransferableFactory()
         another_user = models_factory.UserFactory()
 
@@ -282,23 +261,17 @@ class TestOutgoingTransferable:
 
             assert dateutil.parser.parse(transferable_data["created_at"]) == now
 
-        assert (
-            bytes.fromhex(transferable_data["sha1"])
-            == hashlib.sha1(random_bytes).digest()
-        )
+        assert bytes.fromhex(transferable_data["sha1"]) == hashlib.sha1(random_bytes).digest()
         assert transferable_data["size"] == len(random_bytes)
-        assert (
-            dateutil.parser.parse(transferable_data["submission_succeeded_at"]) == now
-        )
-        assert (
-            transferable_data["state"] == enums.OutgoingTransferableState.PENDING.value
-        )
+        assert dateutil.parser.parse(transferable_data["submission_succeeded_at"]) == now
+        assert transferable_data["state"] == enums.OutgoingTransferableState.PENDING.value
         assert transferable_data["user_provided_meta"] == {"Metadata-Path": file_path}
-        assert transferable_data["progress"] == 0
+        if transferable_size > 0:
+            assert transferable_data["progress"] == 0
+        else:
+            assert transferable_data["progress"] is None
         assert transferable_data["bytes_transferred"] == 0
         assert transferable_data["finished_at"] is None
-        assert transferable_data["speed"] is None
-        assert transferable_data["estimated_finish_date"] is None
 
         outgoing_transferable = models.OutgoingTransferable.objects.prefetch_related(
             Prefetch(
@@ -310,14 +283,9 @@ class TestOutgoingTransferable:
         if transferable_size == 0:
             expected_transferable_range_count = 1
         else:
-            expected_transferable_range_count = math.ceil(
-                transferable_size / transferable_range_size
-            )
+            expected_transferable_range_count = math.ceil(transferable_size / transferable_range_size)
 
-        assert (
-            len(outgoing_transferable.transferable_ranges.all())
-            == expected_transferable_range_count
-        )
+        assert len(outgoing_transferable.transferable_ranges.all()) == expected_transferable_range_count
 
         # Verify uploaded transferable_ranges
         final_transferable_digest = hashlib.sha1()
@@ -325,9 +293,7 @@ class TestOutgoingTransferable:
             final_transferable_digest.update(fs.read_bytes(transferable_range))
         assert final_transferable_digest.hexdigest() == transferable_data["sha1"]
 
-    def test_create_outgoing_transferable_unauthorized(
-        self, faker: Faker, api_client: test.APIClient
-    ):
+    def test_create_outgoing_transferable_unauthorized(self, faker: Faker, api_client: test.APIClient):
         """
         Assert only authenticated users can create Transferables
         """
@@ -363,9 +329,7 @@ class TestOutgoingTransferable:
 
         # post file with a "Content-Length: 2" header
         settings.TRANSFERABLE_MAX_SIZE = 1
-        response = api_client.post(
-            url, content_type="application/octet-stream", HTTP_CONTENT_LENGTH="2"
-        )
+        response = api_client.post(url, content_type="application/octet-stream", HTTP_CONTENT_LENGTH="2")
 
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
         assert response.data["detail"].code == "RequestEntityTooLargeError"
@@ -382,9 +346,7 @@ class TestOutgoingTransferable:
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
         assert response.data["detail"].code == "RequestEntityTooLargeError"
 
-    @mock.patch(
-        "eurydice.origin.api.views.outgoing_transferable._create_transferable_ranges"
-    )
+    @mock.patch("eurydice.origin.api.views.outgoing_transferable._create_transferable_ranges")
     def test_create_outgoing_transferable_unexpected_exception(
         self,
         mocked_create_transferable_ranges: mock.Mock,
@@ -392,9 +354,7 @@ class TestOutgoingTransferable:
         assert not models.OutgoingTransferable.objects.exists()
         assert not models.TransferableRevocation.objects.exists()
 
-        mocked_create_transferable_ranges.side_effect = RuntimeError(
-            "Something bad happened!"
-        )
+        mocked_create_transferable_ranges.side_effect = RuntimeError("Something bad happened!")
 
         user_profile = models_factory.UserProfileFactory()
 
@@ -444,9 +404,7 @@ class TestOutgoingTransferable:
 
         token = Token.objects.create(user=user_profile.user)
 
-        request = request_factory.post(
-            url, data={}, HTTP_AUTHORIZATION=f"Token {token.key}"
-        )
+        request = request_factory.post(url, data={}, HTTP_AUTHORIZATION=f"Token {token.key}")
 
         request.META.pop("CONTENT_TYPE", None)
 
@@ -478,9 +436,7 @@ class TestOutgoingTransferable:
         obj = models.OutgoingTransferable.objects.get(id=obj.id)
         assert obj.state == enums.OutgoingTransferableState.CANCELED
 
-    def test_destroy_outgoing_transferable_error_not_authenticated(
-        self, api_client: test.APIClient
-    ):
+    def test_destroy_outgoing_transferable_error_not_authenticated(self, api_client: test.APIClient):
         obj = models_factory.OutgoingTransferableFactory()
         url = reverse("transferable-detail", kwargs={"pk": obj.id})
         response = api_client.delete(url)
@@ -488,9 +444,7 @@ class TestOutgoingTransferable:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data["detail"].code == "not_authenticated"
 
-    def test_destroy_outgoing_transferable_error_not_successfully_submitted(
-        self, api_client: test.APIClient
-    ):
+    def test_destroy_outgoing_transferable_error_not_successfully_submitted(self, api_client: test.APIClient):
         obj = models_factory.OutgoingTransferableFactory(submission_succeeded_at=None)
 
         assert not obj.submission_succeeded
@@ -501,14 +455,10 @@ class TestOutgoingTransferable:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        revocations = models.TransferableRevocation.objects.filter(
-            outgoing_transferable=obj
-        )
+        revocations = models.TransferableRevocation.objects.filter(outgoing_transferable=obj)
 
         assert revocations.count() == 1
-        assert (
-            revocations.get().reason == enums.TransferableRevocationReason.USER_CANCELED
-        )
+        assert revocations.get().reason == enums.TransferableRevocationReason.USER_CANCELED
 
 
 @pytest.mark.parametrize("transferable_range_size", [1, 2])
@@ -577,9 +527,7 @@ def test_create_outgoing_transferable_content_length(
 
     assert response.status_code == expected_status_code
 
-    revocations = models.TransferableRevocation.objects.filter(
-        outgoing_transferable__user_profile=user_profile
-    )
+    revocations = models.TransferableRevocation.objects.filter(outgoing_transferable__user_profile=user_profile)
 
     assert len(revocations) == expected_revocation_count
 

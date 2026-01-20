@@ -7,8 +7,7 @@ from .maintenance import Maintenance
 from .outgoing_transferable import OutgoingTransferable
 from .transferable_range import TransferableRange
 from .transferable_revocation import TransferableRevocation
-from .user import User
-from .user import UserProfile
+from .user import User, UserProfile
 
 __all__ = (
     "User",

@@ -12,9 +12,7 @@ from tests.destination.integration import factory as destination_factory
 def ongoing_incoming_transferable(
     faker: Faker,
 ) -> Iterator[models.IncomingTransferable]:
-    obj = destination_factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.ONGOING
-    )
+    obj = destination_factory.IncomingTransferableFactory(state=models.IncomingTransferableState.ONGOING)
     try:
         fs.write_bytes(obj, faker.binary(length=1024))
 

@@ -1,5 +1,3 @@
-from typing import List
-from typing import Optional
 from uuid import UUID
 
 import eurydice.origin.core.models as models
@@ -14,8 +12,8 @@ class WeightedRoundRobinUserSelector:
 
     def __init__(self) -> None:
         self._round_counter: int = 0
-        self._current_user: Optional[models.User] = None
-        self._pending_users_in_round: List[UUID] = []
+        self._current_user: models.User | None = None
+        self._pending_users_in_round: list[UUID] = []
 
     def start_round(self) -> None:
         """
@@ -35,7 +33,7 @@ class WeightedRoundRobinUserSelector:
             .distinct("outgoing_transferable__user_profile_id")
         )
 
-    def get_next_user(self) -> Optional[models.User]:
+    def get_next_user(self) -> models.User | None:
         """
         Retrieve the next user using a Weighted Round Robin algorithm.
 
@@ -56,8 +54,7 @@ class WeightedRoundRobinUserSelector:
         elif self._current_user is None:
             self._select_arbitrary_pending_user()
         elif (
-            self._round_counter
-            < self._current_user.user_profile.priority  # type: ignore
+            self._round_counter < self._current_user.user_profile.priority  # type: ignore
             and self._current_user.id in self._pending_users_in_round
         ):
             self._reselect_current_user()
@@ -78,9 +75,7 @@ class WeightedRoundRobinUserSelector:
         """Selects the user with pending TransferableRanges with the lowest UUID."""
 
         self._round_counter = 0
-        self._current_user = models.User.objects.select_related(
-            "user_profile"
-        ).get(  # type: ignore
+        self._current_user = models.User.objects.select_related("user_profile").get(  # type: ignore
             id=self._pending_users_in_round.pop(0)
         )
 
@@ -94,9 +89,7 @@ class WeightedRoundRobinUserSelector:
         """Select the user that comes after the current one."""
 
         self._round_counter = 0
-        self._current_user = models.User.objects.select_related(
-            "user_profile"
-        ).get(  # type: ignore
+        self._current_user = models.User.objects.select_related("user_profile").get(  # type: ignore
             id=self._select_next_pending_user_id()
         )
 

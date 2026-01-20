@@ -1,5 +1,4 @@
-from eurydice.destination.core.models import IncomingTransferable
-from eurydice.destination.core.models import IncomingTransferableState
+from eurydice.destination.core.models import IncomingTransferable, IncomingTransferableState
 from tests.common.integration.endpoints import pagination
 from tests.destination.integration import factory
 

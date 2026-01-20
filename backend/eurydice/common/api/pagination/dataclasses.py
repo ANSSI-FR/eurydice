@@ -1,22 +1,19 @@
-from base64 import urlsafe_b64decode
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime
 from typing import NamedTuple
-from typing import Optional
 
 from django.utils import timezone
-from msgpack import packb
-from msgpack import unpackb
+from msgpack import packb, unpackb
 
 MICROSECONDS = 1_000_000
 
 
-def pack_datetime(date: Optional[datetime]) -> Optional[int]:
+def pack_datetime(date: datetime | None) -> int | None:
     """Convert a datetime string to a more memory-efficient integer."""
     return int(date.timestamp() * MICROSECONDS) if date else None
 
 
-def unpack_datetime(packed_date: Optional[int]) -> Optional[datetime]:
+def unpack_datetime(packed_date: int | None) -> datetime | None:
     """Convert a memory-efficient integer to a datetime string."""
     if packed_date is None:
         return None
@@ -51,7 +48,7 @@ class Link(NamedTuple):
 
     offset: int
     reverse: bool = False
-    position: Optional[datetime] = None
+    position: datetime | None = None
 
     def with_offset(self, offset: int) -> "Link":
         """Create a new Link with an offset."""
@@ -98,13 +95,13 @@ class Session(NamedTuple):
     advanced features like pseudo-stateful navigation and new items detection.
     """
 
-    previous_link: Optional[Link]
+    previous_link: Link | None
     current_link: Link
-    next_link: Optional[Link]
+    next_link: Link | None
     page_number: int
     items_count: int
-    first_item: Optional[datetime]
-    last_item: Optional[datetime]
+    first_item: datetime | None
+    last_item: datetime | None
     query_params_hash: bytes
     paginated_at: datetime
 
@@ -150,9 +147,7 @@ class PageIdentifier(NamedTuple):
     def pack(self) -> str:
         """Serialize the page identifier in a URL-safe base 64 string."""
 
-        return urlsafe_b64encode(packb((self.session.packb(), self.offset))).decode(
-            "ascii"
-        )
+        return urlsafe_b64encode(packb((self.session.packb(), self.offset))).decode("ascii")
 
     @classmethod
     def unpack(cls, packed: str) -> "PageIdentifier":
@@ -178,4 +173,4 @@ class Query(NamedTuple):
     """
 
     queried_page: int
-    session: Optional[Session]
+    session: Session | None

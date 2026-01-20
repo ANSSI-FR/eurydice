@@ -17,17 +17,11 @@ class RollingMetricsSerializer(serializers.Serializer):
         min_value=0,
     )
     recent_successes = serializers.IntegerField(
-        help_text=_(
-            "The amount of transferables successfully transferred within the "
-            "last few minutes"
-        ),
+        help_text=_("The amount of transferables successfully transferred within the last few minutes"),
         min_value=0,
     )
     recent_errors = serializers.IntegerField(
-        help_text=_(
-            "The amount of transferables that failed to be transferred within the "
-            "last few minutes"
-        ),
+        help_text=_("The amount of transferables that failed to be transferred within the last few minutes"),
         min_value=0,
     )
     last_packet_received_at = serializers.DateTimeField(
@@ -44,10 +38,8 @@ class IncomingTransferableSerializer(serializers.ModelSerializer):
     )
 
     progress = serializers.IntegerField(
-        help_text=_(
-            "The percentage of bytes for this Transferable that have been "
-            "received from the network diode"
-        ),
+        help_text=_("The percentage of bytes for this Transferable that have been received from the network diode"),
+        allow_null=True,
         min_value=0,
         max_value=100,
     )

@@ -7,8 +7,8 @@ from django.db import transaction
 from tests.origin.integration import factory as origin_factory
 
 
-class Command(base.BaseCommand):  # noqa: D101
-    help = "Populate the database with data resembling production"  # noqa: VNE003
+class Command(base.BaseCommand):
+    help = "Populate the database with data resembling production"
 
     def add_arguments(self, parser: base.CommandParser) -> None:  # noqa: D102
         parser.add_argument(
@@ -35,18 +35,14 @@ class Command(base.BaseCommand):  # noqa: D101
         Generate and populate database with data in a single query.
         """
         with transaction.atomic():
-            user_profiles = origin_factory.UserProfileFactory.create_batch(
-                options["users"]
-            )
+            user_profiles = origin_factory.UserProfileFactory.create_batch(options["users"])  # type: ignore[arg-type]
 
-            outgoing_transferables = (
-                origin_factory.OutgoingTransferableFactory.create_batch(
-                    options["outgoing_transferables"],
-                    user_profile=factory.Iterator(user_profiles),
-                )
+            outgoing_transferables = origin_factory.OutgoingTransferableFactory.create_batch(
+                options["outgoing_transferables"],  # type: ignore[arg-type]
+                user_profile=factory.Iterator(user_profiles),  # type: ignore[attr-defined, no-untyped-call]
             )
 
             origin_factory.TransferableRangeFactory.create_batch(
-                options["transferable_ranges"],
-                outgoing_transferable=factory.Iterator(outgoing_transferables),
+                options["transferable_ranges"],  # type: ignore[arg-type]
+                outgoing_transferable=factory.Iterator(outgoing_transferables),  # type: ignore[attr-defined, no-untyped-call]
             )

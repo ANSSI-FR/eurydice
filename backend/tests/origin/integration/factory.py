@@ -1,9 +1,6 @@
 import contextlib
 import datetime
-from typing import Any
-from typing import ContextManager
-from typing import List
-from typing import Optional
+from typing import Any, ContextManager
 
 import django.utils.timezone
 import factory
@@ -12,6 +9,7 @@ from django.db import models
 from django.db.models import signals
 
 from eurydice.common import enums
+from eurydice.origin.api.views.outgoing_transferable import get_transferable_file_path
 from eurydice.origin.core import enums as origin_enums
 from eurydice.origin.core import models as origin_models
 from eurydice.origin.core import signals as eurydice_signals
@@ -41,23 +39,17 @@ class UserFactory(UserFactoryWithSignal):
     @classmethod
     def _create(cls, *args, **kwargs) -> django.contrib.auth.get_user_model():
         """Overridden _create method to disable the create_user_profile signal"""
-        signals.post_save.disconnect(
-            receiver=eurydice_signals.create_user_profile, sender=origin_models.User
-        )
+        signals.post_save.disconnect(receiver=eurydice_signals.create_user_profile, sender=origin_models.User)
         try:
             instance = super()._create(*args, **kwargs)
         finally:
-            signals.post_save.connect(
-                eurydice_signals.create_user_profile, sender=origin_models.User
-            )
+            signals.post_save.connect(eurydice_signals.create_user_profile, sender=origin_models.User)
         return instance
 
 
 class UserProfileFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
-    priority = factory.Faker(
-        "pyint", min_value=0, max_value=POSITIVE_SMALL_INTEGER_FIELD_MAX_VALUE
-    )
+    priority = factory.Faker("pyint", min_value=0, max_value=POSITIVE_SMALL_INTEGER_FIELD_MAX_VALUE)
 
     class Meta:
         model = origin_models.UserProfile
@@ -76,7 +68,7 @@ class OutgoingTransferableFactory(factory.django.DjangoModelFactory):
     )
 
     @factory.lazy_attribute
-    def sha1(self) -> Optional[bytes]:
+    def sha1(self) -> bytes | None:
         if self.submission_succeeded_at:
             return self._sha1
 
@@ -87,12 +79,10 @@ class OutgoingTransferableFactory(factory.django.DjangoModelFactory):
         if self.submission_succeeded_at:
             return self.size
 
-        return factory.Faker("pyint", min_value=0, max_value=self.size).evaluate(
-            None, None, {"locale": None}
-        )
+        return factory.Faker("pyint", min_value=0, max_value=self.size).evaluate(None, None, {"locale": None})
 
     @factory.lazy_attribute
-    def submission_succeeded_at(self) -> Optional[datetime.datetime]:
+    def submission_succeeded_at(self) -> datetime.datetime | None:
         if self._submission_succeeded:
             return self._submission_succeeded_at
 
@@ -144,25 +134,14 @@ class OutgoingTransferableFactory(factory.django.DjangoModelFactory):
 
 
 class TransferableRangeFactory(factory.django.DjangoModelFactory):
-    byte_offset = factory.Faker(
-        "pyint", min_value=0, max_value=settings.TRANSFERABLE_MAX_SIZE
-    )
-    size = factory.Faker(
-        "pyint", min_value=0, max_value=settings.TRANSFERABLE_RANGE_SIZE
-    )
-    transfer_state = factory.Faker(
-        "random_element", elements=origin_enums.TransferableRangeTransferState
-    )
-    finished_at = factory.Faker(
-        "future_datetime", tzinfo=django.utils.timezone.get_current_timezone()
-    )
+    byte_offset = factory.Faker("pyint", min_value=0, max_value=settings.TRANSFERABLE_MAX_SIZE)
+    size = factory.Faker("pyint", min_value=0, max_value=settings.TRANSFERABLE_RANGE_SIZE)
+    transfer_state = factory.Faker("random_element", elements=origin_enums.TransferableRangeTransferState)
+    finished_at = factory.Faker("future_datetime", tzinfo=django.utils.timezone.get_current_timezone())
 
     @classmethod
     def _create(cls, model_class: models.Model, *args, **kwargs) -> Any:
-        if (
-            kwargs["transfer_state"]
-            == origin_enums.TransferableRangeTransferState.PENDING
-        ):
+        if kwargs["transfer_state"] == origin_enums.TransferableRangeTransferState.PENDING:
             kwargs["finished_at"] = None
             return super()._create(model_class, *args, **kwargs)
 
@@ -187,22 +166,27 @@ class TransferableRangeFactory(factory.django.DjangoModelFactory):
 class TransferableRevocationFactory(factory.django.DjangoModelFactory):
     outgoing_transferable = factory.SubFactory(OutgoingTransferableFactory)
 
-    reason = factory.Faker(
-        "random_element", elements=enums.TransferableRevocationReason
-    )
+    reason = factory.Faker("random_element", elements=enums.TransferableRevocationReason)
 
-    transfer_state = factory.Faker(
-        "random_element", elements=origin_enums.TransferableRevocationTransferState
-    )
+    transfer_state = factory.Faker("random_element", elements=origin_enums.TransferableRevocationTransferState)
 
     class Meta:
         model = origin_models.TransferableRevocation
 
 
 @contextlib.contextmanager
-def stored_transferable_range(
+def fs_stored_interrupted_upload_transferable(
     data: bytes, **kwargs
-) -> ContextManager[origin_models.TransferableRange]:
+) -> ContextManager[origin_models.OutgoingTransferable]:
+    obj = OutgoingTransferableFactory(**kwargs)
+    target_file_path = get_transferable_file_path(str(obj.id))
+    target_file_path.write_bytes(data)
+
+    yield obj
+
+
+@contextlib.contextmanager
+def stored_transferable_range(data: bytes, **kwargs) -> ContextManager[origin_models.TransferableRange]:
     obj = TransferableRangeFactory(**kwargs)
 
     try:
@@ -215,8 +199,7 @@ def stored_transferable_range(
 @contextlib.contextmanager
 def stored_transferable_ranges(
     data: bytes, count: int, **kwargs
-) -> ContextManager[List[origin_models.TransferableRange]]:
-
+) -> ContextManager[list[origin_models.TransferableRange]]:
     transferable_ranges = [TransferableRangeFactory(**kwargs) for _ in range(count)]
     try:
         for transferable_range in transferable_ranges:
@@ -235,4 +218,5 @@ __all__ = (
     "TransferableRevocationFactory",
     "stored_transferable_range",
     "stored_transferable_ranges",
+    "fs_stored_interrupted_upload_transferable",
 )

@@ -8,9 +8,7 @@ from django.utils.translation import gettext_lazy as _
 class AbstractUser(django.contrib.auth.models.AbstractUser):
     """A custom abstract user model using an UUID4 as primary key."""
 
-    id = models.UUIDField(  # noqa: VNE003
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     last_access = models.DateTimeField(
         _("last access"),

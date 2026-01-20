@@ -1,11 +1,9 @@
 import factory
 import pytest
-from django.db.models import F
-from django.db.models import Q
+from django.db.models import F, Q
 
 from eurydice.common.utils import orm
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from tests.origin.integration import factory as origin_factory
 
 
@@ -40,9 +38,7 @@ def test_outgoing_transferable_state():
 
     # Black magic
     queryset = orm.make_queryset_with_subquery_join(
-        models.TransferableRange.objects.only("id").filter(
-            transfer_state=enums.TransferableRangeTransferState.PENDING
-        ),
+        models.TransferableRange.objects.only("id").filter(transfer_state=enums.TransferableRangeTransferState.PENDING),
         models.TransferableRange.objects.values("outgoing_transferable_id").filter(
             transfer_state=enums.TransferableRangeTransferState.ERROR
         ),
@@ -63,10 +59,7 @@ def test_outgoing_transferable_state():
 
         if transferable_range.outgoing_transferable == erroneous_outgoing_transferable:
             found_erroneous = True
-            assert (
-                transferable_range.erroneous_outgoing_transferable_id
-                == erroneous_outgoing_transferable.id
-            )
+            assert transferable_range.erroneous_outgoing_transferable_id == erroneous_outgoing_transferable.id
 
     assert found_erroneous
     assert found_pending

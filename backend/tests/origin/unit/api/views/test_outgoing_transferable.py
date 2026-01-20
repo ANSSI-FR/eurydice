@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -7,6 +6,7 @@ from django.conf import Settings
 
 from eurydice.origin.api import exceptions
 from eurydice.origin.api.views import outgoing_transferable
+from tests.utils import process_logs
 
 
 def test__get_content_length_transfer_encoding_chunked(
@@ -18,9 +18,14 @@ def test__get_content_length_transfer_encoding_chunked(
     request.headers = {"Transfer-Encoding": "chunked", "Content-Length": "1"}
 
     assert outgoing_transferable._get_content_length(request) is None
-    assert caplog.messages == [
-        "Cannot retrieve the 'Content-Length' header of an HTTP request "
-        "using chunked transfer encoding."
+
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {
+            "log_key": "header_content_lengh_error",
+            "message": "Cannot retrieve the Content-Length header of an HTTP request using chunked transfer encoding.",
+        }
     ]
 
 
@@ -41,7 +46,7 @@ def test__get_content_length_transfer_encoding_chunked(
 def test__get_content_length(
     content_length_header: str,
     transferable_max_size: int,
-    expected_result: Optional[Exception],
+    expected_result: Exception | None,
     settings: Settings,
 ):
     request = mock.Mock()

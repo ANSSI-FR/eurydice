@@ -1,32 +1,23 @@
 import base64
-import logging
-from typing import Union
 from typing import cast
 
 from django import http
 from django.contrib.auth.models import AnonymousUser
 from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
-from rest_framework import decorators
-from rest_framework import mixins
-from rest_framework import renderers
-from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import decorators, mixins, renderers, status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from eurydice.common.api import pagination
-from eurydice.common.api import permissions
+from eurydice.common.api import pagination, permissions
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.api import exceptions as api_exceptions
 from eurydice.destination.api import filters as destination_filters
-from eurydice.destination.api import negotiation
+from eurydice.destination.api import negotiation, serializers
 from eurydice.destination.api import permissions as destination_permissions
-from eurydice.destination.api import serializers
 from eurydice.destination.api.docs import decorators as documentation
 from eurydice.destination.core import models
 from eurydice.destination.storage import fs
-
-logger = logging.getLogger(__name__)
 
 _TRANSFERABLE_STATE_TO_ERROR = {
     models.IncomingTransferableState.ONGOING: api_exceptions.TransferableOngoingError,
@@ -39,7 +30,7 @@ _TRANSFERABLE_STATE_TO_ERROR = {
 
 def _fs_response(
     instance: models.IncomingTransferable, filename: str, headers: dict[str, str]
-) -> Union[http.FileResponse, Response]:
+) -> http.FileResponse | Response:
     try:
         data = open(fs.file_path(instance), "rb")  # noqa: SIM115
         resp = http.FileResponse(
@@ -89,6 +80,7 @@ class IncomingTransferableViewSet(
         """
         queryset = super().get_queryset()
         user_id = cast(AnonymousUser, self.request.user).id
+        logger.info({LOG_KEY: "incoming_transferable_get_queryset", "username": self.request.user.username})
         return queryset.filter(user_profile__user__id=user_id).order_by("-created_at")
 
     def perform_destroy(self, instance: models.IncomingTransferable) -> None:
@@ -96,12 +88,8 @@ class IncomingTransferableViewSet(
         if instance.state != models.IncomingTransferableState.SUCCESS:
             raise api_exceptions.UnsuccessfulTransferableError
 
-        logger.debug("Remove file from filesystem.")
         fs.delete(instance)
-        logger.debug("File successfully removed from filesystem.")
-
         instance.mark_as_removed()
-        logger.debug("IncomingTransferable marked as removed in database.")
 
     @decorators.action(
         detail=True,
@@ -117,9 +105,8 @@ class IncomingTransferableViewSet(
         request: Request,
         *args,
         **kwargs,
-    ) -> Union[http.FileResponse, Response]:
+    ) -> http.FileResponse | Response:
         """Download the file corresponding to an IncomingTransferable."""
-        logger.debug("Request IncomingTransferableState from database.")
         instance = self.get_object()
 
         if instance.state != models.IncomingTransferableState.SUCCESS:
@@ -145,20 +132,26 @@ class IncomingTransferableViewSet(
     )
     def delete(self, request: Request) -> Response:
         """Delete all successful IncomingTransferable to free the space"""
-        logger.debug("Removing all files.")
-        successful_transferables = self.get_queryset().filter(
-            state=models.IncomingTransferableState.SUCCESS
-        )
+        logger.info({LOG_KEY: "incoming_transferable_delete", "username": str(request.user.username)})
+
+        successful_transferables = self.get_queryset().filter(state=models.IncomingTransferableState.SUCCESS)
         if len(successful_transferables) == 0:
             return Response("Aucun fichier à supprimer", 200)
         for instance in successful_transferables:
             self.perform_destroy(instance)
-        logger.debug("Files successfully removed.")
+
+        logger.info(
+            {
+                LOG_KEY: "incoming_transferable_delete",
+                "username": str(request.user.username),
+                "status": "success",
+                "successful_transferables": len(successful_transferables),
+            }
+        )
+
         if len(successful_transferables) == 1:
             return Response("1 fichier a été supprimé", 200)
-        return Response(
-            f"{len(successful_transferables)} fichiers ont été supprimés", 200
-        )
+        return Response(f"{len(successful_transferables)} fichiers ont été supprimés", 200)
 
 
 __all__ = ("IncomingTransferableViewSet",)

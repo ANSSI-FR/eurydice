@@ -1,14 +1,11 @@
-from datetime import datetime
-from datetime import timedelta
-from typing import List
+from datetime import datetime, timedelta
 
 import dateutil
 import freezegun
 import pytest
 from django import conf
 from django.contrib.auth.models import Permission
-from django.db.models import Q
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.urls import reverse
 from django.utils import timezone
 from faker import Faker
@@ -68,8 +65,8 @@ def test__generate_metrics(
     faker: Faker,
     settings: conf.Settings,
     api_client: test.APIClient,
-    old_states_repetitions: List[int],
-    recent_states_repetitions: List[int],
+    old_states_repetitions: list[int],
+    recent_states_repetitions: list[int],
 ) -> None:
     # Test preparation
 
@@ -114,25 +111,17 @@ def test__generate_metrics(
             old_transferable = create_transferable(state=state, date=old_date)
 
             if state == States.ONGOING:
-                expected["queue_size"] += sum_pending_transferable_ranges_size(
-                    old_transferable
-                )
+                expected["queue_size"] += sum_pending_transferable_ranges_size(old_transferable)
 
     for state, repetitions in recent_transferable_nb.items():
         for _ in range(repetitions):
             recent_transferable = create_transferable(state=state, date=recent_date)
 
             if state == States.ONGOING:
-                expected["queue_size"] += sum_pending_transferable_ranges_size(
-                    recent_transferable
-                )
+                expected["queue_size"] += sum_pending_transferable_ranges_size(recent_transferable)
 
-    expected["pending_transferables"] = (
-        old_transferable_nb[States.PENDING] + recent_transferable_nb[States.PENDING]
-    )
-    expected["ongoing_transferables"] = (
-        old_transferable_nb[States.ONGOING] + recent_transferable_nb[States.ONGOING]
-    )
+    expected["pending_transferables"] = old_transferable_nb[States.PENDING] + recent_transferable_nb[States.PENDING]
+    expected["ongoing_transferables"] = old_transferable_nb[States.ONGOING] + recent_transferable_nb[States.ONGOING]
     expected["recent_successes"] = recent_transferable_nb[States.SUCCESS]
     expected["recent_errors"] = recent_transferable_nb[States.ERROR]
     expected["last_packet_sent_at"] = None

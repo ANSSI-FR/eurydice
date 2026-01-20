@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import factory.random
 import pytest
 from django.conf import settings
 from rest_framework import test
+
+from tests.common.decryption_constants import PRIVKEY, PUBKEY
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -27,6 +31,28 @@ def _setup_factory_boy() -> None:
 def faker_seed() -> int:
     """Set the default random seed value used by Faker."""
     return settings.FAKER_SEED
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _create_encryption_keys() -> None:
+    settings.PUBKEY_PATH = "/tmp/eurydice-test/keys/eurydice.pub"
+
+    pubkey_path = Path(settings.PUBKEY_PATH)
+    pubkey_path.parent.mkdir(exist_ok=True, parents=True)
+    pubkey_path.write_bytes(PUBKEY)
+
+    if hasattr(settings, "ROOT_URLCONF") and "destination" in settings.ROOT_URLCONF:
+        settings.PRIVKEY_PATH = "/tmp/eurydice-test/keys/eurydice"
+
+        privkey_path = Path(settings.PRIVKEY_PATH)
+        privkey_path.parent.mkdir(exist_ok=True, parents=True)
+        privkey_path.write_bytes(PRIVKEY)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _create_transferables_test_folder() -> None:
+    folder_path = Path(settings.TRANSFERABLE_STORAGE_DIR)
+    folder_path.mkdir(exist_ok=True, parents=True)
 
 
 @pytest.fixture()

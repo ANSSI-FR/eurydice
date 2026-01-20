@@ -20,9 +20,7 @@ def test_user_save_signal_create_userprofile():
     user.first_name = "Hubert"
     user.last_name = "Bonisseur de La Bath"
 
-    with mock.patch.object(
-        models.UserProfile.objects, "create", return_value=None
-    ) as mock_create:
+    with mock.patch.object(models.UserProfile.objects, "create", return_value=None) as mock_create:
         user.save()
 
         assert not mock_create.called

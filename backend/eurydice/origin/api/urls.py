@@ -17,6 +17,7 @@ urlpatterns = (
     + [
         path("metrics/", views.MetricsView.as_view(), name="metrics"),
         path("status/", views.StatusView.as_view(), name="status"),
+        path("metadata/", views.ServerMetadataView.as_view(), name="server-metadata"),
         path(
             "user/association/",
             views.UserAssociationView.as_view(),

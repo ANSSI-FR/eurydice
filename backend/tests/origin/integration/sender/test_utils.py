@@ -1,5 +1,3 @@
-from typing import Optional
-
 import django.core.exceptions as django_exceptions
 import pytest
 from django.conf import Settings
@@ -17,9 +15,9 @@ import eurydice.origin.sender.utils as sender_utils
     ],
 )
 def test_loop_exception_missing_lidis_address(
-    lidis_host: Optional[str],
-    lidis_port: Optional[int],
-    expected_exception: Optional[django_exceptions.ImproperlyConfigured],
+    lidis_host: str | None,
+    lidis_port: int | None,
+    expected_exception: django_exceptions.ImproperlyConfigured | None,
     settings: Settings,
 ):
     settings.LIDIS_HOST = lidis_host

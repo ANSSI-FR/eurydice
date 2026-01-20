@@ -132,6 +132,21 @@ Use the following command to create the directories required by Eurydice. The ma
 make create-dev-volumes
 ```
 
+#### Optional step : enable encryption
+
+set ENCRYPTION_ENABLED to true and fill PUBKEY_PATH and PRIVKEY_PATH in your .env file
+
+##### Generate keypair for encryption
+
+**Using make dev-up generates the keys to data/keys by default**, but to generate them yourself :
+
+```bash
+make generate-keys
+```
+
+Creates keys to ./eurydice(.pub).
+You should move them where the env variables point to.
+
 ### 🚀 Run the development environment
 
 Make sure you have run the initialization once.
@@ -141,7 +156,7 @@ You have the choice to launch the dev stack with logs in elasticsearch or logs i
 # Development stack with basic console logging
 make dev-up
 
-# Development stack with advanced ElasticSearch logging using filebeat (accessible at `kibana.localhost`)
+# Development stack with advanced ElasticSearch logging using filebeat (accessible at `kibana.test`)
 make dev-up-elk
 ```
 
@@ -149,22 +164,36 @@ The stack is launched with watch mode so that containers are automatically updat
 
 The following URLs are available in the development environment:
 
-- <http://origin.localhost>: the origin user interface.
-- <http://origin.localhost/api/docs/>: the origin API documentation.
-- <http://origin.localhost/api/v1/>: the origin API.
-- <http://origin.localhost/admin/>: the origin administration interface.
-- <http://destination.localhost>: the destination user interface.
-- <http://destination.localhost/api/docs/>: the destination API documentation.
-- <http://destination.localhost/api/v1/>: the destination API.
-- <http://destination.localhost/admin/>: the destination administration interface.
-- <http://pgadmin.localhost/>: database management tool.
-- <http://traefik.localhost/>: the traefik dashboard.
-- <http://kibana.localhost/>: the kibana dashboard (if you launched dev-up-elk).
+- <http://origin.test>: the origin user interface.
+- <http://origin.test/api/docs/>: the origin API documentation.
+- <http://origin.test/api/v1/>: the origin API.
+- <http://origin.test/admin/>: the origin administration interface.
+- <http://destination.test>: the destination user interface.
+- <http://destination.test/api/docs/>: the destination API documentation.
+- <http://destination.test/api/v1/>: the destination API.
+- <http://destination.test/admin/>: the destination administration interface.
+- <http://pgadmin.test/>: database management tool.
+- <http://traefik.test/>: the traefik dashboard.
+- <http://kibana.test/>: the kibana dashboard (if you launched dev-up-elk).
+
+Don't forget to update your '/etc/hosts' with:
+
+```
+0.0.0.0 origin.test destination.test [...]
+```
+
+You can also use a local dns resolver to redirect all `.test` domains to localhost (eg. dnsmasq)
 
 ### 🛑 Stop the development environment
 
 ```bash
 make dev-stop
+```
+
+or, to also remove all local volumes :
+
+```bash
+sudo make dev-clean
 ```
 
 ### ⤵️ Install development dependencies

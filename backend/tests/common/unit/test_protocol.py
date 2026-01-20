@@ -6,8 +6,7 @@ import pydantic
 import pytest
 from faker import Faker
 
-from eurydice.common import enums
-from eurydice.common import protocol
+from eurydice.common import enums, protocol
 
 
 class TestHistoryEntry:
@@ -15,9 +14,7 @@ class TestHistoryEntry:
     TRANSITORY_STATES = set(enums.OutgoingTransferableState) - FINAL_STATES
 
     @pytest.mark.parametrize("state", FINAL_STATES)
-    def test_validation_success(
-        self, state: enums.OutgoingTransferableState, faker: Faker
-    ):
+    def test_validation_success(self, state: enums.OutgoingTransferableState, faker: Faker):
         protocol.HistoryEntry(
             transferable_id=faker.uuid4(),
             user_profile_id=faker.uuid4(),
@@ -27,9 +24,7 @@ class TestHistoryEntry:
         )
 
     @pytest.mark.parametrize("state", TRANSITORY_STATES)
-    def test_validation_failure(
-        self, state: enums.OutgoingTransferableState, faker: Faker
-    ):
+    def test_validation_failure(self, state: enums.OutgoingTransferableState, faker: Faker):
         with pytest.raises(pydantic.ValidationError):
             protocol.HistoryEntry(
                 transferable_id=faker.uuid4(),
@@ -92,9 +87,7 @@ class TestOnTheWirePacket:
                 transferable_range_is_last = idx + 1 == nb_transferable_ranges
                 if transferable_range_is_last:
                     transferable.sha1 = faker.sha1(raw_output=True)
-                    transferable.size = faker.pyint(
-                        min_value=0, max_value=500
-                    ) * hf.parse_size("1MB")
+                    transferable.size = faker.pyint(min_value=0, max_value=500) * hf.parse_size("1MB")
 
                 packet_to_send.transferable_ranges.append(
                     protocol.TransferableRange(
@@ -145,27 +138,17 @@ class TestOnTheWirePacket:
         (protocol.OnTheWirePacket(history=protocol.History(entries=[])), False),
         # packet with at least one history entry is not empty
         (
-            protocol.OnTheWirePacket(
-                history=protocol.History(
-                    entries=[mock.Mock(spec=protocol.HistoryEntry)]
-                )
-            ),
+            protocol.OnTheWirePacket(history=protocol.History(entries=[mock.Mock(spec=protocol.HistoryEntry)])),
             False,
         ),
         # packet with at least one transferable range is not empty
         (
-            protocol.OnTheWirePacket(
-                transferable_ranges=[mock.Mock(spec=protocol.TransferableRange)]
-            ),
+            protocol.OnTheWirePacket(transferable_ranges=[mock.Mock(spec=protocol.TransferableRange)]),
             False,
         ),
         # packet with at least one transferable revocation is not empty
         (
-            protocol.OnTheWirePacket(
-                transferable_revocations=[
-                    mock.Mock(spec=protocol.TransferableRevocation)
-                ]
-            ),
+            protocol.OnTheWirePacket(transferable_revocations=[mock.Mock(spec=protocol.TransferableRevocation)]),
             False,
         ),
     ],

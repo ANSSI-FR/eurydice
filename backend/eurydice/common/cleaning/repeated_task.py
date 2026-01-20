@@ -1,7 +1,6 @@
 import abc
 import datetime
 import time
-from typing import Optional
 
 from django.db import connections
 from django.utils import timezone
@@ -30,7 +29,7 @@ class RepeatedTask(abc.ABC):
             check_if_should_run_every: delay between checks that trigger a run if the
                 `run_every` timedelta has passed. Defaults to 1 second.
         """
-        self._last_run_at: Optional[datetime.datetime] = None
+        self._last_run_at: datetime.datetime | None = None
         self._run_every = run_every
         self._check_if_should_run_every = check_if_should_run_every.total_seconds()
 

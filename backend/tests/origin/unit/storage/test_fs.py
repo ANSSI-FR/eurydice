@@ -44,10 +44,7 @@ def test_fs_file_path(
 
 @pytest.mark.django_db()
 def test_fs_delete():
-
-    obj = factory.TransferableRangeFactory(
-        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
-    )
+    obj = factory.TransferableRangeFactory(id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a"))
 
     file_path = fs.file_path(obj)
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,9 +57,7 @@ def test_fs_delete():
 
 @pytest.mark.django_db()
 def test_fs_write_bytes():
-    obj = factory.TransferableRangeFactory(
-        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
-    )
+    obj = factory.TransferableRangeFactory(id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a"))
 
     fs.write_bytes(obj, b"test data")
 
@@ -73,9 +68,7 @@ def test_fs_write_bytes():
 
 @pytest.mark.django_db()
 def test_fs_append_bytes():
-    obj = factory.TransferableRangeFactory(
-        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189b")
-    )
+    obj = factory.TransferableRangeFactory(id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189b"))
 
     fs.append_bytes(obj, b"test")
     fs.append_bytes(obj, b" data")
@@ -87,10 +80,7 @@ def test_fs_append_bytes():
 
 @pytest.mark.django_db()
 def test_fs_read_bytes():
-
-    obj = factory.TransferableRangeFactory(
-        id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a")
-    )
+    obj = factory.TransferableRangeFactory(id=UUID("a8fcc4dd-4448-42f0-b678-a99ae8a8189a"))
 
     file_path = fs.file_path(obj)
     file_path.write_bytes(b"test data")

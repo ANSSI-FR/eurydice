@@ -15,17 +15,12 @@ def test_weighted_round_robin_user_selector_defaults_to_user_with_pending_transf
         transfer_state=enums.TransferableRangeTransferState.PENDING
     )
 
-    origin_factory.TransferableRangeFactory(
-        transfer_state=enums.TransferableRangeTransferState.TRANSFERRED
-    )
+    origin_factory.TransferableRangeFactory(transfer_state=enums.TransferableRangeTransferState.TRANSFERRED)
 
     selector = user_selector.WeightedRoundRobinUserSelector()
     selector.start_round()
 
-    assert (
-        selector.get_next_user()
-        == pending_transferable_range.outgoing_transferable.user_profile.user
-    )
+    assert selector.get_next_user() == pending_transferable_range.outgoing_transferable.user_profile.user
 
 
 @pytest.mark.django_db()
@@ -37,9 +32,7 @@ def test_weighted_round_robin_user_selector_defaults_to_first_user_with_pending_
     users = models.User.objects.all().order_by("id")
 
     # delete first user's OutgoingTransferables
-    models.TransferableRange.objects.filter(
-        outgoing_transferable__user_profile__user__id=users[0].id
-    ).delete()
+    models.TransferableRange.objects.filter(outgoing_transferable__user_profile__user__id=users[0].id).delete()
 
     selector = user_selector.WeightedRoundRobinUserSelector()
     selector.start_round()
@@ -119,9 +112,7 @@ def test_weighted_round_robin_user_selector_returns_user_with_smallest_uuid():  
     users = models.User.objects.all().order_by("id")
 
     # delete first user's OutgoingTransferables
-    models.TransferableRange.objects.filter(
-        outgoing_transferable__user_profile__user__id=users[0].id
-    ).delete()
+    models.TransferableRange.objects.filter(outgoing_transferable__user_profile__user__id=users[0].id).delete()
 
     selector = user_selector.WeightedRoundRobinUserSelector()
     selector.start_round()

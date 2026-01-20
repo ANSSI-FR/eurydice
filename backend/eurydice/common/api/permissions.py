@@ -2,9 +2,8 @@
 
 from django import http
 from django.utils.translation import gettext as _
-from rest_framework import permissions
+from rest_framework import permissions, views
 from rest_framework import request as drf_request
-from rest_framework import views
 
 from eurydice.common import models
 
@@ -25,13 +24,14 @@ class IsTransferableOwner(permissions.IsAuthenticated):  # type: ignore
         obj: models.AbstractBaseModel,
     ) -> bool:
         if (
-            type(obj)
+            type(obj)  # type: ignore[misc]
             # Using _default_manager, see:
             # https://docs.djangoproject.com/fr/2.2/topics/db/managers/#django.db.models.Model._default_manager
             ._default_manager.filter(
                 id=obj.id,
                 user_profile__user__id=request.user.id,  # type: ignore[union-attr]
-            ).exists()
+            )
+            .exists()
         ):
             return True
 
@@ -44,15 +44,10 @@ class CanViewMetrics(permissions.IsAuthenticated):  # type: ignore
     users to view rolling metrics.
     """
 
-    message = _(
-        "You do not have permission to view metrics, please contact an administrator "
-        "if you think you should."
-    )
+    message = _("You do not have permission to view metrics, please contact an administrator if you think you should.")
 
     def has_permission(self, request: drf_request.Request, view: views.APIView) -> bool:
         """Returns true if and only if the current user is allowed to view metrics."""
-        return super().has_permission(
-            request, view
-        ) and request.user.has_perm(  # type: ignore[union-attr]
+        return super().has_permission(request, view) and request.user.has_perm(  # type: ignore[union-attr]
             "eurydice_common_permissions.view_rolling_metrics"
         )

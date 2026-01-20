@@ -6,60 +6,64 @@ import humanfriendly
 from django.core import exceptions
 from django.utils.translation import gettext_lazy as _
 
-from eurydice.common.config.settings.base import ALLOWED_HOSTS
-from eurydice.common.config.settings.base import AUTH_PASSWORD_VALIDATORS
-from eurydice.common.config.settings.base import AUTHENTICATION_BACKENDS
-from eurydice.common.config.settings.base import BASE_DIR
-from eurydice.common.config.settings.base import COMMON_DOCS_PATH
-from eurydice.common.config.settings.base import CSRF_COOKIE_NAME
-from eurydice.common.config.settings.base import CSRF_COOKIE_SAMESITE
-from eurydice.common.config.settings.base import CSRF_COOKIE_SECURE
-from eurydice.common.config.settings.base import CSRF_TRUSTED_ORIGINS
-from eurydice.common.config.settings.base import DATABASES
-from eurydice.common.config.settings.base import DEBUG
-from eurydice.common.config.settings.base import EURYDICE_CONTACT
-from eurydice.common.config.settings.base import EURYDICE_CONTACT_FR
-from eurydice.common.config.settings.base import EURYDICE_VERSION
-from eurydice.common.config.settings.base import INSTALLED_APPS
-from eurydice.common.config.settings.base import LANGUAGE_CODE
-from eurydice.common.config.settings.base import LOGGING
-from eurydice.common.config.settings.base import MAX_PAGE_SIZE
-from eurydice.common.config.settings.base import METADATA_HEADER_PREFIX
-from eurydice.common.config.settings.base import METRICS_SLIDING_WINDOW
-from eurydice.common.config.settings.base import MIDDLEWARE
-from eurydice.common.config.settings.base import PAGE_SIZE
-from eurydice.common.config.settings.base import REMOTE_USER_HEADER
 from eurydice.common.config.settings.base import (
-    REMOTE_USER_HEADER_AUTHENTICATION_ENABLED,
+    ALLOWED_HOSTS,  # noqa
+    AUTH_PASSWORD_VALIDATORS,  # noqa
+    AUTHENTICATION_BACKENDS,  # noqa
+    BASE_DIR,  # noqa
+    COMMON_DOCS_PATH,  # noqa
+    CSRF_COOKIE_NAME,  # noqa
+    CSRF_COOKIE_SAMESITE,  # noqa
+    CSRF_COOKIE_SECURE,  # noqa
+    CSRF_TRUSTED_ORIGINS,  # noqa
+    DATABASES,  # noqa
+    DEBUG,  # noqa
+    EURYDICE_CONTACT,  # noqa
+    EURYDICE_CONTACT_FR,  # noqa
+    EURYDICE_VERSION,  # noqa
+    INSTALLED_APPS,  # noqa
+    LANGUAGE_CODE,  # noqa
+    LOGGING,  # noqa
+    MAX_PAGE_SIZE,  # noqa
+    METADATA_HEADER_PREFIX,  # noqa
+    METRICS_SLIDING_WINDOW,  # noqa
+    MIDDLEWARE,  # noqa
+    PAGE_SIZE,  # noqa
+    REMOTE_USER_HEADER,  # noqa
+    REMOTE_USER_HEADER_AUTHENTICATION_ENABLED,  # noqa
+    REST_FRAMEWORK,  # noqa
+    SECRET_KEY,  # noqa
+    SECURE_PROXY_SSL_HEADER,  # noqa
+    SESSION_COOKIE_AGE,  # noqa
+    SESSION_COOKIE_NAME,  # noqa
+    SESSION_COOKIE_SAMESITE,  # noqa
+    SESSION_COOKIE_SECURE,  # noqa
+    SPECTACULAR_SETTINGS,  # noqa
+    STATIC_ROOT,  # noqa
+    STATIC_URL,  # noqa
+    TEMPLATES,  # noqa
+    TIME_ZONE,  # noqa
+    TRANSFERABLE_MAX_SIZE,  # noqa
+    TRANSFERABLE_STORAGE_DIR,  # noqa
+    UI_BADGE_COLOR,  # noqa
+    UI_BADGE_CONTENT,  # noqa
+    USE_I18N,  # noqa
+    USE_TZ,  # noqa
+    USER_ASSOCIATION_TOKEN_EXPIRES_AFTER,  # noqa
+    USER_ASSOCIATION_TOKEN_SECRET_KEY,  # noqa
 )
-from eurydice.common.config.settings.base import REST_FRAMEWORK
-from eurydice.common.config.settings.base import SECRET_KEY
-from eurydice.common.config.settings.base import SECURE_PROXY_SSL_HEADER
-from eurydice.common.config.settings.base import SESSION_COOKIE_AGE
-from eurydice.common.config.settings.base import SESSION_COOKIE_NAME
-from eurydice.common.config.settings.base import SESSION_COOKIE_SAMESITE
-from eurydice.common.config.settings.base import SESSION_COOKIE_SECURE
-from eurydice.common.config.settings.base import SPECTACULAR_SETTINGS
-from eurydice.common.config.settings.base import STATIC_ROOT
-from eurydice.common.config.settings.base import STATIC_URL
-from eurydice.common.config.settings.base import TEMPLATES
-from eurydice.common.config.settings.base import TIME_ZONE
-from eurydice.common.config.settings.base import TRANSFERABLE_MAX_SIZE
-from eurydice.common.config.settings.base import TRANSFERABLE_STORAGE_DIR
-from eurydice.common.config.settings.base import UI_BADGE_COLOR
-from eurydice.common.config.settings.base import UI_BADGE_CONTENT
-from eurydice.common.config.settings.base import USE_I18N
-from eurydice.common.config.settings.base import USE_TZ
-from eurydice.common.config.settings.base import USER_ASSOCIATION_TOKEN_EXPIRES_AFTER
-from eurydice.common.config.settings.base import USER_ASSOCIATION_TOKEN_SECRET_KEY
 
 env = environ.Env(
+    ORIGIN_CHUNK_SIZE=(str, "10MB"),
     TRANSFERABLE_RANGE_SIZE=(str, "500MB"),
     TRANSFERABLE_HISTORY_DURATION=(str, "5h"),
     TRANSFERABLE_HISTORY_SEND_EVERY=(str, "5min"),
     PACKET_SENDER_QUEUE_SIZE=(int, 1),
     MAX_TRANSFERABLES_PER_PACKET=(int, 800),
     HEARTBEAT_SEND_EVERY=(str, "2min"),
+    FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER=(str, "1day"),
+    FILE_REMOVER_RUN_EVERY=(str, "1h"),
+    FILE_REMOVER_POLL_EVERY=(str, "200ms"),
     SENDER_POLL_DATABASE_EVERY=(str, "0.1s"),
     SENDER_RANGE_FILLER_CLASS=(str, "UserRotatingTransferableRangeFiller"),
     LIDIS_HOST=(str, None),
@@ -67,6 +71,9 @@ env = environ.Env(
     DBTRIMMER_TRIM_TRANSFERABLES_AFTER=(str, "1day"),
     DBTRIMMER_RUN_EVERY=(str, "6h"),
     DBTRIMMER_POLL_EVERY=(str, "200ms"),
+    FILE_PART_MAIN_SIZE=(int, 5 * 1024 * 1024),
+    ENCRYPTION_ENABLED=(bool, False),
+    PUBKEY_PATH=(str, "/home/eurydice/keys/eurydice.pub"),
 )
 
 DOCS_PATH = pathlib.Path(BASE_DIR) / "origin" / "api" / "docs" / "static"
@@ -119,11 +126,12 @@ SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]["securitySchemes"]["tokenAuth"] = {
 
 # Eurydice
 
+# The size of the chunks to be read from the TRANSFERABLE_RANGE_SIZE
+ORIGIN_CHUNK_SIZE = humanfriendly.parse_size(env("ORIGIN_CHUNK_SIZE"), binary=False)
+
 # The size of the TransferableRanges in bytes
 # i.e. the size of the file chunks transferred over the wire.
-TRANSFERABLE_RANGE_SIZE = humanfriendly.parse_size(
-    env("TRANSFERABLE_RANGE_SIZE"), binary=False
-)
+TRANSFERABLE_RANGE_SIZE = humanfriendly.parse_size(env("TRANSFERABLE_RANGE_SIZE"), binary=False)
 
 # Ranges should not be smaller than 5MiB
 if TRANSFERABLE_RANGE_SIZE < humanfriendly.parse_size("5MiB"):
@@ -131,22 +139,26 @@ if TRANSFERABLE_RANGE_SIZE < humanfriendly.parse_size("5MiB"):
         f"TRANSFERABLE_RANGE_SIZE must not be smaller than 5MiB"
         f"(currently set to {humanfriendly.format_size(TRANSFERABLE_RANGE_SIZE)})"
     )
-
-
 # The time range of the history in seconds.
-TRANSFERABLE_HISTORY_DURATION = humanfriendly.parse_timespan(
-    env("TRANSFERABLE_HISTORY_DURATION")
-)
+TRANSFERABLE_HISTORY_DURATION = humanfriendly.parse_timespan(env("TRANSFERABLE_HISTORY_DURATION"))
 
 # The sending frequency of the history in seconds.
-TRANSFERABLE_HISTORY_SEND_EVERY = humanfriendly.parse_timespan(
-    env("TRANSFERABLE_HISTORY_SEND_EVERY")
+TRANSFERABLE_HISTORY_SEND_EVERY = humanfriendly.parse_timespan(env("TRANSFERABLE_HISTORY_SEND_EVERY"))
+
+# The duration after which outgoing transferable data is removed and the corresponding
+# object in database is marked as EXPIRED.
+FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = datetime.timedelta(
+    seconds=humanfriendly.parse_timespan(env("FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER"))
 )
 
+# How often the file_remover is run.
+FILE_REMOVER_RUN_EVERY = datetime.timedelta(seconds=humanfriendly.parse_timespan(env("FILE_REMOVER_RUN_EVERY")))
+
+# How often the file_remover polls for SIGINT.
+FILE_REMOVER_POLL_EVERY = datetime.timedelta(seconds=humanfriendly.parse_timespan(env("FILE_REMOVER_POLL_EVERY")))
+
 # Time to wait after having generated all packets
-SENDER_POLL_DATABASE_EVERY = humanfriendly.parse_timespan(
-    env("SENDER_POLL_DATABASE_EVERY")
-)
+SENDER_POLL_DATABASE_EVERY = humanfriendly.parse_timespan(env("SENDER_POLL_DATABASE_EVERY"))
 
 # The class used for implementing TransferableFiller in OnTheWirePacket generator.
 SENDER_RANGE_FILLER_CLASS = env("SENDER_RANGE_FILLER_CLASS")
@@ -175,11 +187,14 @@ DBTRIMMER_TRIM_TRANSFERABLES_AFTER = datetime.timedelta(
 )
 
 # How often the dbtrimmer is run.
-DBTRIMMER_RUN_EVERY = datetime.timedelta(
-    seconds=humanfriendly.parse_timespan(env("DBTRIMMER_RUN_EVERY"))
-)
+DBTRIMMER_RUN_EVERY = datetime.timedelta(seconds=humanfriendly.parse_timespan(env("DBTRIMMER_RUN_EVERY")))
 
 # How often the dbtrimmer polls for SIGINT.
-DBTRIMMER_POLL_EVERY = datetime.timedelta(
-    seconds=humanfriendly.parse_timespan(env("DBTRIMMER_POLL_EVERY"))
-)
+DBTRIMMER_POLL_EVERY = datetime.timedelta(seconds=humanfriendly.parse_timespan(env("DBTRIMMER_POLL_EVERY")))
+
+# For file parts if encryption is enabled
+FILE_PART_MAIN_SIZE = env.str("FILE_PART_MAIN_SIZE")
+
+# Used for encryption/decryption
+ENCRYPTION_ENABLED = env("ENCRYPTION_ENABLED")
+PUBKEY_PATH = env("PUBKEY_PATH")

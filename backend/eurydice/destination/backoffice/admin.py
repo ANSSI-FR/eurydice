@@ -1,5 +1,4 @@
 # type: ignore
-from typing import Dict
 
 from django import http
 from django.contrib import admin
@@ -30,7 +29,7 @@ class UserAdmin(auth_admin.UserAdmin):
     list_display = auth_admin.UserAdmin.list_display + ("last_access",)
 
 
-def _get_help_texts(*field_names: str) -> Dict[str, str]:
+def _get_help_texts(*field_names: str) -> dict[str, str]:
     fields = serializers.IncomingTransferableSerializer().fields
     return {name: fields[name].help_text for name in field_names}
 

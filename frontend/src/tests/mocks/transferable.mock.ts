@@ -13,8 +13,6 @@ export const transferableMock: Transferable = {
   progress: 0,
   bytesTransferred: 0,
   finishedAt: null,
-  speed: 0,
-  estimatedFinishDate: null,
 };
 
 export const txtTransferableMock: Transferable = {
@@ -30,6 +28,4 @@ export const txtTransferableMock: Transferable = {
   progress: 0,
   bytesTransferred: 0,
   finishedAt: null,
-  speed: 0,
-  estimatedFinishDate: null,
 };

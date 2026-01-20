@@ -1,4 +1,3 @@
-import logging
 from typing import Iterator
 
 from django.conf import settings
@@ -6,11 +5,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from eurydice.common.cleaning.repeated_task import RepeatedTask
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.core import models
 from eurydice.destination.storage import fs
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
 
 
 class DestinationFileRemover(RepeatedTask):
@@ -22,19 +19,15 @@ class DestinationFileRemover(RepeatedTask):
     """
 
     def __init__(self) -> None:
-        super().__init__(
-            settings.FILE_REMOVER_RUN_EVERY, settings.FILE_REMOVER_POLL_EVERY
-        )
+        super().__init__(settings.FILE_REMOVER_RUN_EVERY, settings.FILE_REMOVER_POLL_EVERY)
 
     def _ready(self) -> None:
         """Logs that the File Remover is ready before first loop."""
-        logger.info("Ready")
+        logger.info({LOG_KEY: "file_remover_destination", "status": "ready"})
 
     def _select_transferables_to_remove(self) -> Iterator[models.IncomingTransferable]:
         """List successful transferables that have expired."""
-        expiration_time = (
-            timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
-        )
+        expiration_time = timezone.now() - settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER
         qset = models.IncomingTransferable.objects.filter(
             state=models.IncomingTransferableState.SUCCESS,
             finished_at__lt=expiration_time,
@@ -61,9 +54,12 @@ class DestinationFileRemover(RepeatedTask):
             fs.delete(transferable)
 
         logger.info(
-            f"The IncomingTransferable {transferable.id} has been marked as "
-            f"{target_status.value}, "  # pytype: disable=attribute-error
-            f"and its data removed from the storage."
+            {
+                LOG_KEY: "file_remover_destination",
+                "status": target_status.value,
+                "transferable_id": str(transferable.id),
+                "message": "Transferable status updated and data removed from fs",
+            }
         )
 
     def _run(self) -> None:

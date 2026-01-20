@@ -4,7 +4,6 @@ StreamPartition Object along with the PartitionedStream iterable to generate the
 
 import io
 from typing import Callable
-from typing import Optional
 
 
 class StreamPartition:
@@ -56,9 +55,7 @@ class StreamPartition:
             self._partition_eof = True
 
         if self._initial_buffer and chunk_size != 0:
-            chunk = self._initial_buffer + self._read(
-                chunk_size - len(self._initial_buffer)
-            )
+            chunk = self._initial_buffer + self._read(chunk_size - len(self._initial_buffer))
             self._initial_buffer = b""
         else:
             chunk = self._read(chunk_size)
@@ -84,7 +81,7 @@ class PartitionedStream:
         self,
         stream: io.BufferedIOBase,
         partition_size: int,
-        on_read: Optional[Callable] = None,
+        on_read: Callable | None = None,
     ):
         self._stream = stream
         self._partition_size = partition_size

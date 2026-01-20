@@ -12,9 +12,7 @@ class User(common_models.AbstractUser):
 class UserProfile(common_models.AbstractBaseModel):
     """User profile metadata."""
 
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_profile"
-    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_profile")
     priority = models.PositiveSmallIntegerField(
         default=0,
         verbose_name=_("Priority"),

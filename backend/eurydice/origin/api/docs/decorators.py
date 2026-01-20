@@ -11,8 +11,15 @@ from rest_framework import status
 from eurydice.common.api import serializers as common_serializers
 from eurydice.common.api.docs import custom_spectacular
 from eurydice.common.api.docs import utils as docs
-from eurydice.origin.api import exceptions
-from eurydice.origin.api import serializers
+from eurydice.origin.api import exceptions, serializers
+
+
+def create_one_of_response(ref_names: list[str]) -> spectacular_utils.OpenApiResponse:
+    return spectacular_utils.OpenApiResponse(
+        description="One of the following errors occurred.",
+        response={"oneOf": [{"$ref": f"#/components/schemas/{name}"} for name in ref_names]},
+    )
+
 
 outgoing_transferable_example = {
     "id": "00002800-0000-1000-8000-00805f9b34fb",
@@ -30,8 +37,6 @@ outgoing_transferable_example = {
     "progress": 43,
     "bytes_transferred": 42,
     "finished_at": "1969-12-28T14:16:42Z",
-    "speed": 17891337,
-    "estimated_finish_date": "1969-12-28T14:16:42Z",
 }
 
 outgoing_transferable = spectacular_utils.extend_schema_view(
@@ -54,10 +59,7 @@ outgoing_transferable = spectacular_utils.extend_schema_view(
             ),
             spectacular_utils.OpenApiParameter(
                 name="name",
-                description=(
-                    "The name (or a part of the name, for instance '.txt') to "
-                    "filter on."
-                ),
+                description=("The name (or a part of the name, for instance '.txt') to filter on."),
                 type=str,
                 location=spectacular_utils.OpenApiParameter.QUERY,
             ),
@@ -97,7 +99,10 @@ outgoing_transferable = spectacular_utils.extend_schema_view(
                 response=serializers.OutgoingTransferableSerializer(many=True),
                 description=_("The list of transferables was successfully created."),
             ),
+            status.HTTP_400_BAD_REQUEST: docs.CredentialErrorResponse,
             status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
+            status.HTTP_404_NOT_FOUND: docs.CredentialErrorResponse,
+            status.HTTP_410_GONE: docs.IdErrorResponse,
         },
         examples=[
             spectacular_utils.OpenApiExample(
@@ -132,18 +137,12 @@ outgoing_transferable = spectacular_utils.extend_schema_view(
         responses={
             status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
                 response=serializers.OutgoingTransferableSerializer,
-                description=_(
-                    "Information about the transferable was successfully retrieved."
-                ),
+                description=_("Information about the transferable was successfully retrieved."),
             ),
             status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
             status.HTTP_404_NOT_FOUND: docs.NotFoundResponse,
         },
-        examples=[
-            spectacular_utils.OpenApiExample(
-                name="Transfer state", value=outgoing_transferable_example
-            )
-        ],
+        examples=[spectacular_utils.OpenApiExample(name="Transfer state", value=outgoing_transferable_example)],
         code_samples=[
             {
                 "lang": "bash",
@@ -196,32 +195,24 @@ outgoing_transferable = spectacular_utils.extend_schema_view(
                 response=serializers.OutgoingTransferableSerializer,
             ),
             status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
-            status.HTTP_400_BAD_REQUEST: docs.create_open_api_response(
-                exceptions.MissingContentTypeError
-            ),
-            # workaround to be able to have multiple responses for one status code
-            f"{status.HTTP_400_BAD_REQUEST} ": docs.create_open_api_response(
-                exceptions.InconsistentContentLengthError
-            ),
-            # workaround to be able to have multiple responses for one status code
-            f"{status.HTTP_400_BAD_REQUEST}  ": docs.create_open_api_response(
-                exceptions.InvalidContentLengthError
-            ),
-            f"{status.HTTP_400_BAD_REQUEST} ": docs.create_open_api_response(
-                exceptions.TransferableNotSuccessfullySubmittedError
+            status.HTTP_400_BAD_REQUEST: spectacular_utils.OpenApiResponse(
+                response=spectacular_utils.PolymorphicProxySerializer(
+                    component_name="Error400",
+                    serializers=[
+                        docs.create_api_exception_serializer(exceptions.MissingContentTypeError),
+                        docs.create_api_exception_serializer(exceptions.InconsistentContentLengthError),
+                        docs.create_api_exception_serializer(exceptions.InvalidContentLengthError),
+                        docs.create_api_exception_serializer(exceptions.TransferableNotSuccessfullySubmittedError),
+                    ],
+                    resource_type_field_name=None,
+                ),
             ),
             status.HTTP_413_REQUEST_ENTITY_TOO_LARGE: docs.create_open_api_response(
                 exceptions.RequestEntityTooLargeError
             ),
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE: docs.create_open_api_response(
-                drf_exceptions.UnsupportedMediaType
-            ),
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE: docs.create_open_api_response(drf_exceptions.UnsupportedMediaType),
         },
-        examples=[
-            spectacular_utils.OpenApiExample(
-                name="Transfer state", value=outgoing_transferable_example
-            )
-        ],
+        examples=[spectacular_utils.OpenApiExample(name="Transfer state", value=outgoing_transferable_example)],
         code_samples=[
             {
                 "lang": "bash",
@@ -231,9 +222,7 @@ outgoing_transferable = spectacular_utils.extend_schema_view(
             {
                 "lang": "bash",
                 "label": "Bash Function",
-                "source": (
-                    settings.DOCS_PATH / "create-transferable-func.sh"
-                ).read_text(),
+                "source": (settings.DOCS_PATH / "create-transferable-func.sh").read_text(),
             },
         ],
         tags=[_("Transferring files")],
@@ -271,7 +260,7 @@ user_association = spectacular_utils.extend_schema_view(
                 response=common_serializers.AssociationTokenSerializer,
                 examples=[
                     spectacular_utils.OpenApiExample(
-                        _("Generate association token"),
+                        _("Generate association token"),  # type: ignore[arg-type]
                         description=_(
                             "The response body will respect this format (the "
                             "expiration date is provided for information purposes only)"
@@ -311,7 +300,7 @@ metrics = spectacular_utils.extend_schema_view(
                 response=serializers.RollingMetricsSerializer,
                 examples=[
                     spectacular_utils.OpenApiExample(
-                        _("Read metrics"),
+                        _("Read metrics"),  # type: ignore[arg-type]
                         value={
                             "pending_transferables": 8,
                             "ongoing_transferables": 3,
@@ -344,7 +333,7 @@ sender_status = spectacular_utils.extend_schema_view(
                 response=serializers.StatusSerializer,
                 examples=[
                     spectacular_utils.OpenApiExample(
-                        _("Get sender status"),
+                        _("Get sender status"),  # type: ignore[arg-type]
                         value={
                             "maintenance": False,
                             "last_packet_sent_at": "2023-07-24T12:39:23.320950Z",

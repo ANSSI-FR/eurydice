@@ -1,5 +1,4 @@
-from drf_spectacular import types
-from drf_spectacular import utils
+from drf_spectacular import types, utils
 from rest_framework import serializers
 
 

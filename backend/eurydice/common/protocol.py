@@ -4,9 +4,6 @@ and destination sides.
 
 import uuid
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import msgpack
 import pydantic
@@ -32,12 +29,12 @@ class Transferable(pydantic.BaseModel):
 
     """
 
-    id: uuid.UUID  # noqa: VNE003
+    id: uuid.UUID
     name: str
     user_profile_id: uuid.UUID
-    user_provided_meta: Dict[str, str]
-    sha1: Optional[bytes]
-    size: Optional[int]
+    user_provided_meta: dict[str, str]
+    sha1: bytes | None = None
+    size: int | None = None
 
 
 class TransferableRange(pydantic.BaseModel):
@@ -76,7 +73,7 @@ class TransferableRevocation(pydantic.BaseModel):
     user_profile_id: uuid.UUID
     reason: enums.TransferableRevocationReason
     transferable_name: str
-    transferable_sha1: Optional[bytes]
+    transferable_sha1: bytes | None = None
 
 
 class HistoryEntry(pydantic.BaseModel):
@@ -99,17 +96,16 @@ class HistoryEntry(pydantic.BaseModel):
     user_profile_id: uuid.UUID
     state: enums.OutgoingTransferableState
     name: str
-    sha1: Optional[bytes]
-    user_provided_meta: Optional[Dict[str, str]]
+    sha1: bytes | None = None
+    user_provided_meta: dict[str, str] | None = None
 
     @pydantic.validator("state")
     def _check_state_is_final(
-        cls, state: enums.OutgoingTransferableState  # noqa: N805
+        cls,
+        state: enums.OutgoingTransferableState,  # noqa: N805
     ) -> enums.OutgoingTransferableState:
         if not state.is_final:
-            raise ValueError(
-                f"State must be final i.e. must be one of {state.get_final_states()}"
-            )
+            raise ValueError(f"State must be final i.e. must be one of {state.get_final_states()}")
 
         return state
 
@@ -122,7 +118,7 @@ class History(pydantic.BaseModel):
 
     """
 
-    entries: List[HistoryEntry]
+    entries: list[HistoryEntry]
 
 
 class SerializationError(RuntimeError):
@@ -150,9 +146,9 @@ class OnTheWirePacket(pydantic.BaseModel):
 
     """
 
-    transferable_ranges: List[TransferableRange] = []
-    transferable_revocations: List[TransferableRevocation] = []
-    history: Optional[History]
+    transferable_ranges: list[TransferableRange] = []
+    transferable_revocations: list[TransferableRevocation] = []
+    history: History | None = None
 
     def to_bytes(self) -> bytes:
         """Serialize the OnTheWirePacket object to bytes.
@@ -197,17 +193,15 @@ class OnTheWirePacket(pydantic.BaseModel):
             and OngoingHistory.
 
         """
-        return (
-            len(self.transferable_ranges) == len(self.transferable_revocations) == 0
-        ) and self.history is None
+        return (len(self.transferable_ranges) == len(self.transferable_revocations) == 0) and self.history is None
 
     def __str__(self) -> str:
-        self.history: Optional[History] = self.history  # pytype
+        self.history: History | None = self.history
         return (
             "OnTheWirePacket<"
             f"transferable ranges: {len(self.transferable_ranges)}, "
             f"revocations: {len(self.transferable_revocations)}, "
-            f"history entries: {len(self.history.entries) if self.history else 0 }"
+            f"history entries: {len(self.history.entries) if self.history else 0}"
             ">"
         )
 

@@ -1,7 +1,5 @@
 from collections import OrderedDict
 from typing import Any
-from typing import Dict
-from typing import List
 
 from django.utils.encoding import force_str
 from rest_framework.response import Response
@@ -13,7 +11,7 @@ from eurydice.common.api.pagination.core import EurydiceSessionPaginationWithout
 class EurydiceSessionPagination(EurydiceSessionPaginationWithoutOpenapi):
     """Custom pagination class, optimized for performances."""
 
-    def get_paginated_response(self, data: List) -> Response:
+    def get_paginated_response(self, data: list) -> Response:
         """Build the API response that will be forwarded to the user."""
 
         return Response(
@@ -29,7 +27,7 @@ class EurydiceSessionPagination(EurydiceSessionPaginationWithoutOpenapi):
             )
         )
 
-    def get_paginated_response_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def get_paginated_response_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
         """Add the custom fields to the parent's openapi description."""
 
         return {
@@ -50,17 +48,14 @@ class EurydiceSessionPagination(EurydiceSessionPaginationWithoutOpenapi):
                         "previous": {
                             "type": "string",
                             "nullable": True,
-                            "format": "byte",
                         },
                         "current": {
                             "type": "string",
                             "nullable": True,
-                            "format": "byte",
                         },
                         "next": {
                             "type": "string",
                             "nullable": True,
-                            "format": "byte",
                         },
                     },
                 },
@@ -73,7 +68,7 @@ class EurydiceSessionPagination(EurydiceSessionPaginationWithoutOpenapi):
             },
         }
 
-    def get_schema_operation_parameters(self, _: APIView) -> List[Dict[str, Any]]:
+    def get_schema_operation_parameters(self, _: APIView) -> list[dict[str, Any]]:
         """Add the custom query parameters to the parent's openapi description."""
 
         return [
@@ -89,14 +84,14 @@ class EurydiceSessionPagination(EurydiceSessionPaginationWithoutOpenapi):
                 "required": False,
                 "in": "query",
                 "description": force_str(self.page_query_description),
-                "schema": {"type": "string", "format": "byte"},
+                "schema": {"type": "string"},
             },
             {
                 "name": self.from_query_param,
                 "required": False,
                 "in": "query",
                 "description": force_str(self.from_query_description),
-                "schema": {"type": "string", "format": "byte"},
+                "schema": {"type": "string"},
             },
             {
                 "name": self.delta_query_param,

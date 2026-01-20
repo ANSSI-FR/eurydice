@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 describe('Api Client', () => {
   it('has response interceptors', () => {
-    vi.stubEnv('VITE_USE_USER_REMOTE_INTERCEPTOR', 'true');
     const spyOnInterceptor = vi
       .spyOn(responseInterceptor, 'snakeCaseToCamelCaseInterceptor')
       .mockImplementation(vi.fn());
@@ -41,39 +40,13 @@ describe('Api Client', () => {
     const spyOnInterceptor = vi
       .spyOn(requestInterceptor, 'camelCaseToSnakeCaseInterceptor')
       .mockImplementation(vi.fn());
-    const spyOnRemoteUserInterceptor = vi
-      .spyOn(requestInterceptor, 'remoteUserHeaderForLoginRoute')
-      .mockImplementation(vi.fn());
     const requestInterceptorHandler = (apiClient.interceptors.request as any).handlers;
-    expect(requestInterceptorHandler).toHaveLength(2);
-
-    // The first should be Remote-User interceptor
-    expect(requestInterceptorHandler[0].fulfilled).toBeDefined();
-    expect(requestInterceptorHandler[0].rejected).toBeUndefined();
-    requestInterceptorHandler[0].fulfilled();
-    expect(spyOnRemoteUserInterceptor).toBeCalled();
-
-    expect(requestInterceptorHandler[1].fulfilled).toBeDefined();
-    expect(requestInterceptorHandler[1].rejected).toBeUndefined();
-    requestInterceptorHandler[1].fulfilled();
-    expect(spyOnInterceptor).toBeCalled();
-  });
-
-  it('does not use Remote-User Header interceptor if it is deactivated', () => {
-    vi.stubEnv('VITE_USE_USER_REMOTE_INTERCEPTOR', 'false');
-    const apiClientInitialized = initApiClient();
-    const spyOnRemoteUserInterceptor = vi
-      .spyOn(requestInterceptor, 'remoteUserHeaderForLoginRoute')
-      .mockImplementation(vi.fn());
-    vi.spyOn(requestInterceptor, 'camelCaseToSnakeCaseInterceptor').mockImplementation(vi.fn());
-    const requestInterceptorHandler = (apiClientInitialized.interceptors.request as any).handlers;
     expect(requestInterceptorHandler).toHaveLength(1);
 
-    // The first should be Remote-User interceptor
     expect(requestInterceptorHandler[0].fulfilled).toBeDefined();
     expect(requestInterceptorHandler[0].rejected).toBeUndefined();
     requestInterceptorHandler[0].fulfilled();
-    expect(spyOnRemoteUserInterceptor).not.toBeCalled();
+    expect(spyOnInterceptor).toBeCalled();
   });
 
   it('configures through env variables', () => {

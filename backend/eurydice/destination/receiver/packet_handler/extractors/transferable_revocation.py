@@ -1,12 +1,9 @@
-import logging
-
 from django.utils import timezone
 
 from eurydice.common import protocol
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.core import models
 from eurydice.destination.receiver.packet_handler.extractors import base
-
-logger = logging.getLogger(__name__)
 
 
 def _create_revoked_transferable(revocation: protocol.TransferableRevocation) -> None:
@@ -15,9 +12,7 @@ def _create_revoked_transferable(revocation: protocol.TransferableRevocation) ->
     If a UserProfile corresponding to the `user_profile_id` in the revocation does not
     exist, it will be created.
     """
-    user_profile, _ = models.UserProfile.objects.get_or_create(
-        associated_user_profile_id=revocation.user_profile_id
-    )
+    user_profile, _ = models.UserProfile.objects.get_or_create(associated_user_profile_id=revocation.user_profile_id)
 
     now = timezone.now()
     models.IncomingTransferable.objects.create(
@@ -49,27 +44,25 @@ def _process_revocation(revocation: protocol.TransferableRevocation) -> None:
 
     """
     try:
-        transferable = models.IncomingTransferable.objects.get(
-            id=revocation.transferable_id
-        )
+        transferable = models.IncomingTransferable.objects.get(id=revocation.transferable_id)
     except models.IncomingTransferable.DoesNotExist:
         _create_revoked_transferable(revocation)
     else:
         if transferable.state != models.IncomingTransferableState.ONGOING:
             logger.error(
-                f"The IncomingTransferable {transferable.id} cannot be revoked as "
-                f"its state is {transferable.state}. "
-                f"Only {models.IncomingTransferableState.ONGOING.value} transferables "  # pytype: disable=attribute-error  # noqa: E501
-                f"can be revoked."
+                {
+                    LOG_KEY: "transferable_cannot_be_revoked",
+                    "transferable_id": str(transferable.id),
+                    "transferable_state": transferable.state,
+                    "message": f"Only {models.IncomingTransferableState.ONGOING.value} transferables can be revoked.",
+                }
             )
+
             return
 
         _revoke_transferable(transferable)
 
-    logger.info(
-        f"The IncomingTransferable {revocation.transferable_id} has been marked as "
-        f"REVOKED and its data removed from the storage (if it had any)."
-    )
+    logger.info({LOG_KEY: "transferable_revoked", "transferable_id": str(revocation.transferable_id)})
 
 
 class TransferableRevocationExtractor(base.OnTheWirePacketExtractor):
@@ -87,8 +80,14 @@ class TransferableRevocationExtractor(base.OnTheWirePacketExtractor):
         for revocation in packet.transferable_revocations:
             try:
                 _process_revocation(revocation)
-            except Exception:
-                logger.exception(f"Cannot process revocation '{revocation}'.")
+            except Exception as error:
+                logger.exception(
+                    {
+                        LOG_KEY: "failed_to_revoke",
+                        "transferable_id": str(revocation.transferable_id),
+                        "error": str(error),
+                    }
+                )
 
 
 __all__ = ("TransferableRevocationExtractor",)

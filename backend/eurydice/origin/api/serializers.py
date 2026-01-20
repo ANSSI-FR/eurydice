@@ -26,17 +26,11 @@ class RollingMetricsSerializer(drf_serializers.Serializer):
         min_value=0,
     )
     recent_successes = drf_serializers.IntegerField(
-        help_text=_(
-            "The amount of transferables successfully transferred within the "
-            "last few minutes"
-        ),
+        help_text=_("The amount of transferables successfully transferred within the last few minutes"),
         min_value=0,
     )
     recent_errors = drf_serializers.IntegerField(
-        help_text=_(
-            "The amount of transferables that failed to be transferred within the "
-            "last few minutes"
-        ),
+        help_text=_("The amount of transferables that failed to be transferred within the last few minutes"),
         min_value=0,
     )
     queue_size = drf_serializers.IntegerField(
@@ -57,10 +51,8 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
     )
 
     progress = drf_serializers.IntegerField(
-        help_text=_(
-            "The percentage of bytes for this Transferable that have been "
-            "sent through the network diode"
-        ),
+        help_text=_("The percentage of bytes for this Transferable that have been sent through the network diode"),
+        allow_null=True,
         min_value=0,
         max_value=100,
     )
@@ -76,12 +68,6 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
         max_value=settings.TRANSFERABLE_MAX_SIZE,
     )
 
-    speed = drf_serializers.IntegerField(
-        help_text=_("The transfer speed through the network diode in bytes per second"),
-        min_value=0,
-        allow_null=True,
-    )
-
     sha1 = serializers.BytesAsHexadecimalField(
         # example value
         default=b"7\xf0+\xcbK\xaa\x83\xeePr|\xfe\xc3n\xdf>\xfa\xe2S<",
@@ -91,14 +77,6 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
 
     finished_at = drf_serializers.DateTimeField(
         help_text=_("Date at which this transferable was fully sent through the diode"),
-        allow_null=True,
-    )
-
-    estimated_finish_date = drf_serializers.DateTimeField(
-        help_text=_(
-            "Date at which this transferable is expected to be fully"
-            " sent through the diode."
-        ),
         allow_null=True,
     )
 
@@ -117,8 +95,6 @@ class OutgoingTransferableSerializer(drf_serializers.ModelSerializer):
             "progress",
             "bytes_transferred",
             "finished_at",
-            "speed",
-            "estimated_finish_date",
         )
 
 

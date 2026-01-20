@@ -1,19 +1,14 @@
 import datetime
-import logging
 
-import humanfriendly as hf
 from django.conf import settings
 from django.db import connections
 from django.utils import timezone
 
 from eurydice.common import protocol
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.common.utils import signals
 from eurydice.destination.core.models import LastPacketReceivedAt
-from eurydice.destination.receiver import packet_handler
-from eurydice.destination.receiver import packet_receiver
-
-logging.config.dictConfig(settings.LOGGING)  # type: ignore
-logger = logging.getLogger(__name__)
+from eurydice.destination.receiver import packet_handler, packet_receiver
 
 
 class _PacketLogger:
@@ -25,9 +20,17 @@ class _PacketLogger:
     def log_received(self, packet: protocol.OnTheWirePacket) -> None:
         """Log the reception of a packet."""
         if packet.is_empty():
-            logger.info("Heartbeat received")
+            logger.info({LOG_KEY: "heartbeat_received"})
         else:
-            logger.info(f"{packet} received")
+            logger.info(
+                {
+                    LOG_KEY: "heartbeat_received",
+                    "message": "OnTheWirePacket received.",
+                    "transferable_ranges": len(packet.transferable_ranges),
+                    "revocations": len(packet.transferable_revocations),
+                    "history_entries": len(packet.history.entries) if packet.history else "0",
+                }
+            )
 
         self._last_log_at = timezone.now()
 
@@ -39,9 +42,13 @@ class _PacketLogger:
 
         if now - self._last_log_at >= settings.EXPECT_PACKET_EVERY:
             logger.error(
-                "No data packet or heartbeat received in the last "
-                f"{hf.format_timespan(settings.EXPECT_PACKET_EVERY)}. "
-                "Check the health of the sender on the origin side."
+                {
+                    LOG_KEY: "heartbeat_not_received",
+                    "message": "No data packet or heartbeat received in the last "
+                    f"{settings.EXPECT_PACKET_EVERY.seconds}. "
+                    "Check the health of the sender on the origin side.",
+                    "EXPECT_PACKET_EVERY": f"{settings.EXPECT_PACKET_EVERY.seconds} seconds",
+                }
             )
 
             self._last_log_at = now
@@ -57,7 +64,7 @@ def _loop() -> None:
         keep_running = signals.BooleanCondition()
         packet_logger = _PacketLogger()
 
-        logger.info("Ready to receive OnTheWirePackets")
+        logger.info({LOG_KEY: "receiver_ready", "message": "Ready to receive OnTheWirePackets"})
 
         while True:
             try:
@@ -68,20 +75,31 @@ def _loop() -> None:
                         break
 
                     packet_logger.log_not_received()
-                except packet_receiver.ReceptionError:
-                    logger.exception("Error on packet reception.")
+                except packet_receiver.ReceptionError as error:
+                    logger.error(
+                        {
+                            LOG_KEY: "packet_reception_error",
+                            "message": "Error on packet reception.",
+                            "error": str(error),
+                        }
+                    )
                 else:
                     LastPacketReceivedAt.update()
                     packet_logger.log_received(packet)
                     handler.handle(packet)
-            except Exception:
-                logger.exception(
-                    "An unexpected error occurred while processing an OnTheWirePacket"
+            except Exception as error:
+                logger.error(
+                    {
+                        LOG_KEY: "on_the_wire_exception",
+                        "message": "An unexpected error occurred while processing an OnTheWirePacket",
+                        "error": str(error),
+                    }
                 )
 
 
 def run() -> None:  # pragma: no cover
     """Entrypoint for the receiver."""
+
     try:
         _loop()
     finally:

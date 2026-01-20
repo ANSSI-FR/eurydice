@@ -1,7 +1,4 @@
 from datetime import datetime
-from typing import Dict
-from typing import Optional
-from typing import Union
 
 from rest_framework.generics import RetrieveAPIView
 
@@ -30,7 +27,7 @@ class StatusView(RetrieveAPIView):
 
     serializer_class = StatusSerializer
 
-    def get_object(self) -> Dict[str, Union[bool, Optional[datetime]]]:
+    def get_object(self) -> dict[str, bool | datetime | None]:
         """Get sender status data."""
         maintenance = models.Maintenance.is_maintenance()
         last_packet_sent_at = models.LastPacketSentAt.get_timestamp()

@@ -24,18 +24,13 @@ def test_transferable_revocation_filler_fill_success():
 
     assert len(packet.transferable_revocations) == 1
     assert (
-        packet.transferable_revocations[0].transferable_id
-        == expected_transferable_revocation.outgoing_transferable.id
+        packet.transferable_revocations[0].transferable_id == expected_transferable_revocation.outgoing_transferable.id
     )
     assert (
-        models.TransferableRevocation.objects.get(
-            id=expected_transferable_revocation.id
-        ).transfer_state
+        models.TransferableRevocation.objects.get(id=expected_transferable_revocation.id).transfer_state
         == enums.TransferableRangeTransferState.TRANSFERRED
     )
     assert (
-        models.TransferableRevocation.objects.get(
-            id=other_transferable_revocation.id
-        ).transfer_state
+        models.TransferableRevocation.objects.get(id=other_transferable_revocation.id).transfer_state
         == enums.TransferableRangeTransferState.TRANSFERRED
     )

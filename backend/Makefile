@@ -43,6 +43,10 @@ run-destination-api: ## Run the eurydice destination API production server.
 run-sender: ## Run the eurydice sender.
 	python -m eurydice.origin.sender
 
+.PHONY: run-origin-file-remover
+run-origin-file-remover: ## Run the eurydice origin file_remover cleaning tool.
+	python -m eurydice.origin.cleaning.file_remover
+
 .PHONY: run-receiver
 run-receiver: ## Run the eurydice receiver.
 	python -m eurydice.destination.receiver
@@ -71,10 +75,18 @@ user: ## Create Django user with an associated token.
 migrations: ## Create new migrations based on the changes made to the models.
 	python manage.py makemigrations
 
+.PHONY: migrations-check-origin
+migrations-check-origin: ## Check that models are not changed without the appropriate migrations.
+	USER_ASSOCIATION_TOKEN_SECRET_KEY="" DJANGO_ENV=TEST EURYDICE_API=origin python manage.py makemigrations --check
+
+.PHONY: migrations-check-destination
+migrations-check-destination: ## Check that models are not changed without the appropriate migrations.
+	USER_ASSOCIATION_TOKEN_SECRET_KEY="" DJANGO_ENV=TEST EURYDICE_API=destination python manage.py makemigrations --check
+
 .PHONY: migrations-check
 migrations-check: ## Check that models are not changed without the appropriate migrations.
-	USER_ASSOCIATION_TOKEN_SECRET_KEY="" DJANGO_ENV=TEST EURYDICE_API=origin python manage.py makemigrations --check
-	USER_ASSOCIATION_TOKEN_SECRET_KEY="" DJANGO_ENV=TEST EURYDICE_API=destination python manage.py makemigrations --check
+	$(MAKE) migrations-check-origin
+	$(MAKE) migrations-check-destination
 
 .PHONY: migrate
 migrate: ## Apply migrations.
@@ -91,31 +103,19 @@ collectstatic: ## Collect static files.
 # Static Analysis & Tests
 # ------------------------------------------------------------------------------
 
-# Overwrite files in place to ensure file flags and mode are unchanged when isort is run
-# inside a Docker container.
-.PHONY: isort
-isort: ## Format imports.
-	isort --overwrite-in-place $(CODE_DIRS)
-
-.PHONY: black
-black: ## Format code.
-	black $(CODE_DIRS)
+.PHONY: ruff
+ruff: ## Format code with ruff
+	uv run ruff check . --fix
+	uv run ruff format .
 
 .PHONY: format
 format: ## Format code and imports.
-	$(MAKE) isort black
+	$(MAKE) ruff
 
-.PHONY: black-check
-black-check: ## Check that the code is properly formatted.
-	black --check $(CODE_DIRS)
-
-.PHONY: isort-check
-isort-check: ## Check that the imports are properly sorted.
-	isort --check-only $(CODE_DIRS)
-
-.PHONY: flake8
-flake8: ## Check PEP8, PyFlakes and circular complexity of the code.
-	flakeheaven lint $(CODE_DIRS)
+.PHONY: ruff-check
+ruff-check:	## Check that the code is linted using ruff
+	uv run ruff check .
+	uv run ruff format --check .
 
 .PHONY: mypy
 mypy: ## Run MyPy static type check across the code.
@@ -126,30 +126,19 @@ mypy: ## Run MyPy static type check across the code.
 		DJANGO_ENV=TEST \
 		$(DUMMY_DB_ENV_VARIABLES) \
 		$(DUMMY_LIDIS_ENV_VARIABLES) \
-		mypy --check eurydice/$$dir \
+		uv run mypy --check eurydice/$$dir \
 		--cache-dir=/dev/null \
 		|| EURYDICE_MYPY_ERROR=1; \
 	done;\
 	if [ "$$EURYDICE_MYPY_ERROR" = '1' ] ; then exit 1; fi
 
-.PHONY: pytype
-pytype: ## Run Pytype static type check across the code.
-	pytype $(CODE_DIRS) --jobs $$(nproc)
-
 .PHONY: bandit
 bandit: ## Run a security oriented static analysis of the code.
-	bandit -c pyproject.toml -r .
-
-.PHONY: safety
-safety: ## Check installed dependencies for known security vulnerabilities.
-	safety \
-	--disable-telemetry \
-	check \
-	--full-report
+	uv run bandit -c pyproject.toml -r .
 
 .PHONY: checks
-checks: ## Runs all the static analysis tools (Flake8, MyPy, Bandit and Safety) at once.
-	$(MAKE) flake8 mypy pytype bandit black-check isort-check safety
+checks: ## Runs all the static analysis tools (Ruff, MyPy, Bandit) at once.
+	$(MAKE) ruff-check mypy bandit
 
 .PHONY: tests
 tests: ## Run tests, iterate over test modules to configure DJANGO_SETTINGS_MODULE, to fail correctly, this should be one command.
@@ -178,7 +167,7 @@ clean: ## clean environments & dependencies
 	rm -rf .venv venv
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
-	rm -rf .mypy_cache .pytest_cache .ruff_cache .pytype .hypothesis coverage coverage.xml .report
+	rm -rf .mypy_cache .pytest_cache .ruff_cache .hypothesis coverage coverage.xml .report
 
 # ------------------------------------------------------------------------------
 # Help

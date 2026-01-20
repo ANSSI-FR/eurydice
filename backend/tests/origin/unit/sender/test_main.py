@@ -8,9 +8,8 @@ from django.utils import timezone
 
 from eurydice.common import protocol
 from eurydice.common.utils import signals
-from eurydice.origin.sender import main
-from eurydice.origin.sender import packet_generator
-from eurydice.origin.sender import packet_sender
+from eurydice.origin.sender import main, packet_generator, packet_sender
+from tests.utils import process_logs
 
 
 @mock.patch.object(signals.BooleanCondition, "__bool__")
@@ -47,13 +46,19 @@ def test__main_running(
     main._loop()
 
     patched_send.assert_has_calls(calls)
-    assert caplog.messages[0] == "Ready to send OnTheWirePackets"
-    assert caplog.messages[1] == "Sending heartbeat"
-    assert caplog.messages[2] == (
-        "Sending OnTheWirePacket<transferable ranges: 0, revocations: 0, "
-        "history entries: 0>"
-    )
-    assert len(caplog.messages) == 3
+
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {"log_key": "sender_ready", "message": "Ready to send OnTheWirePackets"},
+        {"log_key": "packet_stats", "message": "sending heartbeat"},
+        {
+            "log_key": "packet_stats",
+            "message": "Sending OnTheWirePacket<transferable ranges: 0, revocations: 0, history entries: 0>",
+        },
+    ]
+
+    assert len(log_messages) == 3
 
 
 @mock.patch.object(signals.BooleanCondition, "__bool__")
@@ -74,17 +79,11 @@ def test__heartbeat_should_be_sent_no_last_packet():
     assert main._heartbeat_should_be_sent(None) is True
 
 
-@pytest.mark.parametrize(
-    ("time_delta_in_seconds", "expected_return"), [(5, False), (10, True), (11, True)]
-)
-def test__heartbeat_should_be_sent(
-    time_delta_in_seconds: int, expected_return: bool, settings: Settings
-):
+@pytest.mark.parametrize(("time_delta_in_seconds", "expected_return"), [(5, False), (10, True), (11, True)])
+def test__heartbeat_should_be_sent(time_delta_in_seconds: int, expected_return: bool, settings: Settings):
     settings.HEARTBEAT_SEND_EVERY = 10
 
-    last_packet_sent_at = timezone.now() - datetime.timedelta(
-        seconds=time_delta_in_seconds
-    )
+    last_packet_sent_at = timezone.now() - datetime.timedelta(seconds=time_delta_in_seconds)
 
     assert main._heartbeat_should_be_sent(last_packet_sent_at) is expected_return
 
@@ -94,10 +93,14 @@ def test___log_packet_stats(caplog: pytest.LogCaptureFixture):
     packet = protocol.OnTheWirePacket(history=protocol.History(entries=[]))
     main._log_packet_stats(packet)
 
+    log_messages = process_logs(caplog.messages)
+
     assert [
-        "Sending OnTheWirePacket<transferable ranges: 0, revocations: 0, "
-        "history entries: 0>"
-    ] == caplog.messages
+        {
+            "log_key": "packet_stats",
+            "message": "Sending OnTheWirePacket<transferable ranges: 0, revocations: 0, history entries: 0>",
+        }
+    ] == log_messages
 
 
 def test___log_packet_stats_empty_packet(caplog: pytest.LogCaptureFixture):
@@ -105,4 +108,6 @@ def test___log_packet_stats_empty_packet(caplog: pytest.LogCaptureFixture):
     packet = protocol.OnTheWirePacket()
     main._log_packet_stats(packet)
 
-    assert ["Sending heartbeat"] == caplog.messages
+    log_messages = process_logs(caplog.messages)
+
+    assert [{"log_key": "packet_stats", "message": "sending heartbeat"}] == log_messages

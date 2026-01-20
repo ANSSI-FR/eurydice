@@ -19,9 +19,7 @@ def user_login_sets_cookies_with_default_values(api_client: test.APIClient):
     url = django.urls.reverse("user-login")
 
     response = api_client.get(url, HTTP_X_REMOTE_USER="billmurray")
-
-    assert response.status_code == 204
-    assert response.data is None
+    assert response.status_code == 302
 
     csrf_cookie = response.cookies["eurydice_csrftoken"]
     session_cookie = response.cookies["eurydice_sessionid"]
@@ -55,9 +53,7 @@ def user_login_basic_auth(api_client: test.APIClient, user: AbstractUser):
     response = api_client.get(url)
     assert response.status_code == 401
 
-    valid_credentials = base64.b64encode(
-        bytes(f"{username}:{password}", "utf-8")
-    ).decode("utf-8")
+    valid_credentials = base64.b64encode(bytes(f"{username}:{password}", "utf-8")).decode("utf-8")
 
     api_client.credentials(HTTP_AUTHORIZATION=f"Basic {valid_credentials}")
     response = api_client.get(
@@ -68,16 +64,14 @@ def user_login_basic_auth(api_client: test.APIClient, user: AbstractUser):
 
 
 def user_login_removes_expired_sessions(api_client: test.APIClient, faker: Faker):
-    expire_date = faker.date_time_this_decade(
-        before_now=True, tzinfo=django.utils.timezone.get_current_timezone()
-    )
+    expire_date = faker.date_time_this_decade(before_now=True, tzinfo=django.utils.timezone.get_current_timezone())
     expired_session = SessionFactory.create(expire_date=expire_date)
 
     url = django.urls.reverse("user-login")
 
     response = api_client.get(url, HTTP_X_REMOTE_USER="billmurray")
 
-    assert response.status_code == 204
+    assert response.status_code == 302
 
     with pytest.raises(Session.DoesNotExist):
         Session.objects.get(session_key=expired_session.session_key)

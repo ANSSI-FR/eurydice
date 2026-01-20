@@ -14,9 +14,7 @@ class Test_SenderThread:  # noqa: N801
         thread.run()
         assert qu.empty()
 
-    def test_run_log_error(
-        self, settings: django.conf.Settings, caplog: pytest.LogCaptureFixture
-    ):
+    def test_run_log_error(self, settings: django.conf.Settings, caplog: pytest.LogCaptureFixture):
         settings.LIDIS_HOST, settings.LIDIS_PORT = "localhost", 1
         qu = queue.Queue(maxsize=2)
         thread = packet_sender._SenderThread(qu)

@@ -36,11 +36,9 @@ class TransferableRange(common_models.AbstractBaseModel):
     finished_at: models.DateTimeField = models.DateTimeField(
         null=True,
         verbose_name=_("Transfer finish date"),
-        help_text=_(
-            "A timestamp indicating the end of the transfer of the Transferable"
-        ),
+        help_text=_("A timestamp indicating the end of the transfer of the Transferable"),
     )
-    outgoing_transferable: models.ForeignKey = models.ForeignKey(
+    outgoing_transferable = models.ForeignKey(
         "eurydice_origin_core.OutgoingTransferable",
         on_delete=models.CASCADE,
         related_name="transferable_ranges",
@@ -57,17 +55,12 @@ class TransferableRange(common_models.AbstractBaseModel):
         if not self.outgoing_transferable.submission_succeeded:
             return False
 
-        if (
-            self.outgoing_transferable.size is not None
-            and self.outgoing_transferable.size == self.size
-        ):
+        if self.outgoing_transferable.size is not None and self.outgoing_transferable.size == self.size:
             return True
 
         return (
-            type(self)
-            ._default_manager.filter(
-                outgoing_transferable__id=self.outgoing_transferable.id  # type: ignore
-            )
+            type(self)  # type: ignore[union-attr]
+            ._default_manager.filter(outgoing_transferable__id=self.outgoing_transferable.id)
             .order_by("byte_offset")
             .only("id")
             .last()
@@ -75,9 +68,7 @@ class TransferableRange(common_models.AbstractBaseModel):
             == self.id
         )
 
-    def _mark_as_finished(
-        self, transfer_state: enums.TransferableRangeTransferState, save: bool
-    ) -> None:
+    def _mark_as_finished(self, transfer_state: enums.TransferableRangeTransferState, save: bool) -> None:
         """
         Mark the TransferableRange as `transfer_state` and set its finish date
         to now.
@@ -98,27 +89,21 @@ class TransferableRange(common_models.AbstractBaseModel):
         Mark the current TransferableRange as TRANSFERRED in the DB and set
         its finish date to now.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
-            enums.TransferableRangeTransferState.TRANSFERRED, save
-        )
+        self._mark_as_finished(enums.TransferableRangeTransferState.TRANSFERRED, save)
 
     def mark_as_canceled(self, save: bool = True) -> None:
         """
         Mark the current TransferableRange as REVOKED in the DB and set
         its finish date to now.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
-            enums.TransferableRangeTransferState.CANCELED, save
-        )
+        self._mark_as_finished(enums.TransferableRangeTransferState.CANCELED, save)
 
     def mark_as_error(self, save: bool = True) -> None:
         """
         Mark the current TransferableRange as ERROR in the DB and set
         its finish date to now.
         """
-        self._mark_as_finished(  # pytype: disable=wrong-arg-types
-            enums.TransferableRangeTransferState.ERROR, save
-        )
+        self._mark_as_finished(enums.TransferableRangeTransferState.ERROR, save)
 
     class Meta:
         db_table = "eurydice_transferable_ranges"

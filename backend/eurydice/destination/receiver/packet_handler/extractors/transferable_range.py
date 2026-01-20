@@ -1,6 +1,6 @@
 import hashlib
-import logging
-from typing import Tuple
+import os
+from pathlib import Path
 
 import humanfriendly as hf
 
@@ -9,8 +9,9 @@ import eurydice.destination.core.models as models
 import eurydice.destination.receiver.packet_handler.extractors.base as base_extractor
 import eurydice.destination.receiver.transferable_ingestion_fs as transferable_ingestion_fs  # noqa: E501
 import eurydice.destination.utils.rehash as rehash
-
-logger = logging.getLogger(__name__)
+from eurydice.common.logging.logger import LOG_KEY, logger
+from eurydice.destination.receiver.utils.decryption_tools import DecryptionTools
+from eurydice.destination.storage import fs
 
 
 class TransferableRangeExtractionError(RuntimeError):
@@ -158,8 +159,12 @@ def _assert_transferable_size_is_consistent(
 
     if transferable.size is not None and transferable.size != bytes_expected:
         logger.warning(
-            f"IncomingTransferable {transferable.id} was initially announced with "
-            f"size {transferable.size}o but final size is {bytes_received}o."
+            {
+                LOG_KEY: "incoming_transferable_size_mismatch",
+                "transferable_id": str(transferable.id),
+                "expected_size": transferable.size,
+                "received_size": bytes_expected,
+            }
         )
 
 
@@ -195,7 +200,7 @@ def _assert_transferable_sha1_is_consistent(
 def _extract_data(
     transferable_range: protocol.TransferableRange,
     transferable: models.IncomingTransferable,
-) -> Tuple[bytes, "hashlib._Hash"]:
+) -> tuple[bytes, "hashlib._Hash"]:
     """
     Given a TransferableRange and its associated Transferable database entry, returns
     the TransferableRange's data and an updated version of its SHA1 hash.
@@ -250,15 +255,18 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
         transferable_range: the transferable range to process.
 
     """
-    logger.info(f"Extracting data for {transferable_range.transferable.id}")
+    logger.info({LOG_KEY: "extract_transferable_range", "transferable_id": str(transferable_range.transferable.id)})
 
     transferable = _get_or_create_transferable(transferable_range)
 
     if transferable.state == models.IncomingTransferableState.ERROR:
         logger.info(
-            f"IncomingTransferable {transferable.id} has state "
-            f"{models.IncomingTransferableState.ERROR.value}. "  # pytype: disable=attribute-error  # noqa: E501
-            "Ignoring the associated transferable range received."
+            {
+                LOG_KEY: "extract_transferable_range",
+                "transferable_id": str(transferable_range.transferable.id),
+                "state": models.IncomingTransferableState.ERROR.value,
+                "message": "Ignoring the associated transferable range received.",
+            }
         )
         return
 
@@ -271,19 +279,90 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
         transferable_ingestion_fs.ingest(transferable, to_ingest)
 
         logger.info(
-            f"Successfully extracted and ingested TransferableRange for "
-            f"{transferable_range.transferable.id}"
+            {
+                LOG_KEY: "extract_transferable_range",
+                "transferable_id": str(transferable_range.transferable.id),
+                "message": "Successfully extracted and ingested TransferableRange",
+            }
         )
 
         if transferable.state == models.IncomingTransferableState.SUCCESS:
-            logger.info(f"IncomingTransferable {transferable.id} fully received")
+            if transferable.user_provided_meta.get("Metadata-Encrypted") == "true":
+                _decrypt_transferable(transferable)
+            logger.info(
+                {
+                    LOG_KEY: "extract_transferable_range",
+                    "transferable_id": str(transferable_range.transferable.id),
+                    "state": models.IncomingTransferableState.SUCCESS.value,
+                    "message": "IncomingTransferable fully received",
+                }
+            )
 
-    except Exception:
+    except Exception as error:
         transferable_ingestion_fs.abort_ingestion(transferable)
-        logger.exception(
-            f"Encountered an error when trying to extract and ingest "
-            f"transferable range for transferable {transferable.id}"
-            f"from an OnTheWirePacket."
+        logger.error(
+            {
+                LOG_KEY: "extract_transferable_range_failure",
+                "transferable_id": str(transferable_range.transferable.id),
+                "message": "Encountered an error when trying to extract and ingest "
+                "transferable range from an OnTheWirePacket.",
+                "error": str(error),
+            }
+        )
+
+
+def _decrypt_transferable(transferable: models.IncomingTransferable) -> None:
+    logger.info(
+        {
+            LOG_KEY: "decryption_start",
+            "transferable_id": str(transferable.id),
+            "message": f"Start decrypting transferable id {transferable.id}",
+        }
+    )
+    file_path = fs.file_path(transferable)
+
+    if os.path.getsize(file_path) != int(transferable.user_provided_meta["Metadata-Encrypted-Size"]):
+        logger.error(
+            {
+                LOG_KEY: "decryption_error",
+                "transferable_id": str(transferable.id),
+                "message": "Ingested file does not match expected size, aborting",
+            }
+        )
+        transferable_ingestion_fs.abort_ingestion(transferable)
+    else:
+        decrypt_tools = DecryptionTools(transferable)
+        chunk_size = decrypt_tools.chunk_size
+        decrypted_file_path = Path(f"{file_path}.tmp")
+        with (
+            open(file_path, "rb") as encrypted_transferable_file,
+            open(decrypted_file_path, "ab+") as decrypted_transferable_file,
+        ):
+            for chunk_i in range(decrypt_tools.nb_chunks):
+                if chunk_i == decrypt_tools.nb_chunks - 1:
+                    chunk_size = decrypt_tools.last_chunk_size
+                chunk = encrypted_transferable_file.read(chunk_size)
+                if len(chunk) != chunk_size:
+                    raise RuntimeError(
+                        "Encrypted file was fully read before decryption finished. Error in number or size of chunks."
+                    )
+                decrypted_chunk = decrypt_tools.decrypt_chunk(chunk)
+                decrypted_transferable_file.write(decrypted_chunk)
+
+            # Verify if stream is empty now
+            if not encrypted_transferable_file.read(chunk_size) == b"":
+                raise RuntimeError("Encrypted file size mismatches number and sizes of chunks. File isn't fully read")
+
+        # Replace file with unencrypted file
+        file_path.write_bytes(decrypted_file_path.read_bytes())
+        decrypted_file_path.unlink()
+
+        logger.info(
+            {
+                LOG_KEY: "decryption_success",
+                "transferable_id": str(transferable.id),
+                "message": "Finished decryption of transferable",
+            }
         )
 
 

@@ -2,7 +2,8 @@ x-filebeat-common: &filebeat-common
   environment:
     ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
     ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS:?}
-  image: elastic/filebeat:${ELK_VERSION:?}
+    ELASTICSEARCH_INDEX_NAME: ${ELASTICSEARCH_INDEX_NAME}
+  image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elastic/filebeat:${ELK_VERSION:?}
   user: ${PUID}:${PGID}
   networks:
     - eurydice
@@ -38,7 +39,8 @@ services:
       - ${PYTHON_LOGS_DIR:?}/backend-origin:/logs/origin/backend:ro
       - ${PYTHON_LOGS_DIR:?}/sender:/logs/origin/sender:ro
       - ${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/logs/origin/dbtrimmer:ro
-      - ${FILEBEAT_LOGS_DIR:?}/origin:/usr/share/filebeat/logs:ro
+      - ${PYTHON_LOGS_DIR:?}/file-remover-origin:/logs/origin/file-remover:ro
+      - ${FILEBEAT_LOGS_DIR:?}/origin:/usr/share/filebeat/logs
       - ${FILEBEAT_DATA_DIR:?}/origin:/usr/share/filebeat/data
 
   filebeat-destination:
@@ -50,58 +52,59 @@ services:
       - ${PYTHON_LOGS_DIR:?}/backend-destination:/logs/destination/backend:ro
       - ${PYTHON_LOGS_DIR:?}/receiver:/logs/destination/receiver:ro
       - ${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro
-      - ${FILEBEAT_LOGS_DIR:?}/destination:/usr/share/filebeat/logs:ro
+      - ${PYTHON_LOGS_DIR:?}/file-remover-destination:/logs/destination/file-remover:ro
+      - ${FILEBEAT_LOGS_DIR:?}/destination:/usr/share/filebeat/logs
       - ${FILEBEAT_DATA_DIR:?}/destination:/usr/share/filebeat/data
 
   elasticsearch:
-    image: elasticsearch:${ELK_VERSION}
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elasticsearch:${ELK_VERSION}
     networks:
       - eurydice
     environment:
       discovery.type: single-node
+      xpack.security.enabled: false
+      bootstrap.memory_lock: true
       ES_JAVA_OPTS: -Xms512m -Xmx512m
+      xpack.profiling.enabled: false
+      xpack.monitoring.templates.enabled: false
+      xpack.monitoring.elasticsearch.collection.enabled: false
+      ingest.geoip.downloader.enabled: false
     volumes:
       - elastic:/usr/share/elasticsearch/data"
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s; wait $$! || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=30s; wait $$! || exit 1" ]
       interval: 5s
       timeout: 40s
       retries: 5
       start_period: 30s
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.elasticsearch.rule: Host(`elasticsearch.localhost`)
 
   kibana:
-    image: kibana:${ELK_VERSION}
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/kibana:${ELK_VERSION}
     networks:
       - eurydice
     environment:
-      SERVER_NAME: kibana.localhost
+      SERVER_NAME: kibana.test
       SERVER_HOST: "0.0.0.0"
-      SERVER_PUBLICBASEURL: http://kibana.localhost
+      SERVER_PUBLICBASEURL: http://kibana.test
       TELEMETRY_ENABLED: "false"
       ELASTICSEARCH_URL: http://${ELASTICSEARCH_HOSTS:?}
     depends_on:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl --fail --silent localhost:5601/api/status || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl --fail --silent localhost:5601/api/status || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 45s
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.kibana.rule: Host(`kibana.localhost`)
 
 volumes:
   elastic:
+
+networks:
+  eurydice:
+    driver: bridge
+    name: eurydice
+    ipam:
+      config:
+        - subnet: ${EURYDICE_IPV4_SUBNET}

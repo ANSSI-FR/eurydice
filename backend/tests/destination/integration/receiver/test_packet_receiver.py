@@ -6,6 +6,7 @@ from django.test import override_settings
 
 from eurydice.destination.receiver import packet_receiver
 from tests.common.integration.factory import protocol as protocol_factory
+from tests.utils import process_logs
 
 
 @override_settings(PACKET_RECEIVER_PORT=0)
@@ -60,10 +61,6 @@ def test_packet_receiver_receive_multiple_overflow(caplog: pytest.LogCaptureFixt
 
     expected_hits = 4
     expected_misses = len(packets) - expected_hits
-    expected_log_msg = (
-        "Dropped Transferable - Receiver received data "
-        "while processing queue is at full capacity"
-    )
 
     with packet_receiver.PacketReceiver() as receiver:
         receiver_port = receiver._receiver_thread._server.server_address[1]
@@ -81,9 +78,9 @@ def test_packet_receiver_receive_multiple_overflow(caplog: pytest.LogCaptureFixt
                 with pytest.raises(packet_receiver.NothingToReceive):
                     receiver.receive(block=False)
 
-        assert len(caplog.messages) == expected_misses
-        for logmsg in caplog.messages:
-            assert expected_log_msg == logmsg
+        log_messages = process_logs(caplog.messages)
+        errors = [error for error in log_messages if error["log_key"] == "dropped_transferable"]
+        assert len(errors) == expected_misses
 
         assert receiver._queue.empty()
 

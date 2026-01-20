@@ -21,5 +21,5 @@ export const bytesToString = (bytes: number, decimals = 2) => {
   const power = Math.floor(Math.log(bytes) / Math.log(base));
   const value = parseFloat((bytes / Math.pow(base, power)).toFixed(decimals < 0 ? 0 : decimals));
 
-  return t(sizes[power], { count: value });
+  return t(sizes[power]!, { count: value });
 };

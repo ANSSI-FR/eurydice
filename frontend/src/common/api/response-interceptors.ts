@@ -1,12 +1,10 @@
-import apiClient from '@common/api/api-client';
 import { toastMessage } from '@common/services/toast-message.service';
 import { useUserStore } from '@common/store/user.store';
 import { objectKeysToCamelCase } from '@common/utils/case-functions';
-import { router } from '@destination/router';
+import { router as destinationRouter } from '@destination/router';
+import { router as originRouter } from '@origin/router';
 import type { AxiosResponse } from 'axios';
 import axios from 'axios';
-
-const LOGIN_ENDPOINT = import.meta.env.VITE_LOGIN_ENDPOINT ?? '/user/login/';
 
 export const snakeCaseToCamelCaseInterceptor = (response: AxiosResponse<any, any>) => {
   return objectKeysToCamelCase(response.data);
@@ -22,38 +20,47 @@ const hasBasicAuthHeader = (response: AxiosResponse) => {
   return headers[headerName]?.includes(headerValue) === true;
 };
 
-export const errorInterceptor = (error: any) => {
+export const errorInterceptor = (error: any): any => {
+  const userStore = useUserStore();
   // Do not mark canceled transferables as error
   if (error.response === undefined && !(error instanceof axios.Cancel)) {
-    toastMessage('Error.Network.title', error.message, 'error', true);
+    // We stop all autoRefreshed calls if a network error happens
+    toastMessage('Error.Network.title', 'Error.Network.message', 'error', false, {
+      paramsMessage: { errorMessage: error.message },
+    });
   }
 
-  // Handle missing session cookie if no basic auth header or not contacting login_endpoint
+  // Handle missing session cookie if no basic auth header or not contacting login_endpoint we redirect to login page
   else if (
     error.response.status === 401 &&
     !hasBasicAuthHeader(error.response) &&
-    error.response.config?.url !== LOGIN_ENDPOINT
+    !error.response.config?.url.startsWith('/user/login')
   ) {
-    // We try to reconnect automatically otherwise we display an error
-    return apiClient
-      .request(LOGIN_ENDPOINT)
-      .then(() => apiClient.request(error.config))
-      .catch((catchedError) =>
-        toastMessage('Error.401.title', catchedError.message, 'error', true),
-      );
+    if (import.meta.env.VITE_EURYDICE_GUICHET === 'destination') {
+      destinationRouter.push({ name: 'login' });
+    } else {
+      originRouter.push({ name: 'login' });
+    }
+    return;
+  }
+
+  // Handle user association token not set in destination
+  else if (
+    userStore.isUserKnown &&
+    error.response.status === 403 &&
+    import.meta.env.VITE_EURYDICE_GUICHET === 'destination'
+  ) {
+    destinationRouter.push({ name: 'userAssociation' });
   }
 
   // Handle common HTTP errors
-  else if ([401, 403, 404, 500, 503].includes(error.response.status)) {
+  else if ([404, 403, 500, 503].includes(error.response.status)) {
     toastMessage(
       `Error.${error.response.status}.title`,
       `Error.${error.response.status}.message`,
       'error',
       true,
     );
-  }
-  if (error.response.status === 403 && import.meta.env.VITE_EURYDICE_GUICHET === 'destination') {
-    router.push({ name: 'userAssociation' });
   }
   throw error;
 };

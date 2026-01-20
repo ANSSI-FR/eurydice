@@ -5,10 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 describe('server-metadata service', () => {
   it('Default mock values work', async () => {
     const res = await getServerMetadata();
-    expect(Object.keys(res).length).toBe(3);
+    expect(Object.keys(res).length).toBe(5);
     expect('contact' in res).toBe(true);
     expect('badgeColor' in res).toBe(true);
     expect('badgeContent' in res).toBe(true);
+    expect('encryptionEnabled' in res).toBe(true);
+    expect('encodedPublicKey' in res).toBe(true);
   });
   it('Executes correctly the request', async () => {
     const mockFunction = async () => {

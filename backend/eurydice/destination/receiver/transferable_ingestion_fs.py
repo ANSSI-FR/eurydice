@@ -1,15 +1,13 @@
 import hashlib
-import logging
 from math import ceil
 from typing import NamedTuple
 
 from django.db import transaction
 
+from eurydice.common.logging.logger import LOG_KEY, logger
 from eurydice.destination.core import models
 from eurydice.destination.storage import fs
 from eurydice.destination.utils import rehash
-
-logger = logging.getLogger(__name__)
 
 
 class PendingIngestionData(NamedTuple):
@@ -38,11 +36,17 @@ def _create_storage_file(incoming_transferable: models.IncomingTransferable) -> 
     Initiate a Multi-Part Upload (without data yet).
     """
     file_path = fs.file_path(incoming_transferable)
-    logger.debug("Creating empty file on filesystem for multipart upload.")
+    logger.info(
+        {
+            LOG_KEY: "create_storage_file",
+            "status": "starting",
+            "message": "Creating empty file on filesystem for multipart upload.",
+        }
+    )
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    fs.write_bytes(incoming_transferable, b"")
+    file_path.touch(exist_ok=False)
 
-    logger.debug("File created.")
+    logger.info({LOG_KEY: "create_storage_file", "status": "done"})
 
 
 def _store_range(
@@ -52,9 +56,8 @@ def _store_range(
     """
     Add data to an existing Multi-Part Upload.
     """
-    logger.debug("Start writing data to filesystem.")
     fs.append_bytes(incoming_transferable, data)
-    logger.debug("Data successfully written to filesystem.")
+    logger.debug({LOG_KEY: "store_range", "status": "done"})
 
 
 def _update_incoming_transferable(
@@ -77,6 +80,7 @@ def _update_incoming_transferable(
     if to_ingest.eof:
         incoming_transferable.size = incoming_transferable.bytes_received
         incoming_transferable.sha1 = to_ingest.sha1.digest()
+
         incoming_transferable.mark_as_success(save=False)
         updated_fields.extend(("size", "state", "finished_at", "sha1"))
 
@@ -104,10 +108,14 @@ def ingest(
         # keep track of parts so that file_remover
         # can clear broken ONGOING transferables
         if not to_ingest.eof:
-            logger.debug("Create FileUploadPart object in database.")
-            part_number = ceil(
-                incoming_transferable.bytes_received // len(to_ingest.data)
+            logger.info(
+                {
+                    LOG_KEY: "ingest_destination",
+                    "status": "starting",
+                    "message": "Create FileUploadPart object in database.",
+                }
             )
+            part_number = ceil(incoming_transferable.bytes_received // len(to_ingest.data))
             models.FileUploadPart.objects.create(
                 incoming_transferable=incoming_transferable,
                 part_number=part_number,
@@ -129,6 +137,8 @@ def abort_ingestion(failed_transferable: models.IncomingTransferable) -> None:
         failed_transferable: Transferable that failed (its data will be deleted).
     """
     fs.delete(failed_transferable)
+    failed_transferable.bytes_received = 0
+
     failed_transferable.mark_as_error()
 
 

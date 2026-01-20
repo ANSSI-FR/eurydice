@@ -1,4 +1,5 @@
 import Error404View from '@common/views/Error404View.vue';
+import LoginView from '@common/views/LoginView.vue';
 import type { RouteRecordRaw } from 'vue-router';
 
 export const commonRoutes: RouteRecordRaw[] = [
@@ -12,5 +13,10 @@ export const commonRoutes: RouteRecordRaw[] = [
     redirect: {
       name: '404',
     },
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
   },
 ];

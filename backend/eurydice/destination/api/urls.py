@@ -5,9 +5,7 @@ import eurydice.common.api.urls
 from eurydice.destination.api import views
 
 router = routers.DefaultRouter()
-router.register(
-    r"transferables", views.IncomingTransferableViewSet, basename="transferable"
-)
+router.register(r"transferables", views.IncomingTransferableViewSet, basename="transferable")
 
 urlpatterns = (
     eurydice.common.api.urls.urlpatterns
@@ -15,6 +13,7 @@ urlpatterns = (
     + [
         path("metrics/", views.MetricsView.as_view(), name="metrics"),
         path("status/", views.StatusView.as_view(), name="status"),
+        path("metadata/", views.ServerMetadataView.as_view(), name="server-metadata"),
         path(
             "user/association/",
             views.UserAssociationView.as_view(),

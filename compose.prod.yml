@@ -73,6 +73,7 @@ x-filebeat: &filebeat
   environment:
     ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
     ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+    ELASTICSEARCH_INDEX_NAME: ${ELASTICSEARCH_INDEX_NAME}
   command:
     - filebeat
     - run
@@ -112,10 +113,10 @@ services:
       - ${DB_LOGS_DIR:?}:/var/log/postgresql
     command:
       - "postgres"
-      - "-c" # turn on csv logging
+      - "-c" # turn on json logging
       - "logging_collector=on"
       - "-c"
-      - "log_destination=csvlog"
+      - "log_destination=jsonlog"
       - "-c"
       - "log_directory=/var/log/postgresql"
       - "-c" # filebeat format
@@ -123,9 +124,9 @@ services:
       - "-c" # turn on hour-based log rotation
       - "log_truncate_on_rotation=on"
       - "-c"
-      - "log_filename=postgresql-%H.log"
+      - "log_filename=postgresql-%Y-%m-%d.log"
       - "-c"
-      - "log_rotation_age=60"
+      - "log_rotation_age=1d"
       - "-c"
       - "log_file_mode=0644"
       - "-c" # print statements that took more than 200ms...
@@ -165,6 +166,7 @@ services:
       - "${PYTHON_LOGS_DIR:?}/backend-origin:/logs/origin/backend:ro"
       - "${PYTHON_LOGS_DIR:?}/sender:/logs/origin/sender:ro"
       - "${PYTHON_LOGS_DIR:?}/dbtrimmer-origin:/logs/origin/dbtrimmer:ro"
+      - "${PYTHON_LOGS_DIR:?}/file-remover-origin:/logs/origin/file-remover:ro"
       - "${PYTHON_LOGS_DIR:?}/db-migrations-origin:/logs/origin/db-migrations:ro"
 
   backend-origin: &backend-origin
@@ -172,8 +174,9 @@ services:
     profiles:
       - origin
     volumes:
-      - "${PYTHON_LOGS_DIR:?}/backend-origin:/var/log/app"
-      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+      - "${PYTHON_LOGS_DIR}/backend-origin:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR}:/home/eurydice/data"
+      - "${PUBKEY_PATH:-/dev/null}:/home/eurydice/keys/eurydice.pub"
     environment:
       <<: *backend-common-envs
       SECRET_KEY: ${DJANGO_SECRET_KEY:?}
@@ -185,6 +188,7 @@ services:
       REMOTE_USER_HEADER: ${REMOTE_USER_HEADER}
       METRICS_SLIDING_WINDOW: ${METRICS_SLIDING_WINDOW}
       TRANSFERABLE_MAX_SIZE: ${EURYDICE_TRANSFERABLE_MAX_SIZE}
+      ENCRYPTION_ENABLED: ${ENCRYPTION_ENABLED}
     command:
       - make
       - run-origin-api
@@ -231,6 +235,7 @@ services:
     volumes:
       - "${PYTHON_LOGS_DIR:?}/sender:/var/log/app"
       - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+      - "${PUBKEY_PATH:-/dev/null}:/home/eurydice/keys/eurydice.pub"
     extra_hosts:
       - "lidis.docker.host:host-gateway"
     environment:
@@ -278,7 +283,7 @@ services:
       - "--from_tcp"
       - "0.0.0.0:${LIDIS_PORT}"
       - "--to_udp"
-      - "0.0.0.0:${LIDIR_PORT}"
+      - "${LIDIR_HOST}:${LIDIR_PORT}"
       - "--to_udp_mtu"
       - "${LIDI_UDP_MTU}"
       - "--nb_clients"
@@ -319,11 +324,39 @@ services:
       filebeat-origin:
         condition: service_healthy
 
+  file-remover-origin: &file-remover-origin
+    profiles:
+      - origin
+    <<: *backend-common
+    volumes:
+      - "${PYTHON_LOGS_DIR:?}/file-remover-origin:/var/log/app"
+      - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+    cpus: ${CPUS_FILE_REMOVER}
+    mem_limit: ${MEM_LIMIT_FILE_REMOVER}
+    environment:
+      <<: *backend-common-envs
+      FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
+      FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
+      FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
+    restart: always
+    command:
+      - make
+      - run-origin-file-remover
+
+
+  file-remover-origin-with-elk:
+    profiles:
+      - origin-with-elk-logging
+    <<: *file-remover-origin
+    depends_on:
+      filebeat-origin:
+        condition: service_healthy
+
   ############# Destination services #############
   lidir: &lidir
     profiles:
       - destination
-    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-receive:${LIDI_VERSION:-latest}
+    image: docker.io/anssi/lidi-receive:${LIDI_VERSION:-latest}
     depends_on:
       receiver:
         condition: service_started
@@ -365,6 +398,7 @@ services:
     volumes:
       - "${PYTHON_LOGS_DIR:?}/receiver:/var/log/app"
       - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
+      - "${PRIVKEY_PATH:-/dev/null}:/home/eurydice/keys/eurydice"
     cpus: ${CPUS_RECEIVER}
     mem_limit: ${MEM_LIMIT_RECEIVER}
     environment:
@@ -445,7 +479,7 @@ services:
       - "${PYTHON_LOGS_DIR:?}/backend-destination:/logs/destination/backend:ro"
       - "${PYTHON_LOGS_DIR:?}/receiver:/logs/destination/receiver:ro"
       - "${PYTHON_LOGS_DIR:?}/dbtrimmer-destination:/logs/destination/dbtrimmer:ro"
-      - "${PYTHON_LOGS_DIR:?}/file_remover:/logs/destination/file_remover:ro"
+      - "${PYTHON_LOGS_DIR:?}/file-remover-destination:/logs/destination/file-remover:ro"
       - "${PYTHON_LOGS_DIR:?}/db-migrations-destination:/logs/destination/db-migrations:ro"
 
   dbtrimmer-destination: &dbtrimmer-destination
@@ -466,12 +500,12 @@ services:
       filebeat-destination:
         condition: service_healthy
 
-  file-remover: &file-remover
+  file-remover-destination: &file-remover-destination
     profiles:
       - destination
     <<: *backend-common
     volumes:
-      - "${PYTHON_LOGS_DIR:?}/file_remover:/var/log/app"
+      - "${PYTHON_LOGS_DIR:?}/file-remover-destination:/var/log/app"
       - "${HOST_TRANSFERABLE_STORAGE_DIR:?}:/home/eurydice/data"
     cpus: ${CPUS_FILE_REMOVER}
     mem_limit: ${MEM_LIMIT_FILE_REMOVER}
@@ -485,10 +519,10 @@ services:
       - make
       - run-destination-file-remover
 
-  file-remover-with-elk:
+  file-remover-destination-with-elk:
     profiles:
       - destination-with-elk-logging
-    <<: *file-remover
+    <<: *file-remover-destination
     depends_on:
       filebeat-destination:
         condition: service_healthy

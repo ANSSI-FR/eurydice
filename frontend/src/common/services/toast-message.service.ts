@@ -20,7 +20,7 @@ export const toastMessage = (
     summary: titleTranslationKey !== null ? t(titleTranslationKey, options?.paramsTitle) : null,
     detail:
       messageTranslationKey !== null ? t(messageTranslationKey, options?.paramsMessage) : null,
-    life: autoExpires ? parseInt(import.meta.env.VITE_TOAST_MESSAGE_LIFETIME) : undefined,
+    life: autoExpires ? Number(import.meta.env.VITE_TOAST_MESSAGE_LIFETIME ?? '5000') : undefined,
     closable: true,
   });
 };

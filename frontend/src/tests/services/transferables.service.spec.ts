@@ -6,7 +6,7 @@ import {
   deleteTransferable,
   getTransferableData,
 } from '@destination/services/transferables.service';
-import * as originTransferableService from '@origin/services/transferables.service';
+import * as originTransferableService from '@origin/services/transferables';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('Transferable service', () => {
@@ -40,7 +40,12 @@ describe('Transferable service', () => {
     deleteAllTransferables();
     expect(deleteSpyOn).toBeCalledTimes(2);
 
-    originTransferableService.createTransferable(file, vi.fn(), new AbortController().signal);
+    originTransferableService.createTransferable(
+      file,
+      false,
+      vi.fn(),
+      new AbortController().signal,
+    );
     expect(postSpyOn).toBeCalledTimes(1);
 
     originTransferableService.cancelTransferable(id);
@@ -73,7 +78,12 @@ describe('Transferable service', () => {
     const postSpyOn = vi.spyOn(apiClient, 'post').mockImplementation(vi.fn());
     const spyOnToast = vi.spyOn(toastMessageService, 'toastMessage').mockImplementation(vi.fn());
     await expect(
-      originTransferableService.createTransferable(file, vi.fn(), new AbortController().signal),
+      originTransferableService.createTransferable(
+        file,
+        false,
+        vi.fn(),
+        new AbortController().signal,
+      ),
     ).rejects.toThrow();
     expect(spyOnToast).toHaveBeenCalledWith(
       'ValidateTansferable.fileTooLargeTitle',
@@ -88,5 +98,86 @@ describe('Transferable service', () => {
       },
     );
     expect(postSpyOn).not.toHaveBeenCalled();
+    await expect(
+      originTransferableService.createTransferable(
+        file,
+        true,
+        vi.fn(),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow();
+    expect(spyOnToast).toHaveBeenCalledWith(
+      'ValidateTansferable.fileTooLargeTitle',
+      'ValidateTansferable.fileTooLargeMessage',
+      'error',
+      true,
+      {
+        paramsMessage: {
+          fileSize: '25 octets',
+          maxFileSize: '5 octets',
+        },
+      },
+    );
+    expect(postSpyOn).not.toHaveBeenCalled();
+  });
+  /* ======================= ENCRYPTION ======================= */
+  it('use encryption upload when encryption is enabled', async () => {
+    const initEncryptedMultipartUploadSpyOn = vi.spyOn(
+      originTransferableService,
+      'initEncryptedMultipartUpload',
+    );
+    const uploadEncryptedFilePartsSpyOn = vi.spyOn(
+      originTransferableService,
+      'uploadEncryptedFileParts',
+    );
+    const finalizeEncryptedMultipartUploadSpyOn = vi.spyOn(
+      originTransferableService,
+      'finalizeEncryptedMultipartUpload',
+    );
+
+    const file: File = new File(['foo'], 'foo.txt', {
+      type: 'text/plain',
+    });
+    const onUploadProgress = vi.fn();
+
+    console.log('create transferable ', originTransferableService.createTransferable);
+
+    await originTransferableService.createTransferable(
+      file,
+      true,
+      onUploadProgress,
+      new AbortController().signal,
+    );
+
+    expect(initEncryptedMultipartUploadSpyOn).toHaveBeenCalled();
+    expect(uploadEncryptedFilePartsSpyOn).toHaveBeenCalled();
+    expect(finalizeEncryptedMultipartUploadSpyOn).toHaveBeenCalled();
+  });
+
+  it.each([
+    { partSize: 1, expected: 9 },
+    { partSize: 2, expected: 5 },
+    { partSize: 9, expected: 1 },
+    { partSize: 10, expected: 1 },
+  ])('yieldFileParts function succeeds', async ({ partSize, expected }) => {
+    const file: File = new File(['123456789'], 'foo.txt', {
+      type: 'text/plain',
+    });
+
+    const nbTotalParts = Math.ceil(file.size / partSize);
+
+    const partsGenerator = originTransferableService.yieldFileParts(file, partSize, nbTotalParts);
+    const fileParts = [];
+    let result = partsGenerator.next();
+    while (!result.done) {
+      fileParts.push(result.value);
+      result = partsGenerator.next();
+    }
+
+    expect(fileParts.length).toBe(expected);
+    const last_part = fileParts[fileParts.length - 1];
+    if (last_part) {
+      expect(last_part.index).toBe(expected - 1);
+    }
   });
 });

@@ -1,27 +1,32 @@
-filebeat.modules:
-  - module: postgresql
-    log:
-      enabled: true
-      var.paths:
-        - /logs/origin/postgresql/*.csv
-      input:
-        processors:
-        - add_fields:
-            target: 'service'
-            fields:
-              side: origin
-
 x-common-input-conf: &common-input-conf
   type: filestream
   enabled: true
   fields_under_root: true
   parsers:
     - ndjson:
-        target: "data"
+        target: "python"
         add_error_key: true
         message_key: "message"
 
+
 filebeat.inputs:
+- type: filestream
+  id: db-origin-logs
+  enabled: true
+  fields_under_root: true
+  paths:
+    - /logs/origin/postgresql/*.json
+  fields:
+    service:
+      side: origin
+      type: postgresql
+  parsers:
+    - ndjson:
+        target: "postgresql"
+        add_error_key: true
+        message_key: "message"
+
+
 - <<: *common-input-conf
   id: backend-origin-logs
   paths:
@@ -47,6 +52,14 @@ filebeat.inputs:
       side: origin
       type: dbtrimmer
 - <<: *common-input-conf
+  id: file-remover-origin-logs
+  paths:
+    - /logs/origin/file-remover/log.json
+  fields:
+    service:
+      side: origin
+      type: file-remover
+- <<: *common-input-conf
   id: db-migrations-origin-logs
   paths:
     - /logs/origin/db-migrations/log.json
@@ -55,18 +68,38 @@ filebeat.inputs:
       side: origin
       type: db-migrations
 
+
+processors:
+  # the value of the field key comes from the already parsed logs defined in the parsers.ndjson
+  - timestamp:
+      field: "python.record_created"
+      target_field: record_created
+      timezone: "UTC"
+      layouts:
+        - "2006-01-02 15:04:05,999"
+      test:
+        - "2023-12-18 15:16:35,781"
+  - timestamp:
+      field: "postgresql.timestamp"
+      target_field: record_created
+      timezone: "UTC"
+      layouts:
+        - "2006-01-02 15:04:05.999 UTC"
+      test:
+        - "2025-08-21 15:39:02.623 UTC"
+
+
 setup:
   template:
-    enabled: true
-    name: filebeat-%{[agent.version]}
-    pattern: "eurydice-*"
+    enabled: false
   ilm:
     enabled: false
+
 
 output.elasticsearch:
   hosts: "${ELASTICSEARCH_HOSTS}"
   api_key: "${ELASTICSEARCH_API_KEY:}"
-  index: "eurydice-%{[service.side]}-%{[service.type]}-1.0"
+  index: "eurydice-${ELASTICSEARCH_INDEX_NAME}-%{[service.side]}-%{[service.type]}"
   ssl:
     certificate_authorities:
       - /usr/share/elasticsearch/config/certs/cert.crt

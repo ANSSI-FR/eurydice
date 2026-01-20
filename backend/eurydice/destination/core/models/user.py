@@ -18,12 +18,11 @@ class UserProfile(common_models.AbstractBaseModel):
         null=True,
         related_name="user_profile",
     )
-    associated_user_profile_id = models.UUIDField(  # noqa: DJ01
+    associated_user_profile_id = models.UUIDField(
         unique=True,
         verbose_name=_("Associated user profile ID"),
         help_text=_(
-            "The UUID of the user profile on the origin side that is "
-            "associated with the user profile on this side"
+            "The UUID of the user profile on the origin side that is associated with the user profile on this side"
         ),
     )
 

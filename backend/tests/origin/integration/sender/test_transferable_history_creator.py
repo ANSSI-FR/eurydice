@@ -7,8 +7,7 @@ from django.conf import Settings
 from django.utils import timezone
 
 import tests.origin.integration.factory as factory
-from eurydice.origin.core import enums
-from eurydice.origin.core import models
+from eurydice.origin.core import enums, models
 from eurydice.origin.sender.transferable_history_creator import (
     TransferableHistoryCreator,
 )

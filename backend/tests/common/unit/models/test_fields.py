@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pytest
 from django.conf import settings
 from django.core import exceptions
@@ -15,13 +13,11 @@ class TestUserProvidedMetaField:
             ({1: "foo"}, "Keys of the mapping must be strings."),
             (
                 {"": "foo"},
-                f"Metadata item names must start with "
-                f"{settings.METADATA_HEADER_PREFIX}.",
+                f"Metadata item names must start with {settings.METADATA_HEADER_PREFIX}.",
             ),
             (
                 {"Bar": "foo"},
-                f"Metadata item names must start with "
-                f"{settings.METADATA_HEADER_PREFIX}.",
+                f"Metadata item names must start with {settings.METADATA_HEADER_PREFIX}.",
             ),
             (
                 {f"{settings.METADATA_HEADER_PREFIX}Bar": 42},
@@ -36,7 +32,7 @@ class TestUserProvidedMetaField:
             ),
         ],
     )
-    def test_validate_error(self, field_value: Dict[str, str], error_message: str):
+    def test_validate_error(self, field_value: dict[str, str], error_message: str):
         with pytest.raises(exceptions.ValidationError) as exc_info:  # noqa: PT012
             fields.UserProvidedMetaField(blank=True).validate(field_value, None)
 
@@ -53,5 +49,5 @@ class TestUserProvidedMetaField:
             },
         ],
     )
-    def test_validate_success(self, field_value: Dict[str, str]):
+    def test_validate_success(self, field_value: dict[str, str]):
         fields.UserProvidedMetaField(blank=True).validate(field_value, None)

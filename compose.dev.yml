@@ -6,8 +6,8 @@ x-db: &db
     POSTGRES_DB: ${DB_NAME:?}
     POSTGRES_USER: ${DB_USER:?}
     POSTGRES_PASSWORD: ${DB_PASSWORD:?}
-    TZ: "Europe/Paris"
-    PGTZ: "Europe/Paris"
+    TZ: "UTC"
+    PGTZ: "UTC"
   user: ${PUID:?}:${PGID:?}
   read_only: true
   tmpfs:
@@ -15,10 +15,10 @@ x-db: &db
     - /run:mode=770,uid=${PUID:?},gid=${PGID:?}
   command:
     - "postgres"
-    - "-c" # turn on csv logging
+    - "-c" # turn on json logging
     - "logging_collector=on"
     - "-c"
-    - "log_destination=csvlog"
+    - "log_destination=jsonlog"
     - "-c"
     - "log_directory=/var/log/postgresql"
     - "-c" # filebeat format
@@ -26,9 +26,9 @@ x-db: &db
     - "-c" # turn on hour-based log rotation
     - "log_truncate_on_rotation=on"
     - "-c"
-    - "log_filename=postgresql-%H.log"
+    - "log_filename=postgresql-%Y-%m-%d.log"
     - "-c"
-    - "log_rotation_age=60"
+    - "log_rotation_age=1d"
     - "-c"
     - "log_file_mode=0644"
     - "-c" # print statements that took more than 200ms...
@@ -48,24 +48,80 @@ x-db: &db
 
 services:
   ################ Common Services ################
-  traefik:
-    image: traefik:2.10
+  apache:
+    build:
+      context: ./apache2
+      target: dev
+    image: eurydice/apache:dev
+    extra_hosts:
+      - "dex.destination.test:127.0.0.1"
+      - "dex.origin.test:127.0.0.1"
+    ports:
+      - 80:80
     networks:
       - eurydice
-    command:
-      - "--log.level=DEBUG"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--api.dashboard=true"
-    ports:
-      - "80:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:
-      traefik.enable: true
-      traefik.http.routers.dashboard.rule: Host(`traefik.localhost`)
-      traefik.http.routers.dashboard.service: api@internal
+
+  oidc-origin:
+    build:
+      context: ./dex
+    image: eurydice/dex:dev
+    healthcheck:
+      test:
+        - CMD
+        - nc
+        - -z
+        - localhost
+        - "5556"
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+    environment:
+      DEX_CLIENT_ID: eurydice-dev
+      DEX_CLIENT_SECRET: ZXhhbXBsZS1hcHAtc2VjcmV0
+      DEX_REDIRECT_URI: http://origin.test/api/v1/user/login/sso/authorize
+      DEX_ISSUER: http://dex.origin.test/dex
+    networks:
+      - eurydice
+
+  oidc-destination:
+    build:
+      context: ./dex
+    image: eurydice/dex:dev
+    healthcheck:
+      test:
+        - CMD
+        - nc
+        - -z
+        - localhost
+        - "5556"
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+    environment:
+      DEX_CLIENT_ID: eurydice-dev
+      DEX_CLIENT_SECRET: ZXhhbXBsZS1hcHAtc2VjcmV0
+      DEX_REDIRECT_URI: http://destination.test/api/v1/user/login/sso/authorize
+      DEX_ISSUER: http://dex.destination.test/dex
+    networks:
+      - eurydice
+
+  openldap:
+    build:
+      context: ./openldap
+    image: eurydice/openldap:dev
+    healthcheck:
+      test:
+        - CMD
+        - cat
+        - /run/slapd/slapd.pid
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+    networks:
+      - eurydice
 
   ################ Origin Services ################
   db-origin:
@@ -128,9 +184,6 @@ services:
       - eurydice
     volumes:
       - pgadmin:/var/lib/pgadmin
-    labels:
-      traefik.enable: true
-      traefik.http.routers.pgadmin.rule: Host(`pgadmin.localhost`)
 
 volumes:
   pgadmin:

@@ -1,0 +1,6 @@
+# CI does not have alpine's mirror, so we are not able to update packages. Remove this exception if you are able to run 'apk update'
+CVE-2025-58050
+# libpng from nginx
+CVE-2025-64720
+CVE-2025-65018
+CVE-2025-66293

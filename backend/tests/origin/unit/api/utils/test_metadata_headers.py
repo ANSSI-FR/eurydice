@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pytest
 
 from eurydice.origin.api.utils import metadata_headers
@@ -22,9 +20,7 @@ from eurydice.origin.api.utils import metadata_headers
         ),
     ],
 )
-def test_extract_metadata_from_headers(
-    headers: Dict[str, str], expected: Dict[str, str]
-):
+def test_extract_metadata_from_headers(headers: dict[str, str], expected: dict[str, str]):
     assert (
         metadata_headers.extract_metadata_from_headers(headers)  # type: ignore
         == expected

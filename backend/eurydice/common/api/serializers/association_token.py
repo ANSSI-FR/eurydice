@@ -1,9 +1,11 @@
-from typing import Dict
+import re
 
 from rest_framework import serializers
 
-from eurydice.common import association
-from eurydice.common import bytes2words
+from eurydice.common import association, bytes2words
+
+_MALFORMED_ERROR = "Malformed token."
+_NON_ALPHANUMERIC = r"^[a-zA-Z][a-zA-Z\s]*[a-zA-z]$"
 
 
 class AssociationTokenSerializer(serializers.Serializer):
@@ -26,30 +28,25 @@ class AssociationTokenSerializer(serializers.Serializer):
         """Deserialize data to validated AssociationToken."""
         words = super().to_internal_value(data)["token"]
 
+        if not re.match(_NON_ALPHANUMERIC, words):
+            raise serializers.ValidationError({"token": _MALFORMED_ERROR})
+
         try:
             return association.AssociationToken.from_bytes(bytes2words.decode(words))
         except (bytes2words.DecodingError, association.MalformedToken):
-            raise serializers.ValidationError({"token": "Malformed token."})
+            raise serializers.ValidationError({"token": _MALFORMED_ERROR})
         except association.InvalidTokenDigest:
-            raise serializers.ValidationError(
-                {"token": "Invalid association token signature."}
-            )
+            raise serializers.ValidationError({"token": "Invalid association token signature."})
         except association.ExpiredToken:
-            raise serializers.ValidationError(
-                {"token": "The association token has expired."}
-            )
+            raise serializers.ValidationError({"token": "The association token has expired."})
 
-    def to_representation(
-        self, instance: association.AssociationToken
-    ) -> Dict[str, str]:
+    def to_representation(self, instance: association.AssociationToken) -> dict[str, str]:
         """Serialize the AssociationToken to a dictionary representation."""
         instance.verify_validity_time()
 
         return {
             "token": bytes2words.encode(instance.to_bytes()),
-            "expires_at": self.fields["expires_at"].to_representation(
-                instance.expires_at
-            ),
+            "expires_at": self.fields["expires_at"].to_representation(instance.expires_at),
         }
 
 

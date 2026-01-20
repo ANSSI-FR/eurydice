@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 from unittest import mock
 
 import freezegun
@@ -13,6 +12,7 @@ from eurydice.common.utils import signals
 from eurydice.destination.cleaning.dbtrimmer.dbtrimmer import DestinationDBTrimmer
 from eurydice.destination.core import models
 from tests.destination.integration import factory
+from tests.utils import process_logs
 
 
 @pytest.mark.django_db()
@@ -48,7 +48,7 @@ from tests.destination.integration import factory
 )
 def test_dbtrimmer_by_transferable_states(
     faker: Faker,
-    transferable_states: List[models.IncomingTransferableState],
+    transferable_states: list[models.IncomingTransferableState],
     expected_deletions: int,
     caplog: pytest.LogCaptureFixture,
     settings: conf.Settings,
@@ -58,11 +58,7 @@ def test_dbtrimmer_by_transferable_states(
     now = faker.date_time_this_decade(tzinfo=timezone.get_current_timezone())
 
     for state in transferable_states:
-        created_at = (
-            now
-            - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-            - datetime.timedelta(seconds=1)
-        )
+        created_at = now - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
         if state in models.IncomingTransferableState.get_final_states():
             finished_at = created_at
@@ -78,17 +74,18 @@ def test_dbtrimmer_by_transferable_states(
     with freezegun.freeze_time(now):
         DestinationDBTrimmer()._run()
 
+    log_messages = process_logs(caplog.messages)
+
     if expected_deletions == 0:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "dbtrimmer_destination", "status": "running"},
+            {"log_key": "dbtrimmer_destination", "status": "done"},
         ]
     else:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            f"DBTrimmer will remove {expected_deletions} entries.",
-            f"DBTrimmer successfully removed {expected_deletions} entries.",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "dbtrimmer_destination", "status": "running"},
+            {"log_key": "dbtrimmer_destination", "status": "success", "delete_count": expected_deletions},
+            {"log_key": "dbtrimmer_destination", "status": "done"},
         ]
 
     assert not models.IncomingTransferable.objects.filter(
@@ -113,7 +110,7 @@ def test_dbtrimmer_by_transferable_states(
 )
 def test_dbtrimmer_by_transferable_finish_date(
     faker: Faker,
-    transferable_finished_at: List[datetime.timedelta],
+    transferable_finished_at: list[datetime.timedelta],
     expected_deletions: int,
     caplog: pytest.LogCaptureFixture,
     settings: conf.Settings,
@@ -133,17 +130,18 @@ def test_dbtrimmer_by_transferable_finish_date(
     with freezegun.freeze_time(now):
         DestinationDBTrimmer()._run()
 
+    log_messages = process_logs(caplog.messages)
+
     if expected_deletions == 0:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "dbtrimmer_destination", "status": "running"},
+            {"log_key": "dbtrimmer_destination", "status": "done"},
         ]
     else:
-        assert caplog.messages == [
-            "DBTrimmer is running",
-            f"DBTrimmer will remove {expected_deletions} entries.",
-            f"DBTrimmer successfully removed {expected_deletions} entries.",
-            "DBTrimmer finished running",
+        assert log_messages == [
+            {"log_key": "dbtrimmer_destination", "status": "running"},
+            {"log_key": "dbtrimmer_destination", "status": "success", "delete_count": expected_deletions},
+            {"log_key": "dbtrimmer_destination", "status": "done"},
         ]
 
 
@@ -175,12 +173,12 @@ def test_deletion_count_mismatch_is_logged(
 
     DestinationDBTrimmer()._run()
 
-    assert caplog.messages == [
-        "DBTrimmer is running",
-        "DBTrimmer will remove 1 entries.",
-        "DBTrimmer successfully removed 0 entries.",
-        "DBTrimmer deleted 0 entries, instead of the expected 1.",
-        "DBTrimmer finished running",
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {"log_key": "dbtrimmer_destination", "status": "running"},
+        {"log_key": "dbtrimmer_destination", "status": "error", "delete_count": 0, "expected_delete_count": 1},
+        {"log_key": "dbtrimmer_destination", "status": "done"},
     ]
 
 
@@ -200,11 +198,7 @@ def test_dbtrimmer_bulk_delete(
         models.IncomingTransferableState.EXPIRED,
         models.IncomingTransferableState.EXPIRED,
     ]:
-        finished_at = (
-            now
-            - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER
-            - datetime.timedelta(seconds=1)
-        )
+        finished_at = now - settings.DBTRIMMER_TRIM_TRANSFERABLES_AFTER - datetime.timedelta(seconds=1)
 
         with freezegun.freeze_time(finished_at):
             factory.IncomingTransferableFactory(
@@ -216,13 +210,13 @@ def test_dbtrimmer_bulk_delete(
     with freezegun.freeze_time(now):
         DestinationDBTrimmer()._run()
 
-    assert caplog.messages == [
-        "DBTrimmer is running",
-        "DBTrimmer will remove 1 entries.",
-        "DBTrimmer successfully removed 1 entries.",
-        "DBTrimmer will remove 1 entries.",
-        "DBTrimmer successfully removed 1 entries.",
-        "DBTrimmer finished running",
+    log_messages = process_logs(caplog.messages)
+
+    assert log_messages == [
+        {"log_key": "dbtrimmer_destination", "status": "running"},
+        {"log_key": "dbtrimmer_destination", "status": "success", "delete_count": 1},
+        {"log_key": "dbtrimmer_destination", "status": "success", "delete_count": 1},
+        {"log_key": "dbtrimmer_destination", "status": "done"},
     ]
 
     assert not models.IncomingTransferable.objects.filter(

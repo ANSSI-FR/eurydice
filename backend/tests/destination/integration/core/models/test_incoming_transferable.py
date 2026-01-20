@@ -1,6 +1,5 @@
 import datetime
 from typing import Callable
-from typing import Optional
 
 import factory as factory_boy
 import freezegun
@@ -34,9 +33,7 @@ def test_mark_as(
     save: bool,
     has_file_upload_parts: bool,
 ):
-    transferable = factory.IncomingTransferableFactory(
-        state=models.IncomingTransferableState.SUCCESS
-    )
+    transferable = factory.IncomingTransferableFactory(state=models.IncomingTransferableState.SUCCESS)
     if has_file_upload_parts:
         factory.FileUploadPartFactory.create_batch(
             3,
@@ -51,11 +48,7 @@ def test_mark_as(
 
     assert transferable.state == target_state
 
-    assert (
-        not models.FileUploadPart.objects.filter(incoming_transferable=transferable)
-        .only("id")
-        .exists()
-    )
+    assert not models.FileUploadPart.objects.filter(incoming_transferable=transferable).only("id").exists()
 
 
 @pytest.mark.django_db()
@@ -75,7 +68,7 @@ def test_mark_as(
     ],
 )
 def test_incoming_transferable_progress(
-    size: Optional[int],
+    size: int | None,
     bytes_received: int,
     expected_progress: int,
 ):
@@ -84,13 +77,9 @@ def test_incoming_transferable_progress(
     else:
         state = models.IncomingTransferableState.ONGOING
 
-    incoming_transferable = factory.IncomingTransferableFactory(
-        size=size, bytes_received=bytes_received, state=state
-    )
+    incoming_transferable = factory.IncomingTransferableFactory(size=size, bytes_received=bytes_received, state=state)
 
-    queried_incoming_transferable = models.IncomingTransferable.objects.get(
-        id=incoming_transferable.id
-    )
+    queried_incoming_transferable = models.IncomingTransferable.objects.get(id=incoming_transferable.id)
 
     assert queried_incoming_transferable.progress == expected_progress
 
@@ -100,14 +89,10 @@ def test_incoming_transferable_progress(
     ("finished_at", "state", "file_remover_retention", "expected_expires_at"),
     [
         (
-            datetime.datetime(
-                year=1983, month=6, day=21, tzinfo=timezone.get_current_timezone()
-            ),
+            datetime.datetime(year=1983, month=6, day=21, tzinfo=timezone.get_current_timezone()),
             models.IncomingTransferableState.SUCCESS,
             datetime.timedelta(days=1),
-            datetime.datetime(
-                year=1983, month=6, day=22, tzinfo=timezone.get_current_timezone()
-            ),
+            datetime.datetime(year=1983, month=6, day=22, tzinfo=timezone.get_current_timezone()),
         ),
         (
             None,
@@ -136,26 +121,20 @@ def test_incoming_transferable_progress(
     ],
 )
 def test_incoming_transferable_expires_at(
-    finished_at: Optional[datetime.datetime],
+    finished_at: datetime.datetime | None,
     state: models.IncomingTransferableState,
     file_remover_retention: datetime.timedelta,
-    expected_expires_at: Optional[datetime.datetime],
+    expected_expires_at: datetime.datetime | None,
     settings: conf.Settings,
 ):
     settings.FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER = file_remover_retention
 
-    with freezegun.freeze_time(
-        datetime.datetime(
-            year=1982, month=6, day=21, tzinfo=timezone.get_current_timezone()
-        )
-    ):
+    with freezegun.freeze_time(datetime.datetime(year=1982, month=6, day=21, tzinfo=timezone.get_current_timezone())):
         incoming_transferable = factory.IncomingTransferableFactory(
             state=state,
             finished_at=finished_at,
         )
 
-    queried_incoming_transferable = models.IncomingTransferable.objects.get(
-        id=incoming_transferable.id
-    )
+    queried_incoming_transferable = models.IncomingTransferable.objects.get(id=incoming_transferable.id)
 
     assert queried_incoming_transferable.expires_at == expected_expires_at

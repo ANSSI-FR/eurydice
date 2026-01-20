@@ -1,6 +1,5 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
-from rest_framework import status
+from rest_framework import exceptions, status
 
 
 class MissingContentTypeError(exceptions.APIException):
@@ -32,9 +31,7 @@ class InconsistentContentLengthError(exceptions.APIException):
         )
 
     status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _(
-        "Content-Length header does not match the size of the request's body."
-    )
+    default_detail = _("Content-Length header does not match the size of the request's body.")
     # mypy does not recognize qualname
     # https://github.com/python/mypy/issues/6473
     default_code = __qualname__

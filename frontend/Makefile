@@ -27,7 +27,7 @@ run-watch: install-dev	## Run development server.
 
 .PHONY: run-preview
 run-preview:	## Run preview server.
-	VITE_API_URL=http://eurydice.localhost $(MAKE) build
+	VITE_API_URL=http://eurydice.test $(MAKE) build
 	npm run preview
 
 .PHONY: build
@@ -83,7 +83,7 @@ audit:	## Checks production dependencies for vulnerabilities.
 	npm audit
 
 .PHONY: checks
-checks:	## Runs all the static analysis tools (Flake8, MyPy, Bandit and Safety) at once.
+checks:
 	$(MAKE) lint-check format-check && echo All checks succeeded!
 
 # ------------------------------------------------------------------------------
