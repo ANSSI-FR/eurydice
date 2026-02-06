@@ -10,7 +10,8 @@ Instructions to deploy Eurydice manually are available below.
   - support for the compose specification [was added in `19.03.0`](https://docs.docker.com/compose/compose-file/compose-versioning/#compatibility-matrix)
 - 2 servers :
   - one for the origin
-  - the other for the destination
+  - the other one for the destination
+  - configure the sysctl and network cards of each server : <https://github.com/ANSSI-FR/lidi/blob/master/doc/tweaking.rst>
 - A reverse proxy (see Step 9 for configuration details)
 - (Optional) elasticsearch cluster for logs
 
@@ -275,3 +276,24 @@ This key must be the one generated and copied from the destination.
 
 3. move the keys where intended by the environment variables in the destination side
 4. move the generated public key to the origin side (and set the PUBKEY_PATH from the origin side accordingly)
+
+## Restart the application
+
+To restart the different services, follow the order below so LIDI stays synced.
+
+Origin side
+- Activate maintenance mode (wait until ongoing transferables are sent)
+  - With ELK `make prod-stop-origin-elk`
+  - Without ELK `make prod-stop-origin`
+
+Destination side
+- Stop the stack
+  - With ELK `make prod-stop-destination-elk`
+  - Without ELK `make prod-stop-destination`
+- Up the stack
+  - With ELK `make prod-up-destination-elk`
+  - Without ELK `make prod-up-destination`
+
+Origin side
+- With ELK `make prod-up-origin-elk`
+- Without ELK `make prod-up-origin`

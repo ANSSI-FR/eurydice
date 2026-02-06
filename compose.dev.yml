@@ -135,34 +135,32 @@ services:
   lidis:
     image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION}
     network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG}
     depends_on:
       lidir:
         condition: service_started
-    read_only: true
     command:
-      - "--from_tcp"
+      - "--from-tcp"
       - "0.0.0.0:${LIDIS_PORT}"
-      - "--to_udp"
+      - "--to"
       - "0.0.0.0:${LIDIR_PORT}"
-      - "--nb_clients"
+      - "--max-clients"
       - "1"
+      - "--log-level"
+      - "${LIDI_LOG_LEVEL}"
 
   ################ Destination Services ################
   lidir:
     image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-receive:${LIDI_VERSION}
     network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG}
-    read_only: true
     command:
-      - "--from_udp"
+      - "--from"
       - "0.0.0.0:${LIDIR_PORT}"
-      - "--to_tcp"
+      - "--to-tcp"
       - "0.0.0.0:7000"
-      - "--nb_clients"
+      - "--max-clients"
       - "1"
+      - "--log-level"
+      - "${LIDI_LOG_LEVEL}"
 
   db-destination:
     <<: *db

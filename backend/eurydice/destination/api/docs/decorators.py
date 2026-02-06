@@ -207,39 +207,25 @@ incoming_transferable = spectacular_utils.extend_schema_view(
         summary=_("Retrieve a transferable"),
         description=_((settings.DOCS_PATH / "download-transferable.md").read_text()),
         responses={
-            (
-                status.HTTP_200_OK,
-                "application/octet-stream",
-            ): spectacular_utils.OpenApiResponse(
+            status.HTTP_200_OK: spectacular_utils.OpenApiResponse(
                 response=types.OpenApiTypes.BINARY,
                 description=_("The transferable was successfully retrieved and is returned in the response body."),
             ),
-            (
-                status.HTTP_401_UNAUTHORIZED,
-                "application/json",
-            ): docs.NotAuthenticatedResponse,
-            (
-                status.HTTP_403_FORBIDDEN,
-                "application/json",
-            ): docs.create_open_api_response(exceptions.TransferableErroredError),
-            (
-                status.HTTP_404_NOT_FOUND,
-                "application/json",
-            ): docs.NotFoundResponse,
-            (
-                status.HTTP_409_CONFLICT,
-                "application/json",
-            ): docs.create_open_api_response(exceptions.TransferableOngoingError),
-            (
-                status.HTTP_410_GONE,
-                "application/json",
-            ): docs.create_open_api_response(exceptions.TransferableExpiredError),
-            # Converting the status code to a string with an extra whitespace is a hack
-            # to be able to have multiple responses for one status code
-            (
-                f"{status.HTTP_410_GONE} ",
-                "application/json",
-            ): docs.create_open_api_response(exceptions.TransferableRevokedError),
+            status.HTTP_401_UNAUTHORIZED: docs.NotAuthenticatedResponse,
+            status.HTTP_403_FORBIDDEN: docs.create_open_api_response(exceptions.TransferableErroredError),
+            status.HTTP_404_NOT_FOUND: docs.NotFoundResponse,
+            status.HTTP_409_CONFLICT: docs.create_open_api_response(exceptions.TransferableOngoingError),
+            status.HTTP_410_GONE: spectacular_utils.OpenApiResponse(
+                response=spectacular_utils.PolymorphicProxySerializer(
+                    component_name="TransferableGoneErrors",
+                    serializers=[
+                        docs.create_api_exception_serializer(exceptions.TransferableExpiredError),
+                        docs.create_api_exception_serializer(exceptions.TransferableRevokedError),
+                    ],
+                    resource_type_field_name=None,
+                ),
+                description=_("The transferable is either expired or revoked."),
+            ),
         },
         parameters=[
             # Hide the format query parameter, user should not be able to use it

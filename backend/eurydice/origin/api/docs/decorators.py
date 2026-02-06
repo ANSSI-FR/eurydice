@@ -13,14 +13,6 @@ from eurydice.common.api.docs import custom_spectacular
 from eurydice.common.api.docs import utils as docs
 from eurydice.origin.api import exceptions, serializers
 
-
-def create_one_of_response(ref_names: list[str]) -> spectacular_utils.OpenApiResponse:
-    return spectacular_utils.OpenApiResponse(
-        description="One of the following errors occurred.",
-        response={"oneOf": [{"$ref": f"#/components/schemas/{name}"} for name in ref_names]},
-    )
-
-
 outgoing_transferable_example = {
     "id": "00002800-0000-1000-8000-00805f9b34fb",
     "created_at": "1969-12-28T14:15:22Z",

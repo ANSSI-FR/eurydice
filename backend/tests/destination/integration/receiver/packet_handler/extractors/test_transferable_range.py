@@ -180,11 +180,17 @@ def test_transferable_range_transferable_already_marked_as_error(
     log_messages = process_logs(caplog.messages)
 
     assert log_messages == [
-        {"log_key": "extract_transferable_range", "transferable_id": str(incoming_transferable.id)},
         {
             "log_key": "extract_transferable_range",
             "transferable_id": str(incoming_transferable.id),
-            "state": "ERROR",
+            "message": "Start extracting transferable range",
+            "transferable_range_byte_offset": "1024",
+        },
+        {
+            "log_key": "extract_transferable_range",
+            "transferable_id": str(incoming_transferable.id),
+            "transferable_range_byte_offset": "1024",
+            "incoming_transferable_state": "ERROR",
             "message": "Ignoring the associated transferable range received.",
         },
     ]

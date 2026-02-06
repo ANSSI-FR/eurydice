@@ -183,8 +183,10 @@ def _add(
             LOG_KEY: "adding_transferable_range",
             "transferable_id": str(transferable_range.outgoing_transferable.id),
             "transferable_range_id": str(transferable_range.id),
+            "transferable_range_byte_offset": str(transferable_range.byte_offset),
         }
     )
+
     packet.transferable_ranges.append(protocol_transferable_range)
 
     transferable_range.mark_as_transferred()

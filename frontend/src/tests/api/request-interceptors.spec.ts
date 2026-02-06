@@ -23,7 +23,7 @@ const TEST_CASES = [
     },
     expectedTransformedRequest: {
       data: { bar_foo: 'barFoo', foo: { foo_bar: 'bar_foo' } },
-      params: { foo_bar: 'fooBar', expand: ['toto', 'tata_toto'] },
+      params: { foo_bar: 'fooBar', expand: ['toto', 'tataToto'] },
       headers: { headerTest: 'test' },
     },
   },

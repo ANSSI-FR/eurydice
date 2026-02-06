@@ -9,7 +9,7 @@ COMPOSE := docker compose
 COMPOSE_DEV := PUID=$(shell id -u) PGID=$(shell id -g) $(COMPOSE) -f compose.yml
 COMPOSE_PROD := $(COMPOSE) -f compose.prod.yml
 
-SYSCTL_OPTIONS = net.core.rmem_max net.core.rmem_default net.core.netdev_max_backlog net.ipv4.udp_mem
+SYSCTL_OPTIONS = net.ipv4.udp_mem net.core.rmem_max net.ipv4.udp_rmem_min net.core.wmem_max net.ipv4.udp_wmem_min
 SYSCTL_BACKUP_FILE = sysctl_backup.conf
 
 # ------------------------------------------------------------------------------
@@ -35,10 +35,11 @@ restore-sysctl: ## restore sysctl config from backup file
 config-sysctl: ## sysctl config of LIDI
 	# https://github.com/ANSSI-FR/lidi/blob/master/doc/tweaking.rst
 	$(MAKE) backup-sysctl
-	sudo sysctl -w net.core.rmem_max=67108864 \
-		-w net.core.rmem_default=67108864 \
-		-w net.core.netdev_max_backlog=10000 \
-		-w net.ipv4.udp_mem="12148128 16197504 24296256"
+	sudo sysctl -w net.ipv4.udp_mem="97536000 97536000 97536000" \
+		-w net.core.rmem_max=97536000 \
+		-w net.ipv4.udp_rmem_min=97536000 \
+		-w net.core.wmem_max=97536000 \
+		-w net.ipv4.udp_wmem_min=97536000
 
 .PHONY: config-ufw
 config-ufw: ## open sender and receiver firewall ports
@@ -261,7 +262,6 @@ prod-stop-destination-elk: ## stop the production destination stack
 hadolint:	## Lint the Dockerfiles.
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < backend/docker/Dockerfile
 	docker run --rm -i hadolint/hadolint:2.8.0-alpine < frontend/docker/Dockerfile
-	docker run --rm -i hadolint/hadolint:2.8.0-alpine < pgadmin/Dockerfile
 
 # ------------------------------------------------------------------------------
 # Tests

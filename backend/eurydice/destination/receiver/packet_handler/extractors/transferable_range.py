@@ -255,7 +255,14 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
         transferable_range: the transferable range to process.
 
     """
-    logger.info({LOG_KEY: "extract_transferable_range", "transferable_id": str(transferable_range.transferable.id)})
+    logger.info(
+        {
+            LOG_KEY: "extract_transferable_range",
+            "transferable_id": str(transferable_range.transferable.id),
+            "transferable_range_byte_offset": str(transferable_range.byte_offset),
+            "message": "Start extracting transferable range",
+        }
+    )
 
     transferable = _get_or_create_transferable(transferable_range)
 
@@ -264,7 +271,8 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
             {
                 LOG_KEY: "extract_transferable_range",
                 "transferable_id": str(transferable_range.transferable.id),
-                "state": models.IncomingTransferableState.ERROR.value,
+                "transferable_range_byte_offset": str(transferable_range.byte_offset),
+                "incoming_transferable_state": models.IncomingTransferableState.ERROR.value,
                 "message": "Ignoring the associated transferable range received.",
             }
         )
@@ -282,6 +290,7 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
             {
                 LOG_KEY: "extract_transferable_range",
                 "transferable_id": str(transferable_range.transferable.id),
+                "transferable_range_byte_offset": str(transferable_range.byte_offset),
                 "message": "Successfully extracted and ingested TransferableRange",
             }
         )
@@ -293,6 +302,7 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
                 {
                     LOG_KEY: "extract_transferable_range",
                     "transferable_id": str(transferable_range.transferable.id),
+                    "transferable_range_byte_offset": str(transferable_range.byte_offset),
                     "state": models.IncomingTransferableState.SUCCESS.value,
                     "message": "IncomingTransferable fully received",
                 }
@@ -304,6 +314,7 @@ def _extract_transferable_range(transferable_range: protocol.TransferableRange) 
             {
                 LOG_KEY: "extract_transferable_range_failure",
                 "transferable_id": str(transferable_range.transferable.id),
+                "transferable_range_byte_offset": str(transferable_range.byte_offset),
                 "message": "Encountered an error when trying to extract and ingest "
                 "transferable range from an OnTheWirePacket.",
                 "error": str(error),

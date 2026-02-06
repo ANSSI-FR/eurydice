@@ -94,16 +94,17 @@ make config-sysctl
 **Verify:** You can verify the configuration with:
 
 ```bash
-sudo sysctl -n net.core.rmem_default -n net.core.rmem_default -n net.core.netdev_max_backlog -n  net.ipv4.udp_mem
+sudo sysctl -n net.core.rmem_max -n net.ipv4.udp_rmem_min -n net.core.wmem_max -n  net.ipv4.udp_wmem_min -n  net.ipv4.udp_mem
 ```
 
 You should see:
 
 ```bash
-67108864
-67108864
-10000
-12148128        16197504        24296256
+97536000
+97536000
+97536000
+97536000
+97536000	97536000	97536000
 ```
 
 **Note:** Your original sysctl config is backed up in the file sysctl_backup.conf. That is why you should only launch the this configuration once. If you need to revert the configuration, you can launch the following command:

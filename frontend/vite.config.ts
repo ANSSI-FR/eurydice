@@ -11,7 +11,7 @@ const PERMISSIONS_POLICY =
 // NOTE: script-src unsafe-eval should NOT be set in production
 // NOTE: some content security policy are set for VueTools plugin
 const CONTENT_SECURITY_POLICY =
-  "default-src 'none' 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src https://fonts.gstatic.com 'self'; img-src data: 'self'; connect-src 'self'; frame-ancestors 'none' 'self'";
+  "default-src 'none' 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src https://fonts.gstatic.com 'self'; img-src data: 'self'; connect-src 'self'; frame-ancestors 'none' 'self'";
 
 const REFERRER_POLICY = 'same-origin';
 

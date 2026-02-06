@@ -1,6 +1,6 @@
 export type MultipartUploadData = {
   id: string;
-  filename: string;
+  name: string;
   partSize: number;
 };
 

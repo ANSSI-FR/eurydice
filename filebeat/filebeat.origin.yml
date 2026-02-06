@@ -88,13 +88,11 @@ processors:
       test:
         - "2025-08-21 15:39:02.623 UTC"
 
-
 setup:
   template:
     enabled: false
   ilm:
     enabled: false
-
 
 output.elasticsearch:
   hosts: "${ELASTICSEARCH_HOSTS}"

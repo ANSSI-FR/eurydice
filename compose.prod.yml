@@ -19,7 +19,6 @@ x-backend-common: &backend-common
   networks:
     - eurydice
   read_only: true
-  restart: always
   tmpfs:
     - /tmp
   depends_on:
@@ -32,7 +31,6 @@ x-backend: &backend
   mem_limit: ${MEM_LIMIT_BACKEND}
   ports:
     - "${HTTP_SERVICES_BIND_HOST}:8080:8080"
-  restart: always
 
 x-dbtrimmer: &dbtrimmer
   <<: *backend-common
@@ -43,7 +41,6 @@ x-dbtrimmer: &dbtrimmer
     DBTRIMMER_TRIM_TRANSFERABLES_AFTER: ${DBTRIMMER_TRIM_TRANSFERABLES_AFTER}
     DBTRIMMER_RUN_EVERY: ${DBTRIMMER_RUN_EVERY}
     DBTRIMMER_POLL_EVERY: ${DBTRIMMER_POLL_EVERY}
-  restart: always
 
 x-frontend: &frontend
   image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/eurydice-frontend:${EURYDICE_VERSION}
@@ -59,17 +56,15 @@ x-frontend: &frontend
     - /tmp:uid=${PUID},gid=${PGID},mode=700
     - /var/cache/nginx:uid=${PUID},gid=${PGID},mode=700
     - /etc/nginx/conf.d:uid=${PUID},gid=${PGID},mode=700
-  restart: always
 
 x-filebeat: &filebeat
-  image: ${REMOTE_DOCKER_REGISTRY}/elastic/filebeat:${ELK_VERSION}
+  image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/elastic/filebeat:${ELK_VERSION}
   user: ${PUID}:${PGID}
   cpus: ${CPUS_FILEBEAT}
   mem_limit: ${MEM_LIMIT_FILEBEAT}
   read_only: true
   networks:
     - eurydice
-  restart: always
   environment:
     ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
     ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
@@ -92,14 +87,13 @@ x-filebeat: &filebeat
 services:
   ############# Common services #############
   db:
-    image: ${REMOTE_DOCKER_REGISTRY}/postgres:15
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/postgres:15
     read_only: true
     shm_size: ${SHM_SIZE_DATABASE}
     cpus: ${CPUS_DATABASE}
     mem_limit: ${MEM_LIMIT_DATABASE}
     networks:
       - eurydice
-    restart: always
     environment:
       POSTGRES_DB: ${DB_NAME:?}
       POSTGRES_USER: ${DB_USER:?}
@@ -226,6 +220,7 @@ services:
     depends_on:
       filebeat-origin:
         condition: service_healthy
+
   sender: &sender
     <<: *backend-common
     profiles:
@@ -245,7 +240,6 @@ services:
       TRANSFERABLE_HISTORY_DURATION: ${TRANSFERABLE_HISTORY_DURATION}
       TRANSFERABLE_HISTORY_SEND_EVERY: ${TRANSFERABLE_HISTORY_SEND_EVERY}
       SENDER_RANGE_FILLER_CLASS: ${SENDER_RANGE_FILLER_CLASS}
-    restart: always
     depends_on:
       db:
         condition: service_healthy
@@ -271,29 +265,27 @@ services:
     profiles:
       - origin
       - origin-with-elk-logging
-    image: ${LOCAL_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION}
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/anssi/lidi-send:${LIDI_VERSION}
     cpus: ${CPUS_LIDIS}
     mem_limit: ${MEM_LIMIT_LIDIS}
-    read_only: true
     network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG}
-    restart: always
     command:
-      - "--from_tcp"
+      - "--from-tcp"
       - "0.0.0.0:${LIDIS_PORT}"
-      - "--to_udp"
+      - "--to"
       - "${LIDIR_HOST}:${LIDIR_PORT}"
-      - "--to_udp_mtu"
+      - "--to-mtu"
       - "${LIDI_UDP_MTU}"
-      - "--nb_clients"
+      - "--max-clients"
       - "1"
-      - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE}"
-      - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE}"
-      - "--nb_encoding_threads"
-      - "${LIDIS_NB_ENCODING_THREADS}"
+      - "--block"
+      - "${LIDI_BLOCK_SIZE}"
+      - "--repair"
+      - "${LIDI_REPAIR_PERCENTAGE}"
+      - "--encode-threads"
+      - "${LIDIS_ENCODE_THREADS}"
+      - "--log-level"
+      - "${LIDI_LOG_LEVEL}"
 
   ############# Origin tools #############
   db-migrations-origin: &db-migrations-origin
@@ -338,11 +330,9 @@ services:
       FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
       FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
       FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
-    restart: always
     command:
       - make
       - run-origin-file-remover
-
 
   file-remover-origin-with-elk:
     profiles:
@@ -356,32 +346,30 @@ services:
   lidir: &lidir
     profiles:
       - destination
-    image: docker.io/anssi/lidi-receive:${LIDI_VERSION:-latest}
+    image: ${REMOTE_DOCKER_REGISTRY:-docker.io}/anssi/lidi-receive:${LIDI_VERSION:-latest}
     depends_on:
       receiver:
         condition: service_started
     cpus: ${CPUS_LIDIR}
     mem_limit: ${MEM_LIMIT_LIDIR}
-    read_only: true
     network_mode: "host"
-    environment:
-      RUST_LOG: ${RUST_LOG}
-    restart: always
     command:
-      - "--from_udp"
+      - "--from"
       - "0.0.0.0:${LIDIR_PORT}"
-      - "--from_udp_mtu"
+      - "--from-mtu"
       - "${LIDI_UDP_MTU}"
-      - "--to_tcp"
+      - "--to-tcp"
       - "127.0.0.1:65432"
-      - "--encoding_block_size"
-      - "${LIDI_ENCODING_BLOCK_SIZE}"
-      - "--repair_block_size"
-      - "${LIDI_REPAIR_BLOCK_SIZE}"
-      - "--nb_clients"
+      - "--block"
+      - "${LIDI_BLOCK_SIZE}"
+      - "--repair"
+      - "${LIDI_REPAIR_PERCENTAGE}"
+      - "--max-clients"
       - "1"
-      - "--nb_decoding_threads"
-      - "${LIDIR_NB_DECODING_THREADS}"
+      - "--decode-threads"
+      - "${LIDIR_DECODE_THREADS}"
+      - "--log-level"
+      - "${LIDI_LOG_LEVEL}"
 
   lidir-with-elk:
     <<: *lidir
@@ -406,7 +394,6 @@ services:
       PACKET_RECEIVER_HOST: "0.0.0.0"
       PACKET_RECEIVER_PORT: "65432"
       RECEIVER_BUFFER_MAX_ITEMS: "${RECEIVER_BUFFER_MAX_ITEMS}"
-    restart: always
     ports:
       - "127.0.0.1:65432:65432"
     command:
@@ -514,7 +501,6 @@ services:
       FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER: ${FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER}
       FILE_REMOVER_RUN_EVERY: ${FILE_REMOVER_RUN_EVERY}
       FILE_REMOVER_POLL_EVERY: ${FILE_REMOVER_POLL_EVERY}
-    restart: always
     command:
       - make
       - run-destination-file-remover

@@ -84,7 +84,7 @@ const sendOneFilePart = async (
   return apiClient.post(`/transferables/${uploadData.id}/file-part/`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
-      'Metadata-Name': encodeURI(uploadData.filename),
+      'Metadata-Name': encodeURI(uploadData.name),
     },
     signal: abortSignal,
     timeout: 0,
@@ -100,7 +100,7 @@ export const finalizeEncryptedMultipartUpload = (
 ): Promise<AxiosResponse<any, any>> => {
   const res = apiClient.get(`/transferables/${uploadData.id}/finalize-multipart-upload/`, {
     headers: {
-      'Metadata-Name': encodeURI(uploadData.filename),
+      'Metadata-Name': encodeURI(uploadData.name),
       'Metadata-Encrypted': true,
       'Metadata-Parts-Count': encryptionData.nbUploadParts,
       'Metadata-Main-Part-Size': encryptionData.mainPartSize,

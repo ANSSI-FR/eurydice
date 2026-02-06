@@ -2,13 +2,13 @@
 
 ## Docker images configuration
 
-| Variable                 | Default value                                 | Description                                                                                                                       |
-| ------------------------ | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `LOCAL_DOCKER_REGISTRY`  | `docker.io` | Docker image registry hostname local                                                                                              |
-| `REMOTE_DOCKER_REGISTRY` | `docker.io`                                   | Docker image registry hostname for images from the [docker hub](https://hub.docker.com/)                                          |
-| `EURYDICE_VERSION`       | `latest`                                      | Tag for the Eurydice docker image ([list of tags](https://github.com/ANSSI-FR/eurydice/tags)) |
-| `LIDI_VERSION`           | `latest`                                      | Tag for the lidis/r docker images ([list of tags](https://github.com/ANSSI-FR/lidi/tags))     |
-| `ELK_VERSION`            | `7.17.11`                                     | Version of Filebeat service. Should match the version of the targeted elastic service.                                            |
+| Variable                 | Default value | Description                                                                                   |
+| ------------------------ | ------------- | --------------------------------------------------------------------------------------------- |
+| `LOCAL_DOCKER_REGISTRY`  | `docker.io`   | Docker image registry hostname local                                                          |
+| `REMOTE_DOCKER_REGISTRY` | `docker.io`   | Docker image registry hostname for images from the [docker hub](https://hub.docker.com/)      |
+| `EURYDICE_VERSION`       | `latest`      | Tag for the Eurydice docker image ([list of tags](https://github.com/ANSSI-FR/eurydice/tags)) |
+| `LIDI_VERSION`           | `2.1.1`       | Tag for the lidis/r docker images ([list of tags](https://github.com/ANSSI-FR/lidi/tags))     |
+| `ELK_VERSION`            | `8.18.6`      | Version of Filebeat service. Should match the version of the targeted elastic service.        |
 
 ## User configuration
 
@@ -20,7 +20,7 @@
 ## Backend configuration
 
 | Variable                               | Default value    | Description                                                                                                                                                                                                                                 |
-|----------------------------------------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GUNICORN_CONFIGURATION`               | `""`             | Gunicorn commandline arguments                                                                                                                                                                                                              |
 | `CSRF_TRUSTED_ORIGINS`                 | `""`             | Additionnal origin(s) for CSRF validation, separated by a comma: `,`. SEE [Django documentation](https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins) Must include scheme ("http://", "https://") . May be left empty. |
 | `EURYDICE_TRANSFERABLE_MAX_SIZE`       | `54975581388800` | File upload size limit on the origin side. Should be less than your storage capacity. Default is 50TiB.                                                                                                                                     |
@@ -60,15 +60,17 @@
 
 ## Lidi configuration
 
-| Variable                    | Default value | Description                                                                                                                                |
-| --------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `LIDIR_PORT`                | `11011`       | Lidir port number                                                                                                                          |
-| `LIDIS_PORT`                | `33010`       | Lidis port number                                                                                                                          |
-| `LIDIR_NB_DECODING_THREADS` | `2`           | Value for lidi option `--nb_decoding_threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)                       |
-| `LIDI_UDP_MTU`              | `1500`        | Value for lidi option `--from_udp_mtu` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)        |
-| `LIDI_ENCODING_BLOCK_SIZE`  | `60000`       | Value for lidi option `--encoding_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes) |
-| `LIDI_REPAIR_BLOCK_SIZE`    | `6000`        | Value for lidi option `--repair_block_size` (see https://github.com/ANSSI-FR/lidi/blob/master/doc/parameters.rst#block-and-packet-sizes)   |
-| `LIDIS_NB_ENCODING_THREADS` | `2`           | Value for lidi option `--nb_encoding_threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)                       |
+| Variable                 | Default value | Description                                                                                                        |
+| ------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `LIDIR_PORT`             | `11011`       | Lidir (lidi-receive) port number                                                                                   |
+| `LIDIR_HOST`             | `0.0.0.0`     | Lidir (lidi-receive) host                                                                                          |
+| `LIDIS_PORT`             | `33010`       | Lidis (lidi-send) port number                                                                                      |
+| `LIDI_LOG_LEVEL`         | `Info`        | Value for lidi option `--log-level` (see <https://github.com/ANSSI-FR/lidi/blob/v2.0.0/doc/files.rst?plain=1#L14>) |
+| `LIDIR_DECODE_THREADS`   | `2`           | Value for lidi option `--decode-threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)    |
+| `LIDI_UDP_MTU`           | `1500`        | Value for lidi option `--from-mtu` (see <https://anssi-fr.github.io/lidi/parameters.html#block-and-packet-sizes>)  |
+| `LIDI_BLOCK_SIZE`        | `734928`      | Value for lidi option `--block` (see <https://anssi-fr.github.io/lidi/parameters.html#block-and-packet-sizes>)     |
+| `LIDI_REPAIR_PERCENTAGE` | `2`           | Value for lidi option `--repair` (see <https://anssi-fr.github.io/lidi/parameters.html#block-and-packet-sizes>)    |
+| `LIDIS_ENCODE_THREADS`   | `2`           | Value for lidi option `--encode-threads` (see <https://anssi-fr.github.io/lidi/parameters.html#multithreading>)    |
 
 ## Network configuration
 
@@ -78,16 +80,15 @@
 
 ## Backend logging configuration
 
-| Variable      | Default value        | Description                                                                                          |
-| ------------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
-| `LOG_TO_FILE` | `true`               | If true, python processes will configure their logger to log into json files. See `PYTHON_LOGS_DIR`. |
-| `LOG_LEVEL`   | `INFO`               | Django and Eurydice Log Level                                                                        |
-| `RUST_LOG`    | See compose.prod.yml | Rust log level (i.e. Lidi log level)                                                                 |
+| Variable      | Default value | Description                                                                                          |
+| ------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
+| `LOG_TO_FILE` | `true`        | If true, python processes will configure their logger to log into json files. See `PYTHON_LOGS_DIR`. |
+| `LOG_LEVEL`   | `INFO`        | Django and Eurydice Log Level                                                                        |
 
 ## File remover configuration
 
 | Variable                                  | Default value | Description                                                                                                                                                                                                                                                                      |
-| ----------------------------------------- | ------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FILE_REMOVER_RUN_EVERY`                  | `1min`        | Run frequency for the File Remover (service which removes files and sets Transferable to `EXPIRED` on the origin and destination side)                                                                                                                                           |
 | `FILE_REMOVER_EXPIRE_TRANSFERABLES_AFTER` | `7days`       | Duration before which files received on the origin and destination sides are marked as `EXPIRED`. Warning: this value must be bigger than the longest potential upload time. Otherwise, part of the temporary file parts on the origin side could be deleted as it is uploading. |
 | `FILE_REMOVER_POLL_EVERY`                 | `200ms`       | Maximum acceptable duration between the File Remover receiving a `SIGINT` signal and the process' termination                                                                                                                                                                    |
@@ -102,13 +103,13 @@
 
 ## Filebeat configuration
 
-| Variable                  | Default value                                       | Description                                                                                                                                                            |
-|---------------------------| --------------------------------------------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `FILEBEAT_CONFIG_PATH`    |                                                     | Host path to the filebeat config. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                  |
-| `ELASTICSEARCH_API_KEY`   | `""`                                                | API key used by filebeat to publish logs to elasticsearch. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                         |
-| `ELASTICSEARCH_HOSTS`     |                                                     | Elasticsearch URL. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). Should start with https.                                        |
-| `ELASTICSEARCH_CERT_PATH` | `/usr/local/share/ca-certificates/ac-racine-np.crt` | Absolute path to SSL certificate that should be used to connect to elastic search. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). |
-| `ELASTICSEARCH_INDEX_NAME`|                                                     | A name to be included in the elk index name directly after `eurydice` cf the output.elasticsearch section of the filebeat configuration file                           |
+| Variable                   | Default value                        | Description                                                                                                                                                            |
+| -------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FILEBEAT_CONFIG_PATH`     |                                      | Host path to the filebeat config. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                                                  |
+| `ELASTICSEARCH_API_KEY`    | `""`                                 | API key used by filebeat to publish logs to elasticsearch. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`).                         |
+| `ELASTICSEARCH_HOSTS`      |                                      | Elasticsearch URL. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). Should start with https.                                        |
+| `ELASTICSEARCH_CERT_PATH`  | `/etc/ssl/certs/ca-certificates.crt` | Absolute path to SSL certificate that should be used to connect to elastic search. Set this variable if you use the filebeat service (`--profile *-with-elk-logging`). |
+| `ELASTICSEARCH_INDEX_NAME` |                                      | A name to be included in the elk index name directly after `eurydice` cf the output.elasticsearch section of tF/etche filebeat configuration file                      |
 
 
 ## Sender configuration
